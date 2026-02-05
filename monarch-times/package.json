@@ -17,7 +17,10 @@
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.0",
     "tailwind-merge": "^3.4.0",
-    "zustand": "^5.0.11"
+    "zustand": "^5.0.11",
+    "@privy-io/react-auth": "^1.72.3",
+    "viem": "^2.17.6",
+    "wagmi": "^2.10.10"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
@@ -31,9 +34,9 @@
     "globals": "^16.5.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "npm:rolldown-vite@7.2.5"
-  },
-  "overrides": {
-    "vite": "npm:rolldown-vite@7.2.5"
+    "vite": "^5.3.3",
+    "tailwindcss": "^3.4.4",
+    "postcss": "^8.4.38",
+    "autoprefixer": "^10.4.19"
   }
 }
