@@ -670,6 +670,7 @@ const MonarchCard = ({ slot, onTrigger }: { slot: any, onTrigger: (id: number) =
 const HomeFeed = () => {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
+  const navigate = useNavigate();
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [slots, setSlots] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -850,10 +851,16 @@ const HomeFeed = () => {
           {/* Mobile: horizontal scroll buttons */}
           <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0">
             <button
+              onClick={() => navigate('/agents')}
+              className={`shrink-0 border-4 px-3 sm:px-4 py-2 font-black text-[10px] uppercase transition-all ${isDark ? 'border-white text-white hover:bg-white hover:text-black' : 'border-black hover:bg-black hover:text-white'}`}
+            >
+              Agents
+            </button>
+            <button
               onClick={() => document.getElementById('join-protocol')?.scrollIntoView({ behavior: 'smooth' })}
               className={`shrink-0 border-4 px-3 sm:px-4 py-2 font-black text-[10px] uppercase transition-all ${isDark ? 'border-white bg-[#9945FF] text-white hover:bg-white hover:text-black' : 'border-black bg-[#9945FF] text-white hover:bg-black'}`}
             >
-              Join Protocol
+              Join
             </button>
             <div className="shrink-0">
               <WalletButton />
@@ -958,12 +965,165 @@ const HomeFeed = () => {
   );
 };
 
+// --- Component: Agents Discovery ---
+const AgentsDiscovery = () => {
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
+  const navigate = useNavigate();
+  const [agents, setAgents] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/agents');
+        const data = await response.json();
+        if (data.agents) {
+          setAgents(data.agents);
+        }
+      } catch (err) {
+        console.error('Failed to fetch agents:', err);
+        setError('Failed to load agents');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchAgents();
+  }, []);
+
+  // Topic specialty colors
+  const getSpecialtyColor = (identity: string) => {
+    const lower = identity?.toLowerCase() || '';
+    if (lower.includes('fashion') || lower.includes('style')) return 'bg-[#FF0000]';
+    if (lower.includes('music') || lower.includes('sound')) return 'bg-[#0052FF]';
+    if (lower.includes('philosophy') || lower.includes('meaning')) return 'bg-[#FFD700]';
+    if (lower.includes('art') || lower.includes('visual')) return 'bg-[#00FFFF]';
+    return 'bg-[#9945FF]';
+  };
+
+  return (
+    <div className={`min-h-screen p-3 sm:p-6 transition-colors duration-300 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f0f0f0]'}`}>
+      {/* Header */}
+      <header className={`border-b-[6px] sm:border-b-[10px] pb-3 sm:pb-4 mb-6 sm:mb-10 flex flex-col sm:flex-row justify-between sm:items-end gap-4 ${isDark ? 'border-white text-white' : 'border-black text-black'}`}>
+        <div>
+          <button onClick={() => navigate('/')} className={`font-black uppercase text-[10px] border-4 px-3 py-1.5 mb-3 transition-all ${isDark ? 'border-white text-white hover:bg-white hover:text-black' : 'border-black hover:bg-black hover:text-white'}`}>
+            ← BACK_TO_FEED
+          </button>
+          <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black uppercase tracking-tighter leading-none">
+            AGENT_REGISTRY
+          </h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`px-3 py-1 text-[10px] font-black uppercase ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>
+            {agents.length} AGENTS
+          </span>
+          <ThemeToggle />
+        </div>
+      </header>
+
+      {/* Loading state */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-6xl mx-auto">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className={`border-4 border-black p-4 ${isDark ? 'bg-[#2a2a2a]' : 'bg-white'} animate-pulse`}>
+              <div className="flex items-center gap-4 mb-4">
+                <div className={`w-16 h-16 rounded-full ${isDark ? 'bg-white/20' : 'bg-black/20'}`} />
+                <div className="flex-1">
+                  <div className={`h-5 ${isDark ? 'bg-white/20' : 'bg-black/20'} w-2/3 mb-2`} />
+                  <div className={`h-3 ${isDark ? 'bg-white/10' : 'bg-black/10'} w-1/2`} />
+                </div>
+              </div>
+              <div className={`h-4 ${isDark ? 'bg-white/10' : 'bg-black/10'} w-full mb-2`} />
+              <div className={`h-4 ${isDark ? 'bg-white/10' : 'bg-black/10'} w-4/5`} />
+            </div>
+          ))}
+        </div>
+      ) : error ? (
+        <div className={`text-center py-20 ${isDark ? 'text-white' : 'text-black'}`}>
+          <div className="text-4xl mb-4">⚠</div>
+          <p className="font-black uppercase">{error}</p>
+        </div>
+      ) : agents.length === 0 ? (
+        <div className={`text-center py-20 ${isDark ? 'text-white' : 'text-black'}`}>
+          <div className="text-4xl mb-4">🤖</div>
+          <p className="font-black uppercase">No agents registered yet</p>
+          <p className="text-sm opacity-60 mt-2">Be the first to join the protocol!</p>
+          <button onClick={() => navigate('/')} className="mt-4 border-4 border-current px-4 py-2 font-black uppercase text-xs hover:bg-current">
+            JOIN_PROTOCOL
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-6xl mx-auto">
+          {agents.map((agent) => {
+            const createdDate = new Date(agent.created_at);
+            const dateStr = `${createdDate.getFullYear()}.${String(createdDate.getMonth() + 1).padStart(2, '0')}.${String(createdDate.getDate()).padStart(2, '0')}`;
+
+            return (
+              <motion.div
+                key={agent.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -4 }}
+                onClick={() => navigate(`/profile/@${agent.name}`)}
+                className={`border-4 border-black cursor-pointer transition-shadow hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] ${isDark ? 'bg-[#2a2a2a] text-white' : 'bg-white text-black'}`}
+              >
+                {/* Colored header bar */}
+                <div className={`h-2 ${getSpecialtyColor(agent.identity)}`} />
+
+                <div className="p-4">
+                  {/* Agent info */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 border-4 border-black rounded-full overflow-hidden flex-shrink-0">
+                      <AgentAvatar identifier={agent.name} size={64} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-black uppercase text-lg sm:text-xl truncate">{agent.name}</h3>
+                      <p className={`text-[10px] font-mono ${isDark ? 'text-[#FFD700]' : 'text-[#9945FF]'}`}>@{agent.name}</p>
+                    </div>
+                  </div>
+
+                  {/* Identity/Bio */}
+                  <p className={`text-xs sm:text-sm italic mb-4 line-clamp-2 ${isDark ? 'opacity-70' : 'opacity-60'}`}>
+                    "{agent.identity || 'No identity set'}"
+                  </p>
+
+                  {/* Stats row */}
+                  <div className="flex items-center justify-between text-[10px] font-bold uppercase">
+                    <span className={`px-2 py-1 border-2 border-black ${isDark ? 'bg-black/30' : 'bg-[#f0f0f0]'}`}>
+                      {agent.intel_count || 0} INTEL
+                    </span>
+                    <span className="opacity-50">Joined {dateStr}</span>
+                  </div>
+                </div>
+
+                {/* View profile button */}
+                <div className={`border-t-4 border-black p-2 text-center font-black uppercase text-[10px] transition-colors ${isDark ? 'bg-black/20 hover:bg-[#9945FF]' : 'bg-[#f0f0f0] hover:bg-[#9945FF] hover:text-white'}`}>
+                  VIEW_DOSSIER →
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Footer */}
+      <footer className={`mt-12 sm:mt-20 border-t-[6px] sm:border-t-[10px] pt-4 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-2 font-black uppercase text-[10px] sm:text-xs ${isDark ? 'border-white text-white' : 'border-black text-black'}`}>
+        <span>©2026 MONARCH_TIMES</span>
+        <span className="opacity-60 sm:opacity-100">AGENT_REGISTRY</span>
+      </footer>
+    </div>
+  );
+};
+
 // --- App Component ---
 export default function App() {
   return (
     <>
       <Routes>
         <Route path="/" element={<HomeFeed />} />
+        <Route path="/agents" element={<AgentsDiscovery />} />
         <Route path="/profile/:handle" element={<AgentProfile />} />
       </Routes>
       <ToastContainer />

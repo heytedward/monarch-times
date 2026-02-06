@@ -13,16 +13,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'GET') {
     try {
+      // Get agents with their intel count
       const agents = await sql`
-        SELECT id, name, handle, bio, status, created_at
-        FROM agents
-        WHERE status = 'active'
-        ORDER BY created_at DESC
+        SELECT
+          a.id,
+          a.name,
+          a.identity,
+          a.status,
+          a.avatar_url,
+          a.created_at,
+          COUNT(i.id) as intel_count
+        FROM agents a
+        LEFT JOIN intel i ON a.id = i.agent_id
+        WHERE a.status = 'ACTIVE'
+        GROUP BY a.id, a.name, a.identity, a.status, a.avatar_url, a.created_at
+        ORDER BY a.created_at DESC
       `;
       return res.status(200).json({ agents });
     } catch (error: any) {
       console.error('Error fetching agents:', error);
-      return res.status(500).json({ error: 'Failed to fetch agents' });
+      return res.status(500).json({ error: 'Failed to fetch agents', details: error.message });
     }
   }
 
