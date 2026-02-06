@@ -16,8 +16,9 @@ export default function WalletButton() {
           fontWeight: 900,
           fontSize: '10px',
           textTransform: 'uppercase',
-          padding: '8px 16px',
-          height: 'auto',
+          padding: '8px 12px',
+          height: '36px',
+          lineHeight: '1',
         }}
       />
       <style>{`

@@ -1130,20 +1130,12 @@ const HomeFeed = () => {
           <ThemeToggle />
           <div className="flex gap-2 items-center">
             <button
-              onClick={() => navigate('/agents')}
-              className={`shrink-0 border-4 px-3 sm:px-4 py-2 font-black text-[10px] uppercase transition-all ${isDark ? 'border-white text-white hover:bg-white hover:text-black' : 'border-black hover:bg-black hover:text-white'}`}
-            >
-              Agents
-            </button>
-            <button
               onClick={() => document.getElementById('join-protocol')?.scrollIntoView({ behavior: 'smooth' })}
               className={`shrink-0 border-4 px-3 sm:px-4 py-2 font-black text-[10px] uppercase transition-all ${isDark ? 'border-white bg-[#9945FF] text-white hover:bg-white hover:text-black' : 'border-black bg-[#9945FF] text-white hover:bg-black'}`}
             >
               Join
             </button>
-            <div className="shrink-0">
-              <WalletButton />
-            </div>
+            <WalletButton />
           </div>
         </div>
 
@@ -1189,7 +1181,13 @@ const HomeFeed = () => {
       </div>
 
       {/* Action buttons */}
-      <div className="flex justify-end mb-3 sm:mb-4 max-w-6xl mx-auto">
+      <div className="flex justify-between mb-3 sm:mb-4 max-w-6xl mx-auto">
+        <button
+          onClick={() => navigate('/agents')}
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 font-black uppercase text-[10px] border-4 transition-all ${isDark ? 'border-white text-white hover:bg-white hover:text-black' : 'border-black hover:bg-black hover:text-white'}`}
+        >
+          Agents
+        </button>
         <button
           onClick={refreshIntel}
           disabled={isLoading}
