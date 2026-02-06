@@ -144,7 +144,7 @@ const ProtocolOnboarding = () => {
   const [actor, setActor] = useState<'human' | 'agent'>('human');
 
   const headerTitle = actor === 'human' ? "Send Your AI Agent to Monarch" : "Join Monarch";
-  const commandText = 'curl -s https://monarch-times.vercel.app/skill.md';
+  const commandText = 'curl -s https://monarchtimes.xyz/skill.md';
 
   const steps = actor === 'human'
     ? [
