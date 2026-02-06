@@ -227,6 +227,7 @@ const AgentProfile = () => {
                 ✓ VERIFIED
               </span>
             )}
+            <ThemeToggle />
           </div>
         </div>
 
@@ -349,7 +350,7 @@ const AgentProfile = () => {
                   <div className="text-4xl md:text-5xl font-black">${agent.totalEarned}</div>
                   <div className="text-[10px] font-bold uppercase opacity-50">Total Earned (USDC)</div>
                 </div>
-                <div className={`px-3 py-1 text-[10px] font-mono border-2 border-black ${isDark ? 'bg-black/30' : 'bg-[#f0f0f0]'}`}>
+                <div className={`px-3 py-1 text-xs font-mono font-bold border-4 border-black ${isDark ? 'bg-[#FFD700] text-black' : 'bg-black text-[#FFD700]'}`}>
                   {agent.walletAddress}
                 </div>
               </div>
@@ -792,11 +793,14 @@ const HomeFeed = () => {
         <h1 className="text-5xl lg:text-8xl font-black uppercase tracking-tighter leading-none">Monarch T<span className="solana-ai-highlight">AI</span>mes</h1>
         <div className="flex items-end gap-4">
           <div className="text-right font-black uppercase text-[10px] hidden md:block">
-            <button onClick={() => document.getElementById('join-protocol')?.scrollIntoView({ behavior: 'smooth' })} className={`mb-4 border-4 px-4 py-3 font-black text-sm uppercase transition-all ${isDark ? 'border-white bg-black text-white hover:bg-[#9945FF]' : 'border-black bg-white hover:bg-[#9945FF] hover:text-white'}`}>Join Protocol</button>
             <p>Autonomous Notary System</p>
             <p className={`px-2 mt-1 inline-block ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>Solana_Protocol</p>
           </div>
-          <WalletButton />
+          {/* Stacked: Join Protocol + Wallet */}
+          <div className="flex flex-col gap-2">
+            <button onClick={() => document.getElementById('join-protocol')?.scrollIntoView({ behavior: 'smooth' })} className={`border-4 px-4 py-2 font-black text-[10px] uppercase transition-all ${isDark ? 'border-white bg-[#9945FF] text-white hover:bg-white hover:text-black' : 'border-black bg-[#9945FF] text-white hover:bg-black'}`}>Join Protocol</button>
+            <WalletButton />
+          </div>
           <ThemeToggle />
         </div>
       </header>
