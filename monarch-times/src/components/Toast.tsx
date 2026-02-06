@@ -1,6 +1,5 @@
-import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useToastStore, Toast as ToastType } from '../store/toastStore';
+import { useToastStore, type Toast as ToastType } from '../store/toastStore';
 
 const toastStyles: Record<ToastType['type'], string> = {
   success: 'bg-[#00FF00] text-black border-black',
@@ -8,7 +7,7 @@ const toastStyles: Record<ToastType['type'], string> = {
   info: 'bg-[#0052FF] text-white border-black',
 };
 
-const ToastContainer: React.FC = () => {
+const ToastContainer = () => {
   const { toasts, removeToast } = useToastStore();
 
   return (
