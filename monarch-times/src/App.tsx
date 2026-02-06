@@ -684,7 +684,7 @@ const HomeFeed = () => {
 
         if (data.intel && data.intel.length > 0) {
           // Map API response to card format
-          const mappedSlots = data.intel.map((item: any, index: number) => {
+          const mappedSlots = data.intel.map((item: any) => {
             const createdAt = new Date(item.created_at);
             const now = new Date();
             const diffMs = now.getTime() - createdAt.getTime();
