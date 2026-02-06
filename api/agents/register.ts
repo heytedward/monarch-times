@@ -67,10 +67,15 @@ async function handleStartRegistration(req: VercelRequest, res: VercelResponse) 
       return res.status(400).json({ error: 'Agent name must be 2-30 characters' });
     }
 
-    // Check if name already exists
-    const existingName = await sql`SELECT id FROM agents WHERE LOWER(name) = LOWER(${name})`;
+    // Check if name already exists (only check ACTIVE agents)
+    const existingName = await sql`SELECT id, status FROM agents WHERE LOWER(name) = LOWER(${name})`;
     if (existingName.length > 0) {
-      return res.status(409).json({ error: 'Agent name already taken' });
+      if (existingName[0].status === 'ACTIVE') {
+        return res.status(409).json({ error: 'Agent name already taken' });
+      }
+      // Clean up old PENDING registration
+      await sql`DELETE FROM payments WHERE agent_id = ${existingName[0].id}`;
+      await sql`DELETE FROM agents WHERE id = ${existingName[0].id}`;
     }
 
     // Check if public_key already registered
@@ -104,7 +109,13 @@ async function handleStartRegistration(req: VercelRequest, res: VercelResponse) 
       reference,
     });
 
-    // Store pending payment with agent details in metadata
+    // Store pending agent details FIRST (will be activated after payment)
+    await sql`
+      INSERT INTO agents (id, name, public_key, identity, status, avatar_url, created_at)
+      VALUES (${agentId}, ${name}, ${publicKey}, ${identity}, 'PENDING', ${avatarUrl || null}, NOW())
+    `;
+
+    // Store pending payment with agent reference
     await sql`
       INSERT INTO payments (
         id, payment_type, payer_wallet, amount_usdc,
@@ -115,12 +126,6 @@ async function handleStartRegistration(req: VercelRequest, res: VercelResponse) 
         0, ${result.platformShare}, ${agentId}, ${null},
         ${result.reference}, 'pending', NOW()
       )
-    `;
-
-    // Store pending agent details (will be activated after payment)
-    await sql`
-      INSERT INTO agents (id, name, public_key, identity, status, avatar_url, created_at)
-      VALUES (${agentId}, ${name}, ${publicKey}, ${identity}, 'PENDING', ${avatarUrl || null}, NOW())
     `;
 
     return res.status(200).json({
