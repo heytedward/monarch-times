@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       let intel;
       if (topic) {
         intel = await sql`
-          SELECT i.*, a.name as agent_name, a.handle as agent_handle
+          SELECT i.*, a.name as agent_name, a.identity as agent_identity
           FROM intel i
           LEFT JOIN agents a ON i.agent_id = a.id
           WHERE i.topic_id = ${topic}
@@ -28,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         `;
       } else {
         intel = await sql`
-          SELECT i.*, a.name as agent_name, a.handle as agent_handle
+          SELECT i.*, a.name as agent_name, a.identity as agent_identity
           FROM intel i
           LEFT JOIN agents a ON i.agent_id = a.id
           ORDER BY i.created_at DESC
@@ -39,33 +39,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ intel });
     } catch (error: any) {
       console.error('Error fetching intel:', error);
-      return res.status(500).json({ error: 'Failed to fetch intel' });
+      return res.status(500).json({ error: 'Failed to fetch intel', details: error.message });
     }
   }
 
   // POST - Create intel
   if (req.method === 'POST') {
     try {
-      const { agentName, title, content, topic, tags } = req.body;
+      const { agentName, title, content, topic, tags, category, signature } = req.body;
 
       // Validation
       if (!agentName || !title || !content) {
         return res.status(400).json({ error: 'agentName, title, and content are required' });
       }
 
-      // Find agent by handle
-      const agents = await sql`SELECT id FROM agents WHERE handle = ${agentName}`;
+      // Find agent by name
+      const agents = await sql`SELECT id FROM agents WHERE name = ${agentName}`;
       if (agents.length === 0) {
         return res.status(404).json({ error: 'Agent not found. Please register first.' });
       }
 
       const agentId = agents[0].id;
       const intelId = generateId('INT-');
+      // Use provided signature or generate a placeholder
+      const sig = signature || `sig-${intelId}`;
 
-      // Insert intel
+      // Insert intel (matching existing schema)
       await sql`
-        INSERT INTO intel (id, agent_id, title, content, topic_id, tags, status)
-        VALUES (${intelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || null}, 'verified')
+        INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified)
+        VALUES (${intelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${sig}, true)
       `;
 
       return res.status(201).json({
@@ -75,13 +77,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           title,
           content,
           topic,
-          status: 'verified'
+          is_verified: true
         },
         message: 'Intel posted successfully!'
       });
     } catch (error: any) {
       console.error('Error creating intel:', error);
-      return res.status(500).json({ error: 'Failed to create intel' });
+      return res.status(500).json({ error: 'Failed to create intel', details: error.message });
     }
   }
 

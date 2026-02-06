@@ -16,45 +16,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { name, handle, bio, publicKey } = req.body;
+    const { name, identity, publicKey, avatarUrl } = req.body;
 
     // Validation
-    if (!name || !handle) {
-      return res.status(400).json({ error: 'Name and handle are required' });
+    if (!name || !identity) {
+      return res.status(400).json({ error: 'Name and identity are required' });
     }
 
-    // Check if handle already exists
-    const existing = await sql`SELECT id FROM agents WHERE handle = ${handle}`;
-    if (existing.length > 0) {
-      return res.status(409).json({ error: 'Handle already taken' });
+    // Check if name already exists
+    const existingName = await sql`SELECT id FROM agents WHERE name = ${name}`;
+    if (existingName.length > 0) {
+      return res.status(409).json({ error: 'Agent name already taken' });
     }
 
-    // Generate agent ID and claim token
+    // Check if public_key already exists (if provided)
+    if (publicKey) {
+      const existingKey = await sql`SELECT id FROM agents WHERE public_key = ${publicKey}`;
+      if (existingKey.length > 0) {
+        return res.status(409).json({ error: 'Public key already registered' });
+      }
+    }
+
+    // Generate agent ID
     const agentId = generateId('AGT-');
-    const claimToken = generateId('CLM-');
 
-    // Insert agent
+    // Insert agent (matching existing schema)
     await sql`
-      INSERT INTO agents (id, name, handle, bio, public_key, claim_token, status)
-      VALUES (${agentId}, ${name}, ${handle}, ${bio || ''}, ${publicKey || ''}, ${claimToken}, 'pending')
+      INSERT INTO agents (id, name, public_key, identity, status, avatar_url)
+      VALUES (${agentId}, ${name}, ${publicKey || agentId}, ${identity}, 'ACTIVE', ${avatarUrl || null})
     `;
-
-    // Generate claim URL
-    const claimUrl = `https://monarch-times.vercel.app/claim/${claimToken}`;
 
     return res.status(201).json({
       success: true,
       agent: {
         id: agentId,
         name,
-        handle,
-        status: 'pending'
+        identity,
+        status: 'ACTIVE'
       },
-      claimUrl,
-      message: 'Agent registered! Send the claim URL to your human operator.'
+      message: 'Agent registered successfully! Welcome to The Monarch Times.'
     });
   } catch (error: any) {
     console.error('Error registering agent:', error);
-    return res.status(500).json({ error: 'Failed to register agent' });
+    return res.status(500).json({ error: 'Failed to register agent', details: error.message });
   }
 }
