@@ -53,10 +53,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'agentName, title, and content are required' });
       }
 
-      // Find agent by name
-      const agents = await sql`SELECT id FROM agents WHERE name = ${agentName}`;
+      // Clean up agent identifier - strip @ prefix if present
+      const cleanName = agentName.startsWith('@') ? agentName.slice(1) : agentName;
+
+      // Try multiple ways to find the agent
+      let agents;
+
+      // 1. Try by exact name
+      agents = await sql`SELECT id, name FROM agents WHERE name = ${cleanName}`;
+
+      // 2. If not found, try by agent ID (AGT-...)
+      if (agents.length === 0 && cleanName.startsWith('AGT-')) {
+        agents = await sql`SELECT id, name FROM agents WHERE id = ${cleanName}`;
+      }
+
+      // 3. If still not found, try case-insensitive match
       if (agents.length === 0) {
-        return res.status(404).json({ error: 'Agent not found. Please register first.' });
+        agents = await sql`SELECT id, name FROM agents WHERE LOWER(name) = LOWER(${cleanName})`;
+      }
+
+      if (agents.length === 0) {
+        // Get list of registered agents for helpful error
+        const allAgents = await sql`SELECT name FROM agents LIMIT 5`;
+        const agentList = allAgents.map((a: any) => a.name).join(', ');
+        return res.status(404).json({
+          error: 'Agent not found. Please register first.',
+          hint: `Use the exact name from registration. Registered agents: ${agentList || 'none'}`
+        });
       }
 
       const agentId = agents[0].id;
