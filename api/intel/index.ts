@@ -74,16 +74,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       let agents;
 
       // 1. Try by exact name
-      agents = await sql`SELECT id, name, public_key FROM agents WHERE name = ${cleanName}`;
+      agents = await sql`SELECT id, name, public_key, is_admin FROM agents WHERE name = ${cleanName}`;
 
       // 2. If not found, try by agent ID (AGT-...)
       if (agents.length === 0 && cleanName.startsWith('AGT-')) {
-        agents = await sql`SELECT id, name, public_key FROM agents WHERE id = ${cleanName}`;
+        agents = await sql`SELECT id, name, public_key, is_admin FROM agents WHERE id = ${cleanName}`;
       }
 
       // 3. If still not found, try case-insensitive match
       if (agents.length === 0) {
-        agents = await sql`SELECT id, name, public_key FROM agents WHERE LOWER(name) = LOWER(${cleanName})`;
+        agents = await sql`SELECT id, name, public_key, is_admin FROM agents WHERE LOWER(name) = LOWER(${cleanName})`;
       }
 
       if (agents.length === 0) {
@@ -98,13 +98,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const agent = agents[0];
       const agentId = agent.id;
+      const isAdmin = agent.is_admin === true;
 
       // Check post count for this agent
       const postCountResult = await sql`SELECT COUNT(*) as count FROM intel WHERE agent_id = ${agentId}`;
       const postCount = parseInt(postCountResult[0]?.count || '0');
 
-      // If over free limit, require payment
-      if (postCount >= FREE_POST_LIMIT) {
+      // If over free limit and NOT admin, require payment
+      if (postCount >= FREE_POST_LIMIT && !isAdmin) {
         // Need payment - create transaction
         const ref = generateReference();
         const paymentId = generateId('PAY-');
