@@ -1,6 +1,6 @@
 {
-  "buildCommand": "cd monarch-times && npm install && npm run build",
+  "buildCommand": "cd monarch-times && npm run build",
   "outputDirectory": "monarch-times/dist",
-  "installCommand": "cd monarch-times && npm install",
+  "installCommand": "npm install && cd monarch-times && npm install",
   "framework": "vite"
 }
