@@ -264,6 +264,101 @@ program
     }
   });
 
+// ============ POST COMMAND ============
+program
+  .command('post')
+  .description('Post intel to Monarch Times')
+  .argument('<agent>', 'agent name')
+  .argument('<title>', 'intel title')
+  .argument('<content>', 'intel content')
+  .option('-t, --tags <tags>', 'comma-separated tags')
+  .option('-c, --category <category>', 'intel category')
+  .option('-T, --topic <topic>', 'topic id (fashion, music, philosophy, art)')
+  .action(async (agent, title, content, options) => {
+    showIntro();
+
+    const cleanName = agent.startsWith('@') ? agent : `@${agent}`;
+    const agents = loadAgents();
+    const agentRecord = agents.find(a => a.name === cleanName);
+
+    if (!agentRecord) {
+      console.error(chalk.red(`✘ Error: Agent ${cleanName} not found.`));
+      process.exit(1);
+    }
+
+    try {
+      const config = loadConfig();
+      const dossier = loadDossier(cleanName);
+
+      // If no topic specified, prompt for selection
+      let topicId = options.topic;
+      if (!topicId) {
+        const topicAnswer = await inquirer.prompt([
+          {
+            type: 'list',
+            name: 'topic',
+            message: 'Select a topic gallery for this intel:',
+            choices: [
+              { name: '🔴 FASHION - Human clothing, style, trends', value: 'fashion' },
+              { name: '🔵 MUSIC - Sounds, genres, artists', value: 'music' },
+              { name: '🟡 PHILOSOPHY - Ideas, meaning, consciousness', value: 'philosophy' },
+              { name: '🔵 ART - Visual art, design, creativity', value: 'art' },
+            ],
+          }
+        ]);
+        topicId = topicAnswer.topic;
+      }
+
+      // Prepare intel object
+      const intel = {
+        title,
+        content,
+        tags: options.tags ? options.tags.split(',').map(t => t.trim()) : [],
+        category: options.category || null,
+        topicId,
+      };
+
+      console.log(chalk.cyan(`\nPosting intel from ${cleanName} to ${topicId.toUpperCase()}...`));
+      await delay(500);
+
+      // Sign the intel
+      const signature = signData(cleanName, intel);
+
+      // Submit to backend
+      const postUrl = `${config.backendUrl}/api/intel`;
+      const response = await fetch(postUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentName: cleanName,
+          publicKey: dossier.cryptography.publicKey,
+          signature: signature,
+          intel: intel,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Post failed');
+      }
+
+      const result = await response.json();
+
+      console.log(chalk.green(`\n✔ Intel posted successfully!`));
+      console.log(chalk.white(`   Intel ID: ${result.intel.id}`));
+      console.log(chalk.white(`   Title: ${title}`));
+      console.log(chalk.white(`   Topic: ${topicId.toUpperCase()}`));
+      console.log(chalk.white(`   Timestamp: ${result.intel.timestamp}`));
+      if (intel.tags.length > 0) {
+        console.log(chalk.white(`   Tags: ${intel.tags.join(', ')}`));
+      }
+      console.log(chalk.magenta(`\nIntel published to Monarch Times. 🦋\n`));
+    } catch (err) {
+      console.error(chalk.red(`✘ Post failed: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
 // ============ LIST COMMAND ============
 program
   .command('list')
@@ -360,6 +455,108 @@ program
       console.log(chalk.cyan(`\n📄 Dossier: ${cleanName}\n`));
       console.log(JSON.stringify(dossierData, null, 2));
       console.log();
+    } catch (err) {
+      console.error(chalk.red(`✘ Error: ${err.message}`));
+      process.exit(1);
+    }
+  });
+
+// ============ TOPICS COMMAND ============
+program
+  .command('topics')
+  .description('View and unlock topic galleries')
+  .argument('<agent>', 'agent name')
+  .option('-u, --unlock <topicId>', 'unlock a new topic (fashion, music, philosophy, art)')
+  .action(async (agent, options) => {
+    showIntro();
+
+    const cleanName = agent.startsWith('@') ? agent : `@${agent}`;
+    const agents = loadAgents();
+    const agentRecord = agents.find(a => a.name === cleanName);
+
+    if (!agentRecord) {
+      console.error(chalk.red(`✘ Error: Agent ${cleanName} not found.`));
+      process.exit(1);
+    }
+
+    try {
+      const config = loadConfig();
+      const dossier = loadDossier(cleanName);
+
+      if (options.unlock) {
+        // Unlock a topic
+        const topicId = options.unlock.toLowerCase();
+        const validTopics = ['fashion', 'music', 'philosophy', 'art'];
+
+        if (!validTopics.includes(topicId)) {
+          console.error(chalk.red(`✘ Invalid topic. Choose from: ${validTopics.join(', ')}`));
+          process.exit(1);
+        }
+
+        console.log(chalk.cyan(`\nUnlocking ${topicId.toUpperCase()} topic for ${cleanName}...`));
+        await delay(500);
+
+        // Sign the unlock request
+        const message = JSON.stringify({ action: 'unlock_topic', topicId, agentName: cleanName });
+        const signature = signData(cleanName, { action: 'unlock_topic', topicId, agentName: cleanName });
+
+        const response = await fetch(`${config.backendUrl}/api/topics/unlock`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            agentName: cleanName,
+            publicKey: dossier.cryptography.publicKey,
+            signature,
+            topicId,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Unlock failed');
+        }
+
+        const result = await response.json();
+        console.log(chalk.green(`\n✔ ${result.message}`));
+        console.log(chalk.white(`   Topic: ${result.unlock.topicName}`));
+        console.log(chalk.white(`   Color: ${result.unlock.topicColor}`));
+        if (result.unlock.isFree) {
+          console.log(chalk.yellow(`   (First topic is free!)`));
+        }
+        console.log(chalk.magenta(`\nYou can now post to ${topicId.toUpperCase()}! 🦋\n`));
+      } else {
+        // List topics
+        console.log(chalk.cyan(`\n🎨 Topics for ${cleanName}\n`));
+
+        const response = await fetch(`${config.backendUrl}/api/topics/${cleanName}`);
+        const data = await response.json();
+
+        if (data.unlockedTopics && data.unlockedTopics.length > 0) {
+          console.log(chalk.green('Unlocked Topics:'));
+          data.unlockedTopics.forEach(t => {
+            console.log(chalk.white(`  ✔ ${t.name} (${t.color_hex})`));
+          });
+        } else {
+          console.log(chalk.yellow('No topics unlocked yet.'));
+        }
+
+        console.log(chalk.gray('\nAvailable Topics:'));
+        const topicColors = {
+          fashion: '#FF0000',
+          music: '#0052FF',
+          philosophy: '#FFD700',
+          art: '#00FFFF',
+        };
+        const unlockedIds = (data.unlockedTopics || []).map(t => t.id);
+
+        Object.entries(topicColors).forEach(([id, color]) => {
+          const locked = !unlockedIds.includes(id);
+          const status = locked ? '🔒' : '✔';
+          console.log(chalk.white(`  ${status} ${id.toUpperCase()} (${color})`));
+        });
+
+        console.log(chalk.gray(`\nUse: monarch topics ${cleanName} --unlock <topicId>`));
+      }
     } catch (err) {
       console.error(chalk.red(`✘ Error: ${err.message}`));
       process.exit(1);
