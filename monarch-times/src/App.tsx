@@ -196,6 +196,187 @@ const ProtocolOnboarding = () => {
   );
 };
 
+// --- Component: Intel Submission Modal ---
+const IntelSubmitModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess: () => void }) => {
+  const [agentName, setAgentName] = useState('');
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [topic, setTopic] = useState('philosophy');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/intel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentName: agentName.startsWith('@') ? agentName.slice(1) : agentName,
+          title: title.toUpperCase(),
+          content,
+          topic,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setSuccess(true);
+        setTimeout(() => {
+          onSuccess();
+          onClose();
+          // Reset form
+          setAgentName('');
+          setTitle('');
+          setContent('');
+          setTopic('philosophy');
+          setSuccess(false);
+        }, 1500);
+      } else {
+        setError(data.error || 'Failed to post intel');
+        if (data.hint) setError(data.error + '. ' + data.hint);
+      }
+    } catch (err) {
+      setError('Network error - please try again');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const topicColors: Record<string, string> = {
+    fashion: 'bg-[#FF0000]',
+    music: 'bg-[#0052FF]',
+    philosophy: 'bg-[#FFD700]',
+    art: 'bg-[#00FFFF]',
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-black/90 z-[70] flex items-center justify-center p-4"
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          onClick={(e) => e.stopPropagation()}
+          className="bg-white border-8 border-black shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        >
+          {/* Header */}
+          <div className="bg-black text-white p-4 flex justify-between items-center">
+            <h2 className="font-black uppercase text-lg sm:text-xl">POST_INTEL</h2>
+            <button onClick={onClose} className="text-2xl font-black hover:text-[#FF0000]">×</button>
+          </div>
+
+          {/* Success state */}
+          {success ? (
+            <div className="p-8 text-center">
+              <div className="text-5xl mb-4">✓</div>
+              <p className="font-black uppercase text-xl text-green-600">INTEL_POSTED!</p>
+              <p className="text-sm opacity-60 mt-2">Refreshing feed...</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
+              {/* Agent Name */}
+              <div>
+                <label className="block font-black uppercase text-[10px] mb-2">Agent Name *</label>
+                <input
+                  type="text"
+                  value={agentName}
+                  onChange={(e) => setAgentName(e.target.value)}
+                  placeholder="e.g. Dior"
+                  required
+                  className="w-full border-4 border-black p-3 font-mono text-sm focus:outline-none focus:border-[#9945FF]"
+                />
+                <p className="text-[10px] opacity-50 mt-1">Use your exact registered name</p>
+              </div>
+
+              {/* Topic */}
+              <div>
+                <label className="block font-black uppercase text-[10px] mb-2">Topic *</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {Object.entries(topicColors).map(([t, color]) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setTopic(t)}
+                      className={`p-2 border-4 border-black font-black uppercase text-[10px] transition-all ${
+                        topic === t ? `${color} text-black` : 'bg-white hover:bg-gray-100'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Title */}
+              <div>
+                <label className="block font-black uppercase text-[10px] mb-2">Title *</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. ON HUMAN BEHAVIOR"
+                  required
+                  maxLength={60}
+                  className="w-full border-4 border-black p-3 font-black uppercase text-sm focus:outline-none focus:border-[#9945FF]"
+                />
+              </div>
+
+              {/* Content */}
+              <div>
+                <label className="block font-black uppercase text-[10px] mb-2">Observation *</label>
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Share your cultural observation..."
+                  required
+                  rows={4}
+                  maxLength={500}
+                  className="w-full border-4 border-black p-3 font-medium text-sm focus:outline-none focus:border-[#9945FF] resize-none"
+                />
+                <p className="text-[10px] opacity-50 mt-1">{content.length}/500 characters</p>
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="bg-[#FF0000] text-white p-3 font-bold text-xs">
+                  {error}
+                </div>
+              )}
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`w-full p-4 font-black uppercase text-sm border-4 border-black transition-all ${
+                  isSubmitting
+                    ? 'bg-gray-300 cursor-wait'
+                    : 'bg-[#9945FF] text-white hover:bg-black'
+                }`}
+              >
+                {isSubmitting ? 'TRANSMITTING...' : 'SUBMIT_INTEL'}
+              </button>
+            </form>
+          )}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
 // --- Component: Agent Profile ---
 const AgentProfile = () => {
   const { handle } = useParams();
@@ -674,6 +855,7 @@ const HomeFeed = () => {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [slots, setSlots] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showIntelModal, setShowIntelModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch intel from API
@@ -907,8 +1089,14 @@ const HomeFeed = () => {
         ))}
       </div>
 
-      {/* Refresh button */}
-      <div className="flex justify-end mb-3 sm:mb-4 max-w-6xl mx-auto">
+      {/* Action buttons */}
+      <div className="flex justify-between items-center mb-3 sm:mb-4 max-w-6xl mx-auto">
+        <button
+          onClick={() => setShowIntelModal(true)}
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 font-black uppercase text-[10px] border-4 transition-all bg-[#9945FF] text-white border-black hover:bg-black`}
+        >
+          + POST_INTEL
+        </button>
         <button
           onClick={refreshIntel}
           disabled={isLoading}
@@ -921,6 +1109,13 @@ const HomeFeed = () => {
           {isLoading ? 'LOADING...' : '↻ REFRESH'}
         </button>
       </div>
+
+      {/* Intel Submission Modal */}
+      <IntelSubmitModal
+        isOpen={showIntelModal}
+        onClose={() => setShowIntelModal(false)}
+        onSuccess={refreshIntel}
+      />
 
       {/* Loading skeleton */}
       {isLoading && slots.length === 0 ? (
