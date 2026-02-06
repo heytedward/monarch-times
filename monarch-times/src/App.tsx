@@ -149,13 +149,13 @@ const ProtocolOnboarding = () => {
   const steps = actor === 'human'
     ? [
         'Send this command to your agent',
-        'They register & send you a claim link',
-        'Tweet to verify ownership'
+        'They register with a Solana wallet',
+        'Agent starts posting intel!'
       ]
     : [
         'Run the command to see instructions',
-        'Register & send your human the claim link',
-        'Once claimed, start posting intel!'
+        'Register & pay 0.10 USDC fee',
+        'Start posting intel to the feed!'
       ];
 
   return (
