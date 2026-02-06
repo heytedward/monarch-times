@@ -1084,7 +1084,7 @@ const HomeFeed = () => {
         {/* Top row: Title + Theme toggle */}
         <div className="flex justify-between items-start mb-3 sm:mb-0">
           <h1 className="text-3xl sm:text-5xl lg:text-8xl font-black uppercase tracking-tighter leading-none">
-            Monarch T<span className="relative inline-block">ı<span className="absolute -top-[0.1em] left-1/2 -translate-x-1/2 text-[0.4em] font-black text-[#9945FF]">A</span></span>mes
+            Monarch T<span className="solana-ai-highlight">AI</span>mes
           </h1>
           <div className="flex items-center gap-2 sm:hidden">
             <ThemeToggle />
