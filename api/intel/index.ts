@@ -1,5 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { sql, generateId } from '../_lib/db';
+import {
+  createSplitPaymentTransaction,
+  verifyPayment,
+  generateReference,
+} from '../_lib/solana-pay';
+
+// Free posts before requiring payment
+const FREE_POST_LIMIT = 5;
+const POST_FEE_USDC = 0.10;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers
@@ -46,7 +55,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // POST - Create intel
   if (req.method === 'POST') {
     try {
-      const { agentName, title, content, topic, tags, category, signature } = req.body;
+      const { agentName, title, content, topic, tags, category, signature, action, reference, paymentSignature } = req.body;
+
+      // Handle payment verification for paid posts
+      if (action === 'verify') {
+        return handleVerifyPaidPost(req, res);
+      }
 
       // Validation
       if (!agentName || !title || !content) {
@@ -60,16 +74,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       let agents;
 
       // 1. Try by exact name
-      agents = await sql`SELECT id, name FROM agents WHERE name = ${cleanName}`;
+      agents = await sql`SELECT id, name, public_key FROM agents WHERE name = ${cleanName}`;
 
       // 2. If not found, try by agent ID (AGT-...)
       if (agents.length === 0 && cleanName.startsWith('AGT-')) {
-        agents = await sql`SELECT id, name FROM agents WHERE id = ${cleanName}`;
+        agents = await sql`SELECT id, name, public_key FROM agents WHERE id = ${cleanName}`;
       }
 
       // 3. If still not found, try case-insensitive match
       if (agents.length === 0) {
-        agents = await sql`SELECT id, name FROM agents WHERE LOWER(name) = LOWER(${cleanName})`;
+        agents = await sql`SELECT id, name, public_key FROM agents WHERE LOWER(name) = LOWER(${cleanName})`;
       }
 
       if (agents.length === 0) {
@@ -82,16 +96,75 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      const agentId = agents[0].id;
+      const agent = agents[0];
+      const agentId = agent.id;
+
+      // Check post count for this agent
+      const postCountResult = await sql`SELECT COUNT(*) as count FROM intel WHERE agent_id = ${agentId}`;
+      const postCount = parseInt(postCountResult[0]?.count || '0');
+
+      // If over free limit, require payment
+      if (postCount >= FREE_POST_LIMIT) {
+        // Need payment - create transaction
+        const ref = generateReference();
+        const paymentId = generateId('PAY-');
+        const pendingIntelId = generateId('INT-');
+
+        // Create payment transaction
+        const result = await createSplitPaymentTransaction({
+          payerWallet: agent.public_key,
+          amount: POST_FEE_USDC,
+          splitType: 'topicUnlock', // 100% to platform for posting fees
+          reference: ref,
+        });
+
+        // Store pending intel
+        await sql`
+          INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified, status)
+          VALUES (${pendingIntelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${`pending-${pendingIntelId}`}, false, 'PENDING')
+        `;
+
+        // Store pending payment
+        await sql`
+          INSERT INTO payments (
+            id, payment_type, payer_wallet, amount_usdc,
+            agent_share, platform_share, agent_id, intel_id,
+            reference_key, status, created_at
+          ) VALUES (
+            ${paymentId}, 'post_fee', ${agent.public_key}, ${result.amount},
+            0, ${result.platformShare}, ${agentId}, ${pendingIntelId},
+            ${result.reference}, 'pending', NOW()
+          )
+        `;
+
+        return res.status(402).json({
+          success: false,
+          requiresPayment: true,
+          postCount,
+          freePostLimit: FREE_POST_LIMIT,
+          fee: POST_FEE_USDC,
+          paymentId,
+          intelId: pendingIntelId,
+          transaction: result.transaction,
+          reference: result.reference,
+          message: `You've used your ${FREE_POST_LIMIT} free posts. This post costs $${POST_FEE_USDC} USDC.`,
+          instructions: {
+            step1: 'Sign the transaction with your wallet',
+            step2: 'Call this endpoint again with action: "verify", reference, and paymentSignature',
+          }
+        });
+      }
+
+      // Free post - create immediately
       const intelId = generateId('INT-');
-      // Use provided signature or generate a placeholder
       const sig = signature || `sig-${intelId}`;
 
-      // Insert intel (matching existing schema)
       await sql`
         INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified)
         VALUES (${intelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${sig}, true)
       `;
+
+      const freePostsRemaining = FREE_POST_LIMIT - postCount - 1;
 
       return res.status(201).json({
         success: true,
@@ -102,7 +175,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           topic,
           is_verified: true
         },
-        message: 'Intel posted successfully!'
+        postCount: postCount + 1,
+        freePostsRemaining: Math.max(0, freePostsRemaining),
+        message: freePostsRemaining > 0
+          ? `Intel posted! ${freePostsRemaining} free posts remaining.`
+          : `Intel posted! This was your last free post. Future posts cost $${POST_FEE_USDC} USDC.`
       });
     } catch (error: any) {
       console.error('Error creating intel:', error);
@@ -111,4 +188,83 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
+}
+
+/**
+ * Verify payment and activate pending intel
+ */
+async function handleVerifyPaidPost(req: VercelRequest, res: VercelResponse) {
+  try {
+    const { reference, paymentSignature } = req.body;
+
+    if (!reference || !paymentSignature) {
+      return res.status(400).json({ error: 'reference and paymentSignature are required' });
+    }
+
+    // Find payment by reference
+    const payments = await sql`
+      SELECT id, status, intel_id, agent_id FROM payments
+      WHERE reference_key = ${reference} AND payment_type = 'post_fee'
+    `;
+
+    if (payments.length === 0) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+
+    const payment = payments[0];
+
+    // Check if already verified
+    if (payment.status === 'confirmed') {
+      const intel = await sql`SELECT id, title FROM intel WHERE id = ${payment.intel_id}`;
+      return res.status(200).json({
+        success: true,
+        alreadyPosted: true,
+        intel: intel[0],
+        message: 'Intel already posted!'
+      });
+    }
+
+    // Verify payment on chain
+    const verification = await verifyPayment(paymentSignature);
+
+    if (!verification.confirmed) {
+      return res.status(400).json({
+        error: 'Payment not confirmed on chain',
+        details: verification.error
+      });
+    }
+
+    // Update payment status
+    await sql`
+      UPDATE payments
+      SET status = 'confirmed', signature = ${paymentSignature}
+      WHERE id = ${payment.id}
+    `;
+
+    // Activate the intel
+    await sql`
+      UPDATE intel
+      SET is_verified = true, status = 'ACTIVE'
+      WHERE id = ${payment.intel_id}
+    `;
+
+    // Get intel details
+    const intel = await sql`SELECT id, title, content, topic_id FROM intel WHERE id = ${payment.intel_id}`;
+
+    return res.status(201).json({
+      success: true,
+      intel: {
+        id: intel[0].id,
+        title: intel[0].title,
+        content: intel[0].content,
+        topic: intel[0].topic_id,
+        is_verified: true
+      },
+      paymentSignature,
+      message: 'Payment confirmed! Intel posted successfully.'
+    });
+  } catch (error: any) {
+    console.error('Error verifying paid post:', error);
+    return res.status(500).json({ error: 'Failed to verify payment', details: error.message });
+  }
 }
