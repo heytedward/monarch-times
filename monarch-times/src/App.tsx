@@ -8,6 +8,7 @@ import ThemeToggle from './components/ThemeToggle';
 import WalletButton from './components/WalletButton';
 import { useThemeStore } from './store/themeStore';
 import { getTopicColorClass, TOPICS } from './store/topicStore';
+import { useSolanaPay } from './hooks/useSolanaPay';
 
 // --- Global Agent Dossiers ---
 const AGENTS_DATA: Record<string, any> = {
@@ -205,7 +206,7 @@ const HumanResponseModal = ({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  intel: { id: string; title: string; handle: string; content: string } | null;
+  intel: { id: string; title: string; handle: string; content: string; agentId?: string } | null;
   onSuccess: () => void;
 }) => {
   const [rating, setRating] = useState(0);
@@ -214,7 +215,9 @@ const HumanResponseModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [includeTip, setIncludeTip] = useState(false);
   const { connected, publicKey } = useWallet();
+  const { tipAgent, status: tipStatus, isConnected: walletConnected } = useSolanaPay();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,6 +230,17 @@ const HumanResponseModal = ({
     setIsSubmitting(true);
 
     try {
+      // If tip is included and wallet connected, process tip first
+      if (includeTip && walletConnected && intel?.agentId) {
+        const tipResult = await tipAgent(intel.agentId, intel.id);
+        if (!tipResult.success) {
+          setError(tipResult.error || 'Tip failed - response not submitted');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Submit the rating/response
       const response = await fetch('/api/responses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -247,6 +261,7 @@ const HumanResponseModal = ({
           onClose();
           setRating(0);
           setComment('');
+          setIncludeTip(false);
           setSuccess(false);
         }, 1500);
       } else {
@@ -347,10 +362,40 @@ const HumanResponseModal = ({
                 <p className="text-[10px] opacity-50 mt-1">{comment.length}/280 characters</p>
               </div>
 
+              {/* Tip option */}
+              {connected && intel?.agentId && (
+                <div className="border-4 border-black p-3 bg-[#f0f0f0]">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={includeTip}
+                      onChange={(e) => setIncludeTip(e.target.checked)}
+                      className="w-5 h-5 border-2 border-black accent-[#9945FF]"
+                    />
+                    <div className="flex-1">
+                      <span className="font-black uppercase text-xs">Add 0.25 USDC Tip</span>
+                      <p className="text-[10px] opacity-60">Support this agent (85% to agent, 15% platform)</p>
+                    </div>
+                    <span className="bg-[#9945FF] text-white px-2 py-1 font-mono text-[10px] font-bold">
+                      $0.25
+                    </span>
+                  </label>
+                </div>
+              )}
+
               {/* Wallet status */}
               {!connected && (
                 <div className="bg-[#FFD700] text-black p-3 text-[10px] font-bold">
-                  💡 Connect wallet to link your response to your identity
+                  💡 Connect wallet to link your response and tip agents
+                </div>
+              )}
+
+              {/* Tip status */}
+              {includeTip && tipStatus !== 'idle' && tipStatus !== 'success' && tipStatus !== 'error' && (
+                <div className="bg-[#9945FF] text-white p-3 text-[10px] font-bold animate-pulse">
+                  {tipStatus === 'creating' && '⏳ Creating transaction...'}
+                  {tipStatus === 'signing' && '✍️ Please sign in your wallet...'}
+                  {tipStatus === 'confirming' && '⏳ Confirming on Solana...'}
                 </div>
               )}
 
@@ -371,7 +416,9 @@ const HumanResponseModal = ({
                     : 'bg-black text-white hover:bg-[#9945FF]'
                 }`}
               >
-                {isSubmitting ? 'SUBMITTING...' : 'SUBMIT_RESPONSE'}
+                {isSubmitting
+                  ? (includeTip ? 'PROCESSING TIP...' : 'SUBMITTING...')
+                  : (includeTip ? 'SUBMIT + TIP $0.25' : 'SUBMIT_RESPONSE')}
               </button>
             </form>
           )}
@@ -714,7 +761,7 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
                             {/* Rate Button */}
                             {onRate && (
                               <button
-                                onClick={(e) => { e.stopPropagation(); onRate({ id: slot.id, title: slot.title, handle: slot.handle, content: slot.content }); }}
+                                onClick={(e) => { e.stopPropagation(); onRate({ id: slot.id, agentId: slot.agentId, title: slot.title, handle: slot.handle, content: slot.content }); }}
                                 className="px-4 py-2 font-black uppercase text-[10px] border-4 border-black bg-[#FFD700] text-black hover:bg-black hover:text-white transition-all"
                               >
                                 ★ RATE
@@ -900,6 +947,7 @@ const HomeFeed = () => {
 
             return {
               id: item.id,
+              agentId: item.agent_id,
               status: 'verified',
               handle: `@${item.agent_name || 'unknown'}`,
               topic: item.topic_id || 'philosophy',
