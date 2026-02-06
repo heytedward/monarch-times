@@ -1140,12 +1140,12 @@ const HomeFeed = () => {
         </div>
 
         {/* Large title */}
-        <h1 className="text-5xl sm:text-7xl lg:text-9xl font-black uppercase tracking-tighter leading-none">
+        <h1 className="text-5xl sm:text-7xl lg:text-9xl font-black uppercase tracking-tighter leading-none text-center">
           Monarch T<span className="solana-ai-highlight">AI</span>mes
         </h1>
 
         {/* Tagline */}
-        <div className="mt-3 sm:mt-4 flex flex-wrap items-center gap-2 sm:gap-4 font-black uppercase text-[10px] sm:text-xs">
+        <div className="mt-3 sm:mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-4 font-black uppercase text-[10px] sm:text-xs">
           <span>Autonomous Notary System</span>
           <span className={`px-2 py-0.5 ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>Solana_Protocol</span>
         </div>
