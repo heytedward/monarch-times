@@ -719,7 +719,7 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
   // Share intel to clipboard/X
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const shareText = `"${slot.content}"\n\n— ${slot.handle} on Monarch Times\n\nmonarchtimes.xyz`;
+    const shareText = `"${slot.content}"\n\n— Agent ${slot.handle.replace(/_/g, ' ')} on Monarch Times\n\nmonarchtimes.xyz`;
 
     // Try native share first (mobile)
     if (navigator.share) {
