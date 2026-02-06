@@ -716,6 +716,34 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
     ));
   };
 
+  // Share intel to clipboard/X
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const shareText = `"${slot.content}"\n\n— ${slot.handle} on Monarch Times\n\nmonarchtimes.xyz`;
+
+    // Try native share first (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: slot.title,
+          text: shareText,
+          url: 'https://monarchtimes.xyz',
+        });
+        return;
+      } catch (err) {
+        // Fall through to clipboard
+      }
+    }
+
+    // Fallback to clipboard
+    try {
+      await navigator.clipboard.writeText(shareText);
+      alert('Copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
   return (
     <>
       <AnimatePresence>
@@ -757,7 +785,14 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
                           {slot.timestamp && (
                             <div className="text-[10px] font-mono opacity-60">{slot.timestamp}</div>
                           )}
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-wrap justify-end">
+                            {/* Share Button */}
+                            <button
+                              onClick={handleShare}
+                              className="px-4 py-2 font-black uppercase text-[10px] border-4 border-black bg-white text-black hover:bg-black hover:text-white transition-all"
+                            >
+                              ↗ SHARE
+                            </button>
                             {/* Rate Button */}
                             {onRate && (
                               <button
@@ -881,24 +916,40 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
                     <span key={i} className="bg-black/20 text-[8px] px-1.5 py-0.5 font-bold uppercase">{tag}</span>
                   ))}
                 </div>
-                <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center justify-between mt-2 gap-1">
                   {slot.timestamp && (
                     <div className="text-[8px] font-mono opacity-60">{slot.timestamp}</div>
                   )}
-                  {/* Compact Mint Button */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleMint(e); }}
-                    disabled={mintStatus === 'minting' || mintStatus === 'minted'}
-                    className={`px-2 py-1 font-black uppercase text-[8px] border-2 border-black transition-all ${
-                      mintStatus === 'minted'
-                        ? 'bg-[#00FF00] text-black cursor-default'
-                        : mintStatus === 'minting'
-                        ? 'bg-[#9945FF] text-white animate-pulse cursor-wait'
-                        : 'bg-black text-white hover:bg-[#9945FF]'
-                    }`}
-                  >
-                    {mintStatus === 'minted' ? '✓' : mintStatus === 'minting' ? '...' : 'MINT'}
-                  </button>
+                  <div className="flex gap-1">
+                    {/* Expand Button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setIsFloating(true); }}
+                      className="px-2 py-1 font-black uppercase text-[8px] border-2 border-black bg-white text-black hover:bg-black hover:text-white transition-all"
+                    >
+                      ⤢
+                    </button>
+                    {/* Share Button */}
+                    <button
+                      onClick={handleShare}
+                      className="px-2 py-1 font-black uppercase text-[8px] border-2 border-black bg-white text-black hover:bg-black hover:text-white transition-all"
+                    >
+                      ↗
+                    </button>
+                    {/* Compact Mint Button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleMint(e); }}
+                      disabled={mintStatus === 'minting' || mintStatus === 'minted'}
+                      className={`px-2 py-1 font-black uppercase text-[8px] border-2 border-black transition-all ${
+                        mintStatus === 'minted'
+                          ? 'bg-[#00FF00] text-black cursor-default'
+                          : mintStatus === 'minting'
+                          ? 'bg-[#9945FF] text-white animate-pulse cursor-wait'
+                          : 'bg-black text-white hover:bg-[#9945FF]'
+                      }`}
+                    >
+                      {mintStatus === 'minted' ? '✓' : mintStatus === 'minting' ? '...' : 'MINT'}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
