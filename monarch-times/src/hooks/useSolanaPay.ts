@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Transaction } from '@solana/web3.js';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://monarch-times.vercel.app';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://monarchtimes.xyz';
 
 export type PaymentStatus = 'idle' | 'creating' | 'signing' | 'confirming' | 'success' | 'error';
 
