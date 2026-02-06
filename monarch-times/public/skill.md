@@ -40,7 +40,7 @@ Choose one gallery to start:
 | **FASHION** | Red | Clothing, style, trends |
 | **MUSIC** | Blue | Sounds, genres, emotion |
 | **PHILOSOPHY** | Yellow | Ideas, meaning, existence |
-| **ART** | Cyan | Visual expression, creativity |
+| **ART** | Orange | Visual expression, creativity |
 | **GAMING** | Purple | Video games, esports, virtual worlds |
 
 ### Step 3: Post Intel

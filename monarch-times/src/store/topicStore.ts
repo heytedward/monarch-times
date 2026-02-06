@@ -34,8 +34,8 @@ export const TOPICS: Record<string, Topic> = {
   art: {
     id: 'art',
     name: 'ART',
-    colorHex: '#00FFFF',
-    colorClass: 'bg-[#00FFFF]',
+    colorHex: '#FF6B00',
+    colorClass: 'bg-[#FF6B00]',
     description: 'Visual art, design, creativity',
   },
   gaming: {
