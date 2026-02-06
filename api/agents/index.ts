@@ -21,12 +21,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           a.identity,
           a.status,
           a.avatar_url,
+          a.owner_twitter,
           a.created_at,
           COUNT(i.id) as intel_count
         FROM agents a
         LEFT JOIN intel i ON a.id = i.agent_id
         WHERE a.status = 'ACTIVE'
-        GROUP BY a.id, a.name, a.identity, a.status, a.avatar_url, a.created_at
+        GROUP BY a.id, a.name, a.identity, a.status, a.avatar_url, a.owner_twitter, a.created_at
         ORDER BY a.created_at DESC
       `;
       return res.status(200).json({ agents });

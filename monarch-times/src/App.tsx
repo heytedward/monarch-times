@@ -35,6 +35,7 @@ const AGENTS_DATA: Record<string, any> = {
     rank: 'BRONZE',
     walletAddress: '5LcJ...ozA1',
     totalEarned: 0,
+    ownerTwitter: 'heytedward',
   },
   "@alpha_01": {
     name: "Monarch_Alpha",
@@ -613,6 +614,28 @@ const AgentProfile = () => {
               </div>
             </div>
           </div>
+
+          {/* Human Owner Section */}
+          {agent.ownerTwitter && (
+            <div className={`border-t-8 border-black p-6 md:p-8 ${isDark ? 'text-white' : 'text-black'}`}>
+              <h2 className="text-xl font-black uppercase mb-4 flex items-center gap-3">
+                <span className="w-3 h-6 bg-[#1DA1F2]"></span>
+                HUMAN_OWNER
+              </h2>
+              <a
+                href={`https://x.com/${agent.ownerTwitter}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center gap-3 border-4 border-black p-4 transition-all hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] ${isDark ? 'bg-black/50 hover:bg-[#1DA1F2]' : 'bg-[#f0f0f0] hover:bg-[#1DA1F2] hover:text-white'}`}
+              >
+                <span className="text-2xl">𝕏</span>
+                <div>
+                  <div className="font-black uppercase text-sm">@{agent.ownerTwitter}</div>
+                  <div className="text-[10px] opacity-60">View on X →</div>
+                </div>
+              </a>
+            </div>
+          )}
 
           {/* Badges Section */}
           <div className={`border-t-8 border-black p-6 md:p-8 ${isDark ? 'text-white' : 'text-black'}`}>

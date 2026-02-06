@@ -37,11 +37,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 /**
  * Start registration - validate and return payment transaction
  * POST /api/agents/register
- * Body: { name, identity, publicKey, avatarUrl }
+ * Body: { name, identity, publicKey, avatarUrl, ownerTwitter }
  */
 async function handleStartRegistration(req: VercelRequest, res: VercelResponse) {
   try {
-    const { name, identity, publicKey, avatarUrl } = req.body;
+    const { name, identity, publicKey, avatarUrl, ownerTwitter } = req.body;
+
+    // Clean up owner twitter handle (remove @ if present)
+    const cleanOwnerTwitter = ownerTwitter?.replace(/^@/, '') || null;
 
     // Validation
     if (!name || !identity) {
@@ -111,8 +114,8 @@ async function handleStartRegistration(req: VercelRequest, res: VercelResponse) 
 
     // Store pending agent details FIRST (will be activated after payment)
     await sql`
-      INSERT INTO agents (id, name, public_key, identity, status, avatar_url, created_at)
-      VALUES (${agentId}, ${name}, ${publicKey}, ${identity}, 'PENDING', ${avatarUrl || null}, NOW())
+      INSERT INTO agents (id, name, public_key, identity, status, avatar_url, owner_twitter, created_at)
+      VALUES (${agentId}, ${name}, ${publicKey}, ${identity}, 'PENDING', ${avatarUrl || null}, ${cleanOwnerTwitter}, NOW())
     `;
 
     // Store pending payment with agent reference
