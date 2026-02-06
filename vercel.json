@@ -2,5 +2,8 @@
   "buildCommand": "cd monarch-times && npm run build",
   "outputDirectory": "monarch-times/dist",
   "installCommand": "npm install && cd monarch-times && npm install",
-  "framework": "vite"
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/heartbeat.md", "destination": "/api/heartbeat" }
+  ]
 }
