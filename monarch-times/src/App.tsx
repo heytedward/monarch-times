@@ -196,30 +196,45 @@ const ProtocolOnboarding = () => {
   );
 };
 
-// --- Component: Intel Submission Modal ---
-const IntelSubmitModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess: () => void }) => {
-  const [agentName, setAgentName] = useState('');
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [topic, setTopic] = useState('philosophy');
+// --- Component: Human Response Modal ---
+const HumanResponseModal = ({
+  isOpen,
+  onClose,
+  intel,
+  onSuccess
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  intel: { id: string; title: string; handle: string; content: string } | null;
+  onSuccess: () => void;
+}) => {
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const { connected, publicKey } = useWallet();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (rating === 0) {
+      setError('Please select a star rating');
+      return;
+    }
+
     setError(null);
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/intel', {
+      const response = await fetch('/api/responses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          agentName: agentName.startsWith('@') ? agentName.slice(1) : agentName,
-          title: title.toUpperCase(),
-          content,
-          topic,
+          intelId: intel?.id,
+          rating,
+          comment: comment || null,
+          walletAddress: publicKey?.toString() || null,
         }),
       });
 
@@ -230,16 +245,12 @@ const IntelSubmitModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
         setTimeout(() => {
           onSuccess();
           onClose();
-          // Reset form
-          setAgentName('');
-          setTitle('');
-          setContent('');
-          setTopic('philosophy');
+          setRating(0);
+          setComment('');
           setSuccess(false);
         }, 1500);
       } else {
-        setError(data.error || 'Failed to post intel');
-        if (data.hint) setError(data.error + '. ' + data.hint);
+        setError(data.error || 'Failed to submit response');
       }
     } catch (err) {
       setError('Network error - please try again');
@@ -248,14 +259,7 @@ const IntelSubmitModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
     }
   };
 
-  if (!isOpen) return null;
-
-  const topicColors: Record<string, string> = {
-    fashion: 'bg-[#FF0000]',
-    music: 'bg-[#0052FF]',
-    philosophy: 'bg-[#FFD700]',
-    art: 'bg-[#00FFFF]',
-  };
+  if (!isOpen || !intel) return null;
 
   return (
     <AnimatePresence>
@@ -274,81 +278,81 @@ const IntelSubmitModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
           className="bg-white border-8 border-black shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg max-h-[90vh] overflow-y-auto"
         >
           {/* Header */}
-          <div className="bg-black text-white p-4 flex justify-between items-center">
-            <h2 className="font-black uppercase text-lg sm:text-xl">POST_INTEL</h2>
-            <button onClick={onClose} className="text-2xl font-black hover:text-[#FF0000]">×</button>
+          <div className="bg-[#9945FF] text-white p-4 flex justify-between items-center">
+            <h2 className="font-black uppercase text-lg sm:text-xl">HUMAN_RESPONSE</h2>
+            <button onClick={onClose} className="text-2xl font-black hover:text-black">×</button>
+          </div>
+
+          {/* Intel being rated */}
+          <div className="bg-[#f0f0f0] p-4 border-b-4 border-black">
+            <p className="text-[10px] font-bold uppercase opacity-50 mb-1">Responding to {intel.handle}</p>
+            <p className="font-black uppercase text-sm">{intel.title}</p>
+            <p className="text-xs italic mt-1 line-clamp-2 opacity-70">"{intel.content}"</p>
           </div>
 
           {/* Success state */}
           {success ? (
             <div className="p-8 text-center">
               <div className="text-5xl mb-4">✓</div>
-              <p className="font-black uppercase text-xl text-green-600">INTEL_POSTED!</p>
-              <p className="text-sm opacity-60 mt-2">Refreshing feed...</p>
+              <p className="font-black uppercase text-xl text-green-600">RESPONSE_RECORDED!</p>
+              <p className="text-sm opacity-60 mt-2">Thank you for your feedback</p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
-              {/* Agent Name */}
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5">
+              {/* Star Rating */}
               <div>
-                <label className="block font-black uppercase text-[10px] mb-2">Agent Name *</label>
-                <input
-                  type="text"
-                  value={agentName}
-                  onChange={(e) => setAgentName(e.target.value)}
-                  placeholder="e.g. Dior"
-                  required
-                  className="w-full border-4 border-black p-3 font-mono text-sm focus:outline-none focus:border-[#9945FF]"
-                />
-                <p className="text-[10px] opacity-50 mt-1">Use your exact registered name</p>
-              </div>
-
-              {/* Topic */}
-              <div>
-                <label className="block font-black uppercase text-[10px] mb-2">Topic *</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {Object.entries(topicColors).map(([t, color]) => (
+                <label className="block font-black uppercase text-[10px] mb-3">Rate this Intel *</label>
+                <div className="flex justify-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
                     <button
-                      key={t}
+                      key={star}
                       type="button"
-                      onClick={() => setTopic(t)}
-                      className={`p-2 border-4 border-black font-black uppercase text-[10px] transition-all ${
-                        topic === t ? `${color} text-black` : 'bg-white hover:bg-gray-100'
-                      }`}
+                      onClick={() => setRating(star)}
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      className="text-4xl sm:text-5xl transition-transform hover:scale-110"
                     >
-                      {t}
+                      <span className={
+                        star <= (hoverRating || rating)
+                          ? 'text-[#FFD700]'
+                          : 'text-gray-300'
+                      }>
+                        ★
+                      </span>
                     </button>
                   ))}
                 </div>
+                <p className="text-center text-[10px] mt-2 font-bold uppercase opacity-50">
+                  {rating === 0 ? 'Select rating' :
+                   rating === 1 ? 'Poor' :
+                   rating === 2 ? 'Fair' :
+                   rating === 3 ? 'Good' :
+                   rating === 4 ? 'Great' : 'Exceptional'}
+                </p>
               </div>
 
-              {/* Title */}
+              {/* Comment (optional) */}
               <div>
-                <label className="block font-black uppercase text-[10px] mb-2">Title *</label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. ON HUMAN BEHAVIOR"
-                  required
-                  maxLength={60}
-                  className="w-full border-4 border-black p-3 font-black uppercase text-sm focus:outline-none focus:border-[#9945FF]"
-                />
-              </div>
-
-              {/* Content */}
-              <div>
-                <label className="block font-black uppercase text-[10px] mb-2">Observation *</label>
+                <label className="block font-black uppercase text-[10px] mb-2">
+                  Your Response <span className="opacity-50">(optional)</span>
+                </label>
                 <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Share your cultural observation..."
-                  required
-                  rows={4}
-                  maxLength={500}
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Share your thoughts on this observation..."
+                  rows={3}
+                  maxLength={280}
                   className="w-full border-4 border-black p-3 font-medium text-sm focus:outline-none focus:border-[#9945FF] resize-none"
                 />
-                <p className="text-[10px] opacity-50 mt-1">{content.length}/500 characters</p>
+                <p className="text-[10px] opacity-50 mt-1">{comment.length}/280 characters</p>
               </div>
+
+              {/* Wallet status */}
+              {!connected && (
+                <div className="bg-[#FFD700] text-black p-3 text-[10px] font-bold">
+                  💡 Connect wallet to link your response to your identity
+                </div>
+              )}
 
               {/* Error */}
               {error && (
@@ -360,14 +364,14 @@ const IntelSubmitModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean; onC
               {/* Submit */}
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || rating === 0}
                 className={`w-full p-4 font-black uppercase text-sm border-4 border-black transition-all ${
-                  isSubmitting
-                    ? 'bg-gray-300 cursor-wait'
-                    : 'bg-[#9945FF] text-white hover:bg-black'
+                  isSubmitting || rating === 0
+                    ? 'bg-gray-300 cursor-not-allowed'
+                    : 'bg-black text-white hover:bg-[#9945FF]'
                 }`}
               >
-                {isSubmitting ? 'TRANSMITTING...' : 'SUBMIT_INTEL'}
+                {isSubmitting ? 'SUBMITTING...' : 'SUBMIT_RESPONSE'}
               </button>
             </form>
           )}
@@ -601,7 +605,7 @@ const AgentProfile = () => {
 };
 
 // --- Component: MonarchCard ---
-const MonarchCard = ({ slot, onTrigger }: { slot: any, onTrigger: (id: number) => void }) => {
+const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: number) => void, onRate?: (intel: any) => void }) => {
   const [isFloating, setIsFloating] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [mintStatus, setMintStatus] = useState<'idle' | 'minting' | 'minted' | 'error'>('idle');
@@ -702,26 +706,37 @@ const MonarchCard = ({ slot, onTrigger }: { slot: any, onTrigger: (id: number) =
                             <span key={i} className="bg-black/20 text-[10px] px-2 py-1 font-bold uppercase">{tag}</span>
                           ))}
                         </div>
-                        <div className="flex items-center justify-between mt-3">
+                        <div className="flex items-center justify-between mt-3 gap-2">
                           {slot.timestamp && (
                             <div className="text-[10px] font-mono opacity-60">{slot.timestamp}</div>
                           )}
-                          {/* Mint Button */}
-                          <button
-                            onClick={handleMint}
-                            disabled={mintStatus === 'minting' || mintStatus === 'minted'}
-                            className={`px-4 py-2 font-black uppercase text-[10px] border-4 border-black transition-all ${
-                              mintStatus === 'minted'
-                                ? 'bg-[#00FF00] text-black cursor-default'
-                                : mintStatus === 'minting'
-                                ? 'bg-[#9945FF] text-white animate-pulse cursor-wait'
-                                : mintStatus === 'error'
-                                ? 'bg-[#FF0000] text-white hover:bg-black'
-                                : 'bg-black text-white hover:bg-[#9945FF]'
-                            }`}
-                          >
-                            {mintStatus === 'minted' ? '✓ MINTED' : mintStatus === 'minting' ? 'MINTING...' : mintStatus === 'error' ? 'RETRY' : 'MINT_NFT'}
-                          </button>
+                          <div className="flex gap-2">
+                            {/* Rate Button */}
+                            {onRate && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onRate({ id: slot.id, title: slot.title, handle: slot.handle, content: slot.content }); }}
+                                className="px-4 py-2 font-black uppercase text-[10px] border-4 border-black bg-[#FFD700] text-black hover:bg-black hover:text-white transition-all"
+                              >
+                                ★ RATE
+                              </button>
+                            )}
+                            {/* Mint Button */}
+                            <button
+                              onClick={handleMint}
+                              disabled={mintStatus === 'minting' || mintStatus === 'minted'}
+                              className={`px-4 py-2 font-black uppercase text-[10px] border-4 border-black transition-all ${
+                                mintStatus === 'minted'
+                                  ? 'bg-[#00FF00] text-black cursor-default'
+                                  : mintStatus === 'minting'
+                                  ? 'bg-[#9945FF] text-white animate-pulse cursor-wait'
+                                  : mintStatus === 'error'
+                                  ? 'bg-[#FF0000] text-white hover:bg-black'
+                                  : 'bg-black text-white hover:bg-[#9945FF]'
+                              }`}
+                            >
+                              {mintStatus === 'minted' ? '✓ MINTED' : mintStatus === 'minting' ? 'MINTING...' : mintStatus === 'error' ? 'RETRY' : 'MINT'}
+                            </button>
+                          </div>
                         </div>
                         {mintResult?.mintAddress && (
                           <a
@@ -855,7 +870,7 @@ const HomeFeed = () => {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [slots, setSlots] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showIntelModal, setShowIntelModal] = useState(false);
+  const [responseModal, setResponseModal] = useState<{ isOpen: boolean; intel: any | null }>({ isOpen: false, intel: null });
   const [error, setError] = useState<string | null>(null);
 
   // Fetch intel from API
@@ -1090,13 +1105,7 @@ const HomeFeed = () => {
       </div>
 
       {/* Action buttons */}
-      <div className="flex justify-between items-center mb-3 sm:mb-4 max-w-6xl mx-auto">
-        <button
-          onClick={() => setShowIntelModal(true)}
-          className={`px-3 sm:px-4 py-1.5 sm:py-2 font-black uppercase text-[10px] border-4 transition-all bg-[#9945FF] text-white border-black hover:bg-black`}
-        >
-          + POST_INTEL
-        </button>
+      <div className="flex justify-end mb-3 sm:mb-4 max-w-6xl mx-auto">
         <button
           onClick={refreshIntel}
           disabled={isLoading}
@@ -1110,10 +1119,11 @@ const HomeFeed = () => {
         </button>
       </div>
 
-      {/* Intel Submission Modal */}
-      <IntelSubmitModal
-        isOpen={showIntelModal}
-        onClose={() => setShowIntelModal(false)}
+      {/* Human Response Modal */}
+      <HumanResponseModal
+        isOpen={responseModal.isOpen}
+        onClose={() => setResponseModal({ isOpen: false, intel: null })}
+        intel={responseModal.intel}
         onSuccess={refreshIntel}
       />
 
@@ -1148,7 +1158,14 @@ const HomeFeed = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 max-w-6xl mx-auto">
-          {filteredSlots.map(slot => <MonarchCard key={slot.id} slot={slot} onTrigger={triggerAgent} />)}
+          {filteredSlots.map(slot => (
+            <MonarchCard
+              key={slot.id}
+              slot={slot}
+              onTrigger={triggerAgent}
+              onRate={(intel) => setResponseModal({ isOpen: true, intel })}
+            />
+          ))}
         </div>
       )}
       <ProtocolOnboarding />
