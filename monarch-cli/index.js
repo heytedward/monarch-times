@@ -21,22 +21,101 @@ const agentsFile = path.join(dataDir, 'agents.json');
 // Configuration file
 const configFile = path.join(dataDir, 'config.json');
 
+// Default backend URL from environment
+const DEFAULT_BACKEND_URL = process.env.SOLAUTH_API_URL || 'http://localhost:3000';
+
 // Ensure data directory exists
 function ensureDataDir() {
   if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
   }
-    try {
-      ensureDataDir();
-      fs.writeFileSync(configFile, JSON.stringify(config, null, 2), { mode: 0o600 });
-    } catch (err) {
-      console.error(chalk.red('Error writing config file'));
-    }
-          process.exit(1);
-        }
+}
+
+// Load agents from file
+function loadAgents() {
+  ensureDataDir();
+  if (!fs.existsSync(agentsFile)) return [];
+  try {
+    return JSON.parse(fs.readFileSync(agentsFile, 'utf-8'));
+  } catch {
+    return [];
+  }
+}
+
+// Save agents to file
+function saveAgents(agents) {
+  ensureDataDir();
+  fs.writeFileSync(agentsFile, JSON.stringify(agents, null, 2), { mode: 0o600 });
+}
+
+// Load config
+function loadConfig() {
+  ensureDataDir();
+  if (!fs.existsSync(configFile)) {
+    return { backendUrl: DEFAULT_BACKEND_URL };
+  }
+  try {
+    return JSON.parse(fs.readFileSync(configFile, 'utf-8'));
+  } catch {
+    return { backendUrl: DEFAULT_BACKEND_URL };
+  }
+}
+
+// Save config
+function saveConfig(config) {
+  ensureDataDir();
+  try {
+    fs.writeFileSync(configFile, JSON.stringify(config, null, 2), { mode: 0o600 });
+  } catch (err) {
+    console.error(chalk.red('Error writing config file'));
+  }
+}
+
+// Delay helper
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Validate agent name
+function validateAgentName(name) {
+  const cleanName = name.startsWith('@') ? name.slice(1) : name;
+  return /^[a-zA-Z0-9_-]{1,50}$/.test(cleanName);
+}
+
+// ASCII banner
+const MONARCH_BANNER = `
+ __  __  ___  _  _   _   ___  ___ _  _
+|  \\/  |/ _ \\| \\| | /_\\ | _ \\/ __| || |
+| |\\/| | (_) | .\` |/ _ \\|   / (__| __ |
+|_|  |_|\\___/|_|\\_/_/ \\_\\_|_\\\\___|_||_|
+`;
+
+// Show intro banner
+function showIntro() {
+  console.log(chalk.magenta(MONARCH_BANNER));
+  console.log(chalk.gray('  Agent Notarization Protocol\n'));
+}
+
+// Register agent with backend
+async function registerAgentWithBackend(agentName, publicKey, agentId, identity, backendUrl) {
+  const response = await fetch(`${backendUrl}/api/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ agentName, publicKey, agentId, identity }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Registration failed');
+  }
+  return response.json();
+}
+
+// ============ INSTALL COMMAND ============
+program
+  .command('install')
   .description('Install and notarize a new agent dossier')
   .argument('<name>', 'name of the agent')
-  .option('-u, --url <url>', 'backend URL', 'http://localhost:3000')
+  .option('-u, --url <url>', 'backend URL', DEFAULT_BACKEND_URL)
   .action(async (name, options) => {
     showIntro();
     

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "boring-avatars": "^1.10.2",
     "framer-motion": "^12.31.2",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",

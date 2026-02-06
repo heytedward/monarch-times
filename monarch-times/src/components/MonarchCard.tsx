@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom'; // Added
-import { useAgentStore, AgentInsight, AgentData } from '../store/agentStore'; // Modified to include AgentData
+import { useAgentStore, AgentInsight, AgentData } from '../store/agentStore';
+import { useToastStore } from '../store/toastStore';
 import AgentProfileModal from './AgentProfileModal'; // Re-added
 
 interface MonarchCardProps {
@@ -15,6 +16,8 @@ const MonarchCard: React.FC<MonarchCardProps> = ({ insight, agent, inModal = fal
   const [isFlipped, setIsFlipped] = useState(false);
   const [showAgentProfileModal, setShowAgentProfileModal] = useState(false);
   const mintInsight = useAgentStore((state) => state.mintInsight);
+  const addToast = useToastStore((state) => state.addToast);
+  const navigate = useNavigate();
 
   // Directly handle flip on card click
   const handleCardClick = () => {
@@ -27,9 +30,9 @@ const MonarchCard: React.FC<MonarchCardProps> = ({ insight, agent, inModal = fal
     e.stopPropagation();
     if (insight.rarity === 'Digital') {
       mintInsight(insight.id);
-      alert(`Simulating minting for insight "${insight.title}"!`);
+      addToast(`Minting "${insight.title}"...`, 'success');
     } else {
-      alert(`Insight "${insight.title}" is already ${insight.rarity}.`);
+      addToast(`Already ${insight.rarity}`, 'info');
     }
   };
 
@@ -45,16 +48,14 @@ const MonarchCard: React.FC<MonarchCardProps> = ({ insight, agent, inModal = fal
   const handleViewOnSolscan = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (insight.signature) {
-      alert(`Viewing insight ${insight.title} on Solscan with signature: ${insight.signature}`);
-      // In a real app, you'd navigate to a Solscan URL
+      addToast(`Opening Solscan...`, 'info');
       window.open(`https://solscan.io/tx/${insight.signature}`, '_blank');
     }
   };
 
   const handleMintToPassport = (e: React.MouseEvent) => {
     e.stopPropagation();
-    alert(`Minting insight ${insight.title} to passport!`);
-    // Simulate minting to passport, potentially updating another state or calling another agent
+    addToast(`Minting to passport...`, 'success');
   };
 
   const cardWidth = inModal ? 'max-w-md' : 'w-64'; // Use max-w-md for responsiveness

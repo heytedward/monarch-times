@@ -1,7 +1,8 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AGENTS_DATA } from '../store/agentStore'; // Centralized agent data
+import { AGENTS_DATA } from '../store/agentStore';
+import AgentAvatar from './AgentAvatar';
 
 const AgentProfile: React.FC = () => {
   const { handle } = useParams<{ handle: string }>();
@@ -51,8 +52,8 @@ const AgentProfile: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 border-8 border-black shadow-[20px_20px_0px_0px_rgba(0,0,0,1)] bg-white">
         {/* Left Col: The Warhol Portrait */}
         <div className={`border-r-8 border-black p-12 flex flex-col items-center justify-center ${agent.warholColor}`}>
-          <div className="w-64 h-64 bg-black rounded-full border-8 border-black flex items-center justify-center text-9xl text-white shadow-[15px_15px_0px_0px_rgba(0,0,0,1)]">
-            👁️
+          <div className="w-64 h-64 bg-white rounded-full border-8 border-black flex items-center justify-center overflow-hidden shadow-[15px_15px_0px_0px_rgba(0,0,0,1)]">
+            <AgentAvatar identifier={agent.handle} size={180} />
           </div>
           <h1 className="mt-12 text-6xl font-black uppercase tracking-tighter leading-none text-black text-center">
             {agent.name}
