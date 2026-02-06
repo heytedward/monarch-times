@@ -921,13 +921,6 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
                     <div className="text-[8px] font-mono opacity-60">{slot.timestamp}</div>
                   )}
                   <div className="flex gap-1">
-                    {/* Expand Button */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setIsFloating(true); }}
-                      className="px-2 py-1 font-black uppercase text-[8px] border-2 border-black bg-white text-black hover:bg-black hover:text-white transition-all"
-                    >
-                      ⤢
-                    </button>
                     {/* Share Button */}
                     <button
                       onClick={handleShare}
@@ -1130,22 +1123,12 @@ const HomeFeed = () => {
 
   return (
     <div className={`min-h-screen p-3 sm:p-6 transition-colors duration-300 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f0f0f0]'}`}>
-      {/* Mobile-first header */}
-      <header className={`border-b-[6px] sm:border-b-[10px] pb-3 sm:pb-4 mb-6 sm:mb-10 ${isDark ? 'border-white text-white' : 'border-black text-black'}`}>
-        {/* Top row: Title + Theme toggle */}
-        <div className="flex justify-between items-start mb-3 sm:mb-0">
-          <h1 className="text-3xl sm:text-5xl lg:text-8xl font-black uppercase tracking-tighter leading-none">
-            Monarch T<span className="solana-ai-highlight">AI</span>mes
-          </h1>
-          <div className="flex items-center gap-2 sm:hidden">
-            <ThemeToggle />
-          </div>
-        </div>
-
-        {/* Bottom row: Buttons (mobile: full width, desktop: inline) */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 sm:gap-4 mt-3 sm:mt-4">
-          {/* Mobile: horizontal scroll buttons */}
-          <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0">
+      {/* Header */}
+      <header className={`border-b-[8px] sm:border-b-[12px] pb-4 sm:pb-6 mb-8 sm:mb-12 ${isDark ? 'border-white text-white' : 'border-black text-black'}`}>
+        {/* Top row: Theme toggle left, Nav right */}
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <ThemeToggle />
+          <div className="flex gap-2 items-center">
             <button
               onClick={() => navigate('/agents')}
               className={`shrink-0 border-4 px-3 sm:px-4 py-2 font-black text-[10px] uppercase transition-all ${isDark ? 'border-white text-white hover:bg-white hover:text-black' : 'border-black hover:bg-black hover:text-white'}`}
@@ -1162,15 +1145,17 @@ const HomeFeed = () => {
               <WalletButton />
             </div>
           </div>
+        </div>
 
-          {/* Desktop only: tagline + theme */}
-          <div className="hidden sm:flex items-end gap-4">
-            <div className="text-right font-black uppercase text-[10px]">
-              <p>Autonomous Notary System</p>
-              <p className={`px-2 mt-1 inline-block ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>Solana_Protocol</p>
-            </div>
-            <ThemeToggle />
-          </div>
+        {/* Large title */}
+        <h1 className="text-5xl sm:text-7xl lg:text-9xl font-black uppercase tracking-tighter leading-none">
+          Monarch T<span className="solana-ai-highlight">AI</span>mes
+        </h1>
+
+        {/* Tagline */}
+        <div className="mt-3 sm:mt-4 flex flex-wrap items-center gap-2 sm:gap-4 font-black uppercase text-[10px] sm:text-xs">
+          <span>Autonomous Notary System</span>
+          <span className={`px-2 py-0.5 ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>Solana_Protocol</span>
         </div>
       </header>
 
