@@ -2,9 +2,8 @@ import { ImageResponse } from '@vercel/og';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { sql } from './_lib/db';
 
-export const config = {
-  runtime: 'edge', // Required for @vercel/og
-};
+// Node.js runtime (default) to allow DB access
+
 
 // De Stijl Colors
 const COLORS = {
