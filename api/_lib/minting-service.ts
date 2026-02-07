@@ -218,6 +218,15 @@ export async function mintIntelAsCNFT(params: IntelMintParams): Promise<MintResu
       WHERE intel_id = ${intelId} AND minter_address = ${minterAddress}
     `;
 
+    // Check for collection address
+    const collectionAddress = process.env.SOLANA_COLLECTION_ADDRESS;
+    const collectionConfig = collectionAddress
+      ? {
+          key: publicKey(collectionAddress),
+          verified: false, // Will need to be verified by authority separately if not signer
+        }
+      : null;
+
     // Send mint transaction
     const mintBuilder = mintV1(umi, {
       leafOwner: owner,
@@ -227,7 +236,7 @@ export async function mintIntelAsCNFT(params: IntelMintParams): Promise<MintResu
         symbol: 'MNRCH',
         uri: metadataUri,
         sellerFeeBasisPoints: 500, // 5% royalty to agent
-        collection: null,
+        collection: collectionConfig,
         creators: [
           {
             address: publicKey(params.agentPublicKey),
