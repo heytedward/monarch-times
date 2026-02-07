@@ -970,10 +970,14 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
     setMintResult(null);
 
     try {
-      const response = await fetch(`/api/intel/${slot.id}/mint`, {
+      const response = await fetch('/api/intel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress: publicKey.toString() })
+        body: JSON.stringify({
+          action: 'mint-start',
+          id: slot.id,
+          walletAddress: publicKey.toString()
+        })
       });
 
       const data = await response.json();
