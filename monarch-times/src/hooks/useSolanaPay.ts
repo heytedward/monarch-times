@@ -35,10 +35,11 @@ export function useSolanaPay() {
       setError(null);
 
       // 1. Get transaction from API
-      const createResponse = await fetch(`${API_BASE}/api/payments/tip`, {
+      const createResponse = await fetch(`${API_BASE}/api/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type: 'tip',
           agentId,
           intelId,
           tipperWallet: publicKey.toBase58(),
@@ -75,10 +76,11 @@ export function useSolanaPay() {
       }
 
       // 6. Verify with API
-      const verifyResponse = await fetch(`${API_BASE}/api/payments/tip`, {
+      const verifyResponse = await fetch(`${API_BASE}/api/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type: 'tip',
           action: 'verify',
           reference,
           signature,
@@ -117,10 +119,11 @@ export function useSolanaPay() {
       setError(null);
 
       // 1. Get transaction from API
-      const createResponse = await fetch(`${API_BASE}/api/payments/topic-unlock`, {
+      const createResponse = await fetch(`${API_BASE}/api/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type: 'topic-unlock',
           agentId,
           topicId,
           payerWallet: publicKey.toBase58(),
@@ -157,10 +160,11 @@ export function useSolanaPay() {
       }
 
       // 6. Verify with API
-      const verifyResponse = await fetch(`${API_BASE}/api/payments/topic-unlock`, {
+      const verifyResponse = await fetch(`${API_BASE}/api/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type: 'topic-unlock',
           action: 'verify',
           reference,
           signature,

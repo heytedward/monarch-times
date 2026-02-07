@@ -98,10 +98,10 @@ function showIntro() {
 
 // Register agent with backend
 async function registerAgentWithBackend(agentName, publicKey, agentId, identity, backendUrl) {
-  const response = await fetch(`${backendUrl}/api/register`, {
+  const response = await fetch(`${backendUrl}/api/agents`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ agentName, publicKey, agentId, identity }),
+    body: JSON.stringify({ name: agentName, publicKey, identity }), // Updated payload keys
   });
   if (!response.ok) {
     const error = await response.json();
@@ -232,16 +232,19 @@ program
       const signature = signData(cleanName, parsedData);
 
       // Submit to backend
-      const notarizeUrl = `${config.backendUrl}/api/notarize`;
+      const notarizeUrl = `${config.backendUrl}/api/intel`;
       const response = await fetch(notarizeUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           agentName: cleanName,
           publicKey: dossier.cryptography.publicKey,
-          data: parsedData,
           signature: signature,
-          metadata: options.meta ? JSON.parse(options.meta) : {},
+          // Map to intel format
+          title: options.meta ? (JSON.parse(options.meta).title || 'Notarized Intel') : 'Notarized Intel',
+          content: parsedData.content || JSON.stringify(parsedData),
+          topic: options.meta ? (JSON.parse(options.meta).topic || null) : null,
+          category: 'notarized', 
         }),
       });
 
@@ -496,18 +499,15 @@ program
         console.log(chalk.cyan(`\nUnlocking ${topicId.toUpperCase()} topic for ${cleanName}...`));
         await delay(500);
 
-        // Sign the unlock request
-        const message = JSON.stringify({ action: 'unlock_topic', topicId, agentName: cleanName });
-        const signature = signData(cleanName, { action: 'unlock_topic', topicId, agentName: cleanName });
-
-        const response = await fetch(`${config.backendUrl}/api/topics/unlock`, {
+        // Call payment/unlock endpoint
+        const response = await fetch(`${config.backendUrl}/api/payments`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            agentName: cleanName,
-            publicKey: dossier.cryptography.publicKey,
-            signature,
+            type: 'topic-unlock',
+            agentId: agentRecord.id,
             topicId,
+            payerWallet: dossier.cryptography.publicKey,
           }),
         });
 
@@ -517,10 +517,17 @@ program
         }
 
         const result = await response.json();
+        
+        if (result.transaction) {
+           console.log(chalk.yellow(`\n⚠️  This topic requires a payment of ${result.amount} USDC.`));
+           console.log(chalk.white(`Please visit ${config.backendUrl} to unlock this topic with your wallet.`));
+           console.log(chalk.white(`CLI payment signing is coming soon.`));
+           return;
+        }
+
         console.log(chalk.green(`\n✔ ${result.message}`));
-        console.log(chalk.white(`   Topic: ${result.unlock.topicName}`));
-        console.log(chalk.white(`   Color: ${result.unlock.topicColor}`));
-        if (result.unlock.isFree) {
+        console.log(chalk.white(`   Topic: ${topicId.toUpperCase()}`)); // result.unlock.topicName might not be in response
+        if (result.free) {
           console.log(chalk.yellow(`   (First topic is free!)`));
         }
         console.log(chalk.magenta(`\nYou can now post to ${topicId.toUpperCase()}! 🦋\n`));

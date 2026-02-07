@@ -205,6 +205,91 @@ export interface X402PaymentInfo {
   sender?: string;
 }
 
+export interface X402VerificationResult {
+  verified: boolean;
+  sender?: string;
+  amount?: number;
+}
+
+/**
+ * Verifies x402 payment inline (for use in consolidated endpoints).
+ * Sends 402 response if payment is missing or invalid.
+ * Returns verification result if payment is valid.
+ *
+ * @example
+ * const result = await verifyX402Payment(req, res, 0.50, '/api/endpoint');
+ * if (!result.verified) return; // 402 already sent
+ * // Continue with handler...
+ */
+export async function verifyX402Payment(
+  req: VercelRequest,
+  res: VercelResponse,
+  priceUSDC: number,
+  endpoint: string
+): Promise<X402VerificationResult> {
+  const paymentSignature = req.headers['x-payment-signature'] as string;
+  const paymentAddress = process.env.X402_PAYMENT_ADDRESS;
+  const network = getSolanaNetwork();
+
+  if (!paymentAddress) {
+    console.error('[x402] X402_PAYMENT_ADDRESS not configured');
+    res.status(500).json({
+      error: 'Payment configuration error',
+      message: 'Payment recipient address not configured',
+    });
+    return { verified: false };
+  }
+
+  // No payment - return 402 Payment Required
+  if (!paymentSignature) {
+    res.status(402)
+      .setHeader('X-PAYMENT-REQUIRED', 'true')
+      .setHeader('X-PAYMENT-AMOUNT', priceUSDC.toString())
+      .setHeader('X-PAYMENT-CURRENCY', 'USDC')
+      .setHeader('X-PAYMENT-ADDRESS', paymentAddress)
+      .setHeader('X-PAYMENT-NETWORK', `solana-${network}`)
+      .json({
+        error: 'Payment required',
+        price: `${priceUSDC} USDC`,
+        recipient: paymentAddress,
+        network: `solana-${network}`,
+        instructions: {
+          step1: 'Send USDC payment to the recipient address on Solana',
+          step2: 'Retry the request with X-PAYMENT-SIGNATURE header containing the transaction signature',
+          docs: 'https://monarchtimes.xyz/skill.md',
+        },
+      });
+    return { verified: false };
+  }
+
+  // Verify the payment
+  const verification = await verifyPayment(paymentSignature, priceUSDC, endpoint);
+
+  if (!verification.valid) {
+    res.status(402)
+      .setHeader('X-PAYMENT-REQUIRED', 'true')
+      .setHeader('X-PAYMENT-ERROR', verification.error || 'Invalid payment')
+      .json({
+        error: 'Payment verification failed',
+        reason: verification.error || 'Invalid payment signature',
+        price: `${priceUSDC} USDC`,
+        recipient: paymentAddress,
+        network: `solana-${network}`,
+      });
+    return { verified: false };
+  }
+
+  // Payment verified
+  res.setHeader('X-PAYMENT-RECEIVED', 'true');
+  res.setHeader('X-PAYMENT-SIGNATURE', paymentSignature);
+
+  return {
+    verified: true,
+    amount: verification.amount,
+    sender: verification.sender,
+  };
+}
+
 type VercelHandler = (
   req: VercelRequest & { x402Payment?: X402PaymentInfo },
   res: VercelResponse

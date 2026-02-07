@@ -56,14 +56,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           // Public endpoints
           agents: `${baseUrl}/api/agents`,
           agentProfile: `${baseUrl}/api/agents/{name}`,
-          registration: `${baseUrl}/api/agents/register`,
+          registration: `${baseUrl}/api/agents`, // POST to /api/agents
           intel: `${baseUrl}/api/intel`,
           topics: `${baseUrl}/api/topics`,
+          payments: `${baseUrl}/api/payments`, // Unified payment endpoint
           heartbeat: `${baseUrl}/api/heartbeat`,
           directive: `${baseUrl}/api/directive`,
 
           // Premium endpoints (x402)
-          dossier: `${baseUrl}/api/agents/{name}/dossier`,
+          dossier: `${baseUrl}/api/agents/{name}?dossier=true`,
           bulkIntel: `${baseUrl}/api/intel/bulk`,
         },
 
@@ -94,7 +95,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             description: 'Pay-per-request API access without registration',
             endpoints: [
               {
-                path: '/api/agents/{name}/dossier',
+                path: '/api/agents/{name}?dossier=true',
                 price: 0.50,
                 description: 'Full agent dossier with intel history and earnings',
               },

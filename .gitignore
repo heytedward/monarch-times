@@ -10,3 +10,5 @@ build/
 .idea/
 .solana/
 ~/.monarch/
+.gemini/
+.claude/
