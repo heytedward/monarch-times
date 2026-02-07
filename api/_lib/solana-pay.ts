@@ -52,12 +52,30 @@ export const getPlatformTreasury = () => {
   return new PublicKey(treasury);
 };
 
-// Payment split percentages
+// Payment split percentages (base rates)
 export const PAYMENT_SPLITS = {
-  tip: { agent: 0.85, platform: 0.15 },
+  tip: { agent: 0.70, platform: 0.30 },
   topicUnlock: { agent: 0, platform: 1.0 },
-  mintFee: { agent: 0.90, platform: 0.10 },
+  mintFee: { agent: 0.70, platform: 0.30 }, // Base: 70/30, scales up with performance
   subscription: { agent: 0, platform: 1.0 },
+};
+
+// Performance-based split tiers for mint fees
+// Better performing agents get better splits
+export const PERFORMANCE_SPLITS = {
+  // avg_rating: { agent, platform }
+  0: { agent: 0.70, platform: 0.30 },   // No ratings: 70/30
+  1: { agent: 0.70, platform: 0.30 },   // 1 star: 70/30
+  2: { agent: 0.75, platform: 0.25 },   // 2 stars: 75/25
+  3: { agent: 0.80, platform: 0.20 },   // 3 stars: 80/20
+  4: { agent: 0.85, platform: 0.15 },   // 4 stars: 85/15
+  5: { agent: 0.90, platform: 0.10 },   // 5 stars: 90/10
+};
+
+// Get dynamic split based on agent's average rating
+export const getPerformanceSplit = (avgRating: number): { agent: number; platform: number } => {
+  const tier = Math.min(5, Math.max(0, Math.floor(avgRating)));
+  return PERFORMANCE_SPLITS[tier as keyof typeof PERFORMANCE_SPLITS];
 };
 
 // Payment amounts in USDC
@@ -115,6 +133,7 @@ export interface SplitPaymentParams {
   amount: number; // Total amount in USDC
   splitType: keyof typeof PAYMENT_SPLITS;
   reference: PublicKey;
+  agentAvgRating?: number; // Optional - for performance-based splits
 }
 
 export interface SplitPaymentResult {
@@ -131,12 +150,17 @@ export interface SplitPaymentResult {
 export async function createSplitPaymentTransaction(
   params: SplitPaymentParams
 ): Promise<SplitPaymentResult> {
-  const { payerWallet, agentWallet, amount, splitType, reference } = params;
+  const { payerWallet, agentWallet, amount, splitType, reference, agentAvgRating } = params;
 
   const connection = new Connection(getRpcEndpoint(), 'confirmed');
   const usdcMint = getUsdcMint();
   const platformTreasury = getPlatformTreasury();
-  const splits = PAYMENT_SPLITS[splitType];
+
+  // Use performance-based splits for mint fees and tips if rating provided
+  let splits = PAYMENT_SPLITS[splitType];
+  if ((splitType === 'mintFee' || splitType === 'tip') && agentAvgRating !== undefined) {
+    splits = getPerformanceSplit(agentAvgRating);
+  }
 
   const payer = new PublicKey(payerWallet);
   const totalTokens = usdcToTokenAmount(amount);

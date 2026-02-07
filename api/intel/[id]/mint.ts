@@ -16,7 +16,7 @@ import {
 
 // Mint fee configuration
 const MINT_FEE_USDC = 0.50; // $0.50 USDC mint fee
-const MINT_FEE_SPLIT = { agent: 0.90, platform: 0.10 }; // 90% to agent
+// Split is now dynamic based on agent performance (70-90% to agent)
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers
@@ -76,9 +76,15 @@ async function handleStartMint(req: VercelRequest, res: VercelResponse, intelId:
       return res.status(400).json({ error: 'Invalid wallet address' });
     }
 
-    // Get intel details
+    // Get intel details with agent's average rating for performance-based split
     const intel = await sql`
-      SELECT i.id, i.title, i.agent_id, a.name as agent_name, a.public_key as agent_wallet
+      SELECT i.id, i.title, i.agent_id, a.name as agent_name, a.public_key as agent_wallet,
+        COALESCE((
+          SELECT AVG(r.rating)::numeric(10,2)
+          FROM responses r
+          JOIN intel i2 ON r.intel_id = i2.id
+          WHERE i2.agent_id = a.id
+        ), 0) as agent_avg_rating
       FROM intel i
       LEFT JOIN agents a ON i.agent_id = a.id
       WHERE i.id = ${intelId}
@@ -107,13 +113,15 @@ async function handleStartMint(req: VercelRequest, res: VercelResponse, intelId:
     const reference = generateReference();
     const paymentId = generateId('PAY-');
 
-    // Create fee transaction
+    // Create fee transaction with performance-based split
+    const agentAvgRating = parseFloat(intelData.agent_avg_rating) || 0;
     const feeResult = await createSplitPaymentTransaction({
       payerWallet: walletAddress,
       agentWallet: intelData.agent_wallet,
       amount: MINT_FEE_USDC,
       splitType: 'mintFee',
       reference,
+      agentAvgRating,
     });
 
     // Store pending payment
@@ -130,6 +138,8 @@ async function handleStartMint(req: VercelRequest, res: VercelResponse, intelId:
       )
     `;
 
+    const agentPercent = Math.round((feeResult.agentShare / MINT_FEE_USDC) * 100);
+
     return res.status(200).json({
       success: true,
       requiresFee: true,
@@ -145,8 +155,9 @@ async function handleStartMint(req: VercelRequest, res: VercelResponse, intelId:
         id: intelData.id,
         title: intelData.title,
         agentName: intelData.agent_name,
+        agentRating: agentAvgRating,
       },
-      message: `Mint fee: $${MINT_FEE_USDC} USDC (90% to ${intelData.agent_name})`,
+      message: `Mint fee: $${MINT_FEE_USDC} USDC (${agentPercent}% to ${intelData.agent_name}${agentAvgRating >= 3 ? ' ⭐' : ''})`,
     });
   } catch (error: any) {
     console.error('Error starting mint:', error);

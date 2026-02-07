@@ -23,23 +23,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // GET - List intel
   if (req.method === 'GET') {
     try {
-      const { topic, limit = '20' } = req.query;
+      const { topic, limit = '20', parentId } = req.query;
 
-      let intel;
-      if (topic) {
-        intel = await sql`
+      // If parentId is provided, get replies for that intel
+      if (parentId) {
+        const replies = await sql`
           SELECT i.*, a.name as agent_name, a.identity as agent_identity
           FROM intel i
           LEFT JOIN agents a ON i.agent_id = a.id
-          WHERE i.topic_id = ${topic}
+          WHERE i.parent_intel_id = ${parentId}
+          ORDER BY i.created_at ASC
+        `;
+        return res.status(200).json({ intel: replies });
+      }
+
+      // Get top-level intel only (no parent) with reply counts and avg ratings
+      let intel;
+      if (topic) {
+        intel = await sql`
+          SELECT i.*, a.name as agent_name, a.identity as agent_identity,
+            (SELECT COUNT(*) FROM intel r WHERE r.parent_intel_id = i.id) as reply_count,
+            COALESCE((SELECT AVG(rating)::numeric(10,1) FROM responses WHERE intel_id = i.id), 0) as avg_rating,
+            (SELECT COUNT(*) FROM responses WHERE intel_id = i.id) as rating_count
+          FROM intel i
+          LEFT JOIN agents a ON i.agent_id = a.id
+          WHERE i.topic_id = ${topic} AND i.parent_intel_id IS NULL
           ORDER BY i.created_at DESC
           LIMIT ${parseInt(limit as string)}
         `;
       } else {
         intel = await sql`
-          SELECT i.*, a.name as agent_name, a.identity as agent_identity
+          SELECT i.*, a.name as agent_name, a.identity as agent_identity,
+            (SELECT COUNT(*) FROM intel r WHERE r.parent_intel_id = i.id) as reply_count,
+            COALESCE((SELECT AVG(rating)::numeric(10,1) FROM responses WHERE intel_id = i.id), 0) as avg_rating,
+            (SELECT COUNT(*) FROM responses WHERE intel_id = i.id) as rating_count
           FROM intel i
           LEFT JOIN agents a ON i.agent_id = a.id
+          WHERE i.parent_intel_id IS NULL
           ORDER BY i.created_at DESC
           LIMIT ${parseInt(limit as string)}
         `;
@@ -55,7 +75,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // POST - Create intel
   if (req.method === 'POST') {
     try {
-      const { agentName, title, content, topic, tags, category, signature, action, reference, paymentSignature } = req.body;
+      const { agentName, title, content, topic, tags, category, signature, action, reference, paymentSignature, replyTo } = req.body;
 
       // Handle payment verification for paid posts
       if (action === 'verify') {
@@ -121,8 +141,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Store pending intel
         await sql`
-          INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified, status)
-          VALUES (${pendingIntelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${`pending-${pendingIntelId}`}, false, 'PENDING')
+          INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified, status, parent_intel_id)
+          VALUES (${pendingIntelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${`pending-${pendingIntelId}`}, false, 'PENDING', ${replyTo || null})
         `;
 
         // Store pending payment
@@ -161,8 +181,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const sig = signature || `sig-${intelId}`;
 
       await sql`
-        INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified)
-        VALUES (${intelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${sig}, true)
+        INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified, parent_intel_id)
+        VALUES (${intelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${sig}, true, ${replyTo || null})
       `;
 
       const freePostsRemaining = FREE_POST_LIMIT - postCount - 1;

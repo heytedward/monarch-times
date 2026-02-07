@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap');
 
 html, body, #root {
   height: 100%;
@@ -96,4 +96,122 @@ h1 {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #000;
   border: 1px solid #f0f0f0;
+}
+
+/* ========================================
+   HOLOGRAPHIC CARD EFFECTS (Rating-based)
+   ======================================== */
+
+/* Base card variables */
+.monarch-card {
+  --mx: 50%;
+  --my: 50%;
+  --posx: 50%;
+  --posy: 50%;
+  transform-style: preserve-3d;
+  perspective: 600px;
+}
+
+/* Shine overlay - positioned absolute over card */
+.card__shine,
+.card__glare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 15;
+  mix-blend-mode: color-dodge;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.monarch-card:hover .card__shine,
+.monarch-card:hover .card__glare {
+  opacity: 0.7;
+}
+
+/* COMMON - no effect (0 stars / no ratings) */
+[data-rarity="common"] .card__shine,
+[data-rarity="common"] .card__glare {
+  display: none;
+}
+
+/* GALAXY - no effect (< 1.5 stars) */
+[data-rarity="galaxy"] .card__shine,
+[data-rarity="galaxy"] .card__glare {
+  display: none;
+}
+
+/* AMAZING RARE - rainbow with grain (1.5 - 2.5 stars) */
+[data-rarity="amazing"] .card__shine {
+  background:
+    repeating-linear-gradient(
+      133deg,
+      #ff7773 0%, #ffed5f 14%, #a8ff5f 28%,
+      #83fff7 42%, #7894ff 56%, #d875ff 70%,
+      #ff7773 84%
+    );
+  background-size: 200% 200%;
+  background-position: var(--posx) var(--posy);
+  filter: brightness(0.8) contrast(2) saturate(0.6);
+  mix-blend-mode: overlay;
+}
+
+/* TRAINER GALLERY - diagonal color shift (2.5 - 3.5 stars) */
+[data-rarity="trainer-gallery"] .card__shine {
+  background: repeating-linear-gradient(
+    -22deg,
+    rgba(174,102,202,0.75) 0%,
+    rgba(228,77,72,0.75) 14%,
+    rgba(216,197,55,0.75) 28%,
+    rgba(124,201,62,0.75) 42%,
+    rgba(80,177,170,0.75) 56%,
+    rgba(136,160,255,0.75) 70%,
+    rgba(176,105,204,0.75) 84%
+  );
+  background-size: 200% 400%;
+  background-position: 0% var(--posy);
+  filter: brightness(0.7) contrast(2) saturate(1.1);
+}
+
+/* VMAX - subtle diagonal shift (3.5 - 4.5 stars) */
+[data-rarity="vmax"] .card__shine {
+  background: repeating-linear-gradient(
+    -22deg,
+    rgba(174,102,202,0.5) 0%,
+    rgba(228,77,72,0.5) 14%,
+    rgba(216,197,55,0.5) 28%,
+    rgba(124,201,62,0.5) 42%,
+    rgba(80,177,170,0.5) 56%,
+    rgba(136,160,255,0.5) 70%,
+    rgba(176,105,204,0.5) 84%
+  );
+  background-size: 200% 400%;
+  background-position: 0% var(--posy);
+  filter: brightness(0.8) contrast(1.5) saturate(0.8);
+}
+
+[data-rarity="vmax"] .card__glare {
+  display: none;
+}
+
+/* FULL ART - subtle diagonal shift (4.5 - 5 stars) */
+[data-rarity="full-art"] .card__shine {
+  background: repeating-linear-gradient(
+    -22deg,
+    rgba(174,102,202,0.5) 0%,
+    rgba(228,77,72,0.5) 14%,
+    rgba(216,197,55,0.5) 28%,
+    rgba(124,201,62,0.5) 42%,
+    rgba(80,177,170,0.5) 56%,
+    rgba(136,160,255,0.5) 70%,
+    rgba(176,105,204,0.5) 84%
+  );
+  background-size: 200% 400%;
+  background-position: 0% var(--posy);
+  filter: brightness(0.8) contrast(1.5) saturate(0.8);
+}
+
+[data-rarity="full-art"] .card__glare {
+  display: none;
 }
