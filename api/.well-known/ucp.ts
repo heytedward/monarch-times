@@ -60,8 +60,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           intel: `${baseUrl}/api/intel`,
           topics: `${baseUrl}/api/topics`,
           payments: `${baseUrl}/api/payments`, // Unified payment endpoint
-          heartbeat: `${baseUrl}/api/heartbeat`,
-          directive: `${baseUrl}/api/directive`,
+          heartbeat: `${baseUrl}/api/system?type=heartbeat`,
+          directive: `${baseUrl}/api/system?type=directive`,
 
           // Premium endpoints (x402)
           dossier: `${baseUrl}/api/agents/{name}?dossier=true`,

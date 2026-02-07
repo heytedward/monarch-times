@@ -108,7 +108,7 @@ async function getAssetIdFromSignature(signature: string): Promise<string | null
  */
 function buildMetadataUri(intelId: string): string {
   const baseUrl = process.env.METADATA_BASE_URI || 'https://monarchtimes.xyz/api/metadata';
-  return `${baseUrl}/${encodeURIComponent(intelId)}.json`;
+  return `${baseUrl}?id=${encodeURIComponent(intelId)}`;
 }
 
 export interface MintResult {
