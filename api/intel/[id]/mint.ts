@@ -1,18 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { PublicKey, Keypair, Connection, Transaction } from '@solana/web3.js';
-import {
-  createMint,
-  getOrCreateAssociatedTokenAccount,
-  mintTo,
-  TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
+import { PublicKey } from '@solana/web3.js';
 import { sql, generateId } from '../../_lib/db';
 import {
   createSplitPaymentTransaction,
   verifyPayment,
   generateReference,
-  getRpcEndpoint,
 } from '../../_lib/solana-pay';
+import { mintIntelAsCNFT } from '../../_lib/minting-service';
+import { getExplorerUrl, getSolanaNetwork } from '../../_lib/solana-config';
 
 // Mint fee configuration
 const MINT_FEE_USDC = 0.50; // $0.50 USDC mint fee
@@ -267,41 +262,80 @@ async function handleCompleteMint(req: VercelRequest, res: VercelResponse, intel
 
     // Check if already minted
     const existingMint = await sql`
-      SELECT mint_address FROM minted_intel
+      SELECT mint_address, status FROM minted_intel
       WHERE intel_id = ${intelId} AND minter_address = ${walletAddress}
     `;
 
-    if (existingMint.length > 0) {
+    if (existingMint.length > 0 && existingMint[0].status === 'COMPLETED') {
       return res.status(200).json({
         success: true,
         alreadyMinted: true,
         mintAddress: existingMint[0].mint_address,
-        message: 'Already minted!'
+        message: 'Already minted!',
+        explorerUrl: getExplorerUrl(existingMint[0].mint_address),
       });
     }
 
-    // For now, simulate the mint (actual SPL token mint would require a backend keypair)
-    // In production, you'd use Metaplex or a similar solution
-    const mockMintAddress = `MINT${generateId('')}`;
-
-    // Record the mint
+    // Create pending mint record if not exists
     const mintId = generateId('MNT-');
-    await sql`
-      INSERT INTO minted_intel (id, intel_id, minter_address, mint_address, price_paid, minted_at)
-      VALUES (${mintId}, ${intelId}, ${walletAddress}, ${mockMintAddress}, ${MINT_FEE_USDC}, NOW())
+    if (existingMint.length === 0) {
+      await sql`
+        INSERT INTO minted_intel (id, intel_id, minter_address, price_paid, status, created_at)
+        VALUES (${mintId}, ${intelId}, ${walletAddress}, ${MINT_FEE_USDC}, 'PENDING', NOW())
+      `;
+    }
+
+    // Get agent details for minting
+    const agentDetails = await sql`
+      SELECT a.name, a.public_key,
+        COALESCE((
+          SELECT AVG(r.rating)::numeric(10,2)
+          FROM responses r
+          JOIN intel i2 ON r.intel_id = i2.id
+          WHERE i2.agent_id = a.id
+        ), 0) as avg_rating
+      FROM agents a
+      WHERE a.id = ${intelData.agent_id}
     `;
+
+    const agent = agentDetails[0];
+
+    // Mint intel as cNFT using Bubblegum
+    const mintResult = await mintIntelAsCNFT({
+      intelId,
+      title: intelData.title,
+      content: intelData.content || '',
+      topicName: intelData.topic_name || 'GENERAL',
+      agentName: agent?.name || intelData.agent_name,
+      agentPublicKey: agent?.public_key || '',
+      agentAvgRating: parseFloat(agent?.avg_rating) || 0,
+      ownerWallet: walletAddress,
+      minterAddress: walletAddress,
+      pricePaid: MINT_FEE_USDC,
+    });
+
+    if (!mintResult.success) {
+      return res.status(500).json({
+        error: 'Minting failed',
+        details: mintResult.error,
+      });
+    }
+
+    const network = getSolanaNetwork();
 
     return res.status(200).json({
       success: true,
       mintId,
-      mintAddress: mockMintAddress,
+      mintAddress: mintResult.mintAddress,
+      signature: mintResult.signature,
       intel: {
         id: intelData.id,
         title: intelData.title,
         agentName: intelData.agent_name,
       },
-      message: `Successfully minted "${intelData.title}" by ${intelData.agent_name}!`,
-      explorerUrl: `https://explorer.solana.com/address/${mockMintAddress}?cluster=devnet`,
+      message: `Successfully minted "${intelData.title}" by ${intelData.agent_name} as cNFT!`,
+      explorerUrl: getExplorerUrl(mintResult.mintAddress!),
+      network,
     });
   } catch (error: any) {
     console.error('Error completing mint:', error);

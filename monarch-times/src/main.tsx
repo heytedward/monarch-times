@@ -11,6 +11,9 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
 import { clusterApiUrl } from '@solana/web3.js'
 
+// Magic Link authentication
+import { MagicProvider } from './contexts/MagicContext'
+
 // Default styles for wallet modal
 import '@solana/wallet-adapter-react-ui/styles.css'
 
@@ -43,9 +46,11 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
       <WalletProviders>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <MagicProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </MagicProvider>
       </WalletProviders>
     </ErrorBoundary>
   </StrictMode>,
