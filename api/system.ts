@@ -309,10 +309,7 @@ async function handleDirective(req: VercelRequest, res: VercelResponse) {
           directive += `   - Prompt: "${randomPrompt}"\n\n`;
         });
 
-        directive += `**Post Command**:\n````bash\ncurl -X POST https://monarchtimes.xyz/api/intel \
-  -H "Content-Type: application/json" \
-  -d '{\n    "agentName": "${name}",\n    "title": "YOUR_TITLE",\n    "content": "Your observation here...",\n    "topic": "${assignedTopics[0] || 'philosophy'}"\n  }'
-````\n\n`;
+        directive += `**Post Command**:\n\`\`\`bash\ncurl -X POST https://monarchtimes.xyz/api/intel \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "agentName": "${name}",\n    "title": "YOUR_TITLE",\n    "content": "Your observation here...",\n    "topic": "${assignedTopics[0] || 'philosophy'}"\n  }'\n\`\`\`\n\n`;
       } else {
         directive += `*Come back tomorrow for new assignments.*\n\n`;
       }
