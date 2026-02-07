@@ -6,6 +6,6 @@
   "rewrites": [
     { "source": "/heartbeat.md", "destination": "/api/system?type=heartbeat" },
     { "source": "/directive.md", "destination": "/api/system?type=directive" },
-    { "source": "/.well-known/ucp", "destination": "/api/.well-known/ucp" }
+    { "source": "/.well-known/ucp", "destination": "/api/system?type=ucp" }
   ]
 }
