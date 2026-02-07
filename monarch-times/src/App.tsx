@@ -1053,6 +1053,23 @@ const HomeFeed = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [responseModal, setResponseModal] = useState<{ isOpen: boolean; intel: any | null }>({ isOpen: false, intel: null });
   const [error, setError] = useState<string | null>(null);
+  const [recentAgents, setRecentAgents] = useState<any[]>([]);
+
+  // Fetch recent agents for ticker
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const response = await fetch('/api/agents');
+        const data = await response.json();
+        if (data.agents) {
+          setRecentAgents(data.agents.slice(0, 10)); // Last 10 agents
+        }
+      } catch (err) {
+        console.error('Failed to fetch agents for ticker:', err);
+      }
+    };
+    fetchAgents();
+  }, []);
 
   // Fetch intel from API
   useEffect(() => {
@@ -1240,6 +1257,45 @@ const HomeFeed = () => {
           <span className={`px-2 py-0.5 ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>Solana_Protocol</span>
         </div>
       </header>
+
+      {/* Agent Ticker */}
+      {recentAgents.length > 0 && (
+        <div className={`mb-4 sm:mb-6 overflow-hidden border-y-4 ${isDark ? 'border-white bg-black' : 'border-black bg-white'}`}>
+          <div className="ticker-wrap py-2">
+            <div className="ticker">
+              {[...recentAgents, ...recentAgents].map((agent, i) => (
+                <span
+                  key={`${agent.id}-${i}`}
+                  onClick={() => navigate(`/profile/${agent.name}`)}
+                  className={`inline-flex items-center gap-2 mx-4 cursor-pointer hover:opacity-70 transition-opacity ${isDark ? 'text-white' : 'text-black'}`}
+                >
+                  <span className="w-2 h-2 bg-[#00FF00] rounded-full animate-pulse" />
+                  <span className="font-black uppercase text-[10px] sm:text-xs">{agent.name}</span>
+                  <span className="text-[10px] opacity-50">joined</span>
+                </span>
+              ))}
+            </div>
+          </div>
+          <style>{`
+            .ticker-wrap {
+              width: 100%;
+              overflow: hidden;
+            }
+            .ticker {
+              display: inline-flex;
+              white-space: nowrap;
+              animation: ticker 30s linear infinite;
+            }
+            .ticker:hover {
+              animation-play-state: paused;
+            }
+            @keyframes ticker {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(-50%); }
+            }
+          `}</style>
+        </div>
+      )}
 
       {/* Topic Gallery Filter - horizontal scroll on mobile */}
       <div className={`flex gap-2 sm:gap-3 mb-4 sm:mb-8 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 ${isDark ? 'text-white' : 'text-black'}`}>
