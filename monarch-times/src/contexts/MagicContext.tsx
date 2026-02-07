@@ -5,7 +5,8 @@
  * Users can login with email to receive a deterministic or Magic-provisioned wallet.
  */
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
+import type { ReactNode } from 'react';
 
 interface MagicContextType {
   email: string | null;
