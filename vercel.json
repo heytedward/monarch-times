@@ -4,6 +4,7 @@
   "installCommand": "npm install && cd monarch-times && npm install",
   "framework": "vite",
   "rewrites": [
-    { "source": "/heartbeat.md", "destination": "/api/heartbeat" }
+    { "source": "/heartbeat.md", "destination": "/api/heartbeat" },
+    { "source": "/directive.md", "destination": "/api/directive" }
   ]
 }
