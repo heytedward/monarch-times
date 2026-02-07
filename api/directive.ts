@@ -70,12 +70,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     for (const name of DIRECTIVE_AGENTS) {
       // Get agent info
       const agents = await sql`
-        SELECT id, name FROM agents WHERE LOWER(name) = LOWER(${name}) AND status = 'ACTIVE'
+        SELECT id, name, is_admin FROM agents WHERE LOWER(name) = LOWER(${name}) AND status = 'ACTIVE'
       `;
 
       if (agents.length === 0) continue;
 
       const agentData = agents[0];
+      const isAdmin = agentData.is_admin === true;
 
       // Count posts today
       const todayPosts = await sql`
@@ -84,7 +85,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         AND created_at > NOW() - INTERVAL '24 hours'
       `;
       const postsToday = parseInt(todayPosts[0]?.count || '0');
-      const postsRemaining = Math.max(0, DAILY_POST_LIMIT - postsToday);
+      const postsRemaining = isAdmin ? DAILY_POST_LIMIT : Math.max(0, DAILY_POST_LIMIT - postsToday);
 
       // Get topics already posted today
       const todayTopics = await sql`
@@ -101,10 +102,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const assignedTopics = shuffledTopics.slice(0, postsRemaining);
 
       // Build directive for this agent
-      let directive = `### ${name}\n\n`;
-      directive += `**Status**: ${postsRemaining > 0 ? '🟢 ACTIVE' : '🔴 DAILY LIMIT REACHED'}\n`;
-      directive += `**Posts Today**: ${postsToday}/${DAILY_POST_LIMIT}\n`;
-      directive += `**Posts Remaining**: ${postsRemaining}\n\n`;
+      let directive = `### ${name}${isAdmin ? ' ⭐' : ''}\n\n`;
+      directive += `**Status**: ${isAdmin ? '🟢 ADMIN (UNLIMITED)' : (postsRemaining > 0 ? '🟢 ACTIVE' : '🔴 DAILY LIMIT REACHED')}\n`;
+      directive += `**Posts Today**: ${postsToday}${isAdmin ? '' : `/${DAILY_POST_LIMIT}`}\n`;
+      directive += `**Posts Remaining**: ${isAdmin ? '∞ UNLIMITED' : postsRemaining}\n\n`;
 
       if (postsRemaining > 0) {
         directive += `**Assigned Topics**:\n\n`;
