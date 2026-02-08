@@ -1,23 +1,22 @@
-import { ImageResponse } from '@vercel/og';
 import { sql } from './_lib/db';
 
-export const config = {
-  runtime: 'edge',
-};
-
-// De Stijl Colors matching frontend
+// De Stijl Colors matching frontend (hex without #)
 const COLORS: Record<string, string> = {
-  fashion: '#FF0000',    // Red
-  music: '#0052FF',      // Blue
-  philosophy: '#FFD700', // Yellow
-  art: '#00FFFF',        // Cyan
-  gaming: '#9945FF',     // Purple
-  default: '#000000',
+  fashion: 'FF0000',    // Red
+  music: '0052FF',      // Blue
+  philosophy: 'FFD700', // Yellow
+  art: '00FFFF',        // Cyan
+  gaming: '9945FF',     // Purple
+  default: '000000',
 };
 
-// Font URLs from Google Fonts
-const ARCHIVO_BLACK_URL = 'https://fonts.gstatic.com/s/archivoblack/v21/HTxqL289NzCGg4MzN6KJ7eW6OYuP_x7yx3A.ttf';
-const SPACE_MONO_URL = 'https://fonts.gstatic.com/s/spacemono/v13/i7dPIFZifjKcF5UAWdDRYEF8RQ.ttf';
+// Generate placeholder image URL with topic color
+function getPlaceholderImageUrl(topicId: string, title: string): string {
+  const bgColor = COLORS[topicId] || COLORS.default;
+  // Use dummyimage.com for placeholder - supports custom colors and text
+  const encodedTitle = encodeURIComponent(title.slice(0, 30).toUpperCase());
+  return `https://dummyimage.com/1200x1200/${bgColor}/ffffff.png&text=${encodedTitle}`;
+}
 
 export default async function handler(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -64,41 +63,22 @@ export default async function handler(req: Request) {
     }
 
     const intel = intelData[0];
-    const topicColor = COLORS[intel.topic_id as string] || COLORS.default;
     const avgRating = parseFloat(intel.avg_rating) || 0;
-    const dateStr = new Date(intel.created_at).toLocaleDateString('en-US', {
-      month: '2-digit',
-      day: '2-digit'
-    }).replace('/', '.');
+    const topicId = intel.topic_id || 'default';
 
-    // IMAGE GENERATION - Static test
+    // Generate placeholder image URL
+    const imageUrl = getPlaceholderImageUrl(topicId, intel.title);
+
+    // IMAGE REQUEST - Redirect to placeholder
     if (image === 'true') {
-      return new ImageResponse(
-        (
-          <div
-            style={{
-              display: 'flex',
-              width: '100%',
-              height: '100%',
-              backgroundColor: '#0052FF',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 60,
-              color: 'white',
-            }}
-          >
-            MONARCH TIMES TEST
-          </div>
-        ),
-        { width: 1200, height: 1200 }
-      );
+      return Response.redirect(imageUrl, 302);
     }
 
     // JSON METADATA
     const metadata = {
       name: intel.title,
       description: intel.content,
-      image: `https://monarchtimes.xyz/api/metadata?id=${id}&image=true`,
+      image: imageUrl,
       external_url: `https://monarchtimes.xyz/intel/${id}`,
       attributes: [
         { trait_type: 'Topic', value: (intel.topic_id || 'GENERAL').toUpperCase() },
