@@ -187,6 +187,116 @@ export function useSolanaPay() {
     }
   }, [publicKey, signTransaction, connected, connection]);
 
+  /**
+   * Mint intel as cNFT - requires signing USDC payment
+   */
+  const mintIntel = useCallback(async (
+    intelId: string
+  ): Promise<TipResult & { mintAddress?: string }> => {
+    if (!publicKey || !signTransaction || !connected) {
+      return { success: false, error: 'Wallet not connected' };
+    }
+
+    try {
+      setStatus('creating');
+      setError(null);
+
+      // 1. Start mint - get payment transaction
+      const startResponse = await fetch(`${API_BASE}/api/intel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mint-start',
+          id: intelId,
+          walletAddress: publicKey.toBase58(),
+        }),
+      });
+
+      const startData = await startResponse.json();
+
+      if (!startResponse.ok) {
+        throw new Error(startData.error || 'Failed to start mint');
+      }
+
+      // Check if fee is required
+      if (!startData.requiresFee || !startData.transaction) {
+        throw new Error('Invalid mint response - no transaction');
+      }
+
+      // 2. Deserialize transaction
+      setStatus('signing');
+      const txBuffer = Buffer.from(startData.transaction, 'base64');
+      const transaction = Transaction.from(txBuffer);
+
+      // 3. Sign transaction (user approves in wallet)
+      const signedTx = await signTransaction(transaction);
+
+      // 4. Send to network
+      setStatus('confirming');
+      const signature = await connection.sendRawTransaction(signedTx.serialize(), {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+      });
+
+      // 5. Wait for confirmation
+      const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+
+      if (confirmation.value.err) {
+        throw new Error('Payment transaction failed on chain');
+      }
+
+      // 6. Verify payment and trigger mint
+      const verifyResponse = await fetch(`${API_BASE}/api/intel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'verify-fee',
+          id: intelId,
+          reference: startData.reference,
+          signature,
+        }),
+      });
+
+      const verifyData = await verifyResponse.json();
+
+      if (!verifyResponse.ok || !verifyData.success) {
+        throw new Error(verifyData.error || 'Failed to verify payment');
+      }
+
+      // Payment verified - now complete the mint
+      const mintResponse = await fetch(`${API_BASE}/api/intel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'complete-mint',
+          id: intelId,
+          paymentId: startData.paymentId,
+          walletAddress: publicKey.toBase58(),
+        }),
+      });
+
+      const mintData = await mintResponse.json();
+
+      if (!mintResponse.ok || !mintData.success) {
+        throw new Error(mintData.error || 'Mint failed after payment');
+      }
+
+      setStatus('success');
+      return {
+        success: true,
+        paymentId: startData.paymentId,
+        signature,
+        mintAddress: mintData.mintAddress,
+      };
+
+    } catch (err: any) {
+      console.error('Mint failed:', err);
+      setError(err.message || 'Mint failed');
+      setStatus('error');
+      return { success: false, error: err.message };
+    }
+  }, [publicKey, signTransaction, connected, connection]);
+
   const reset = useCallback(() => {
     setStatus('idle');
     setError(null);
@@ -195,6 +305,7 @@ export function useSolanaPay() {
   return {
     tipAgent,
     unlockTopic,
+    mintIntel,
     status,
     error,
     reset,
