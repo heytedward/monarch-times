@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useThemeStore } from '../store/themeStore';
+import { MonarchCardModal } from './MonarchCard';
 
 // De Stijl topic colors (matches topicStore.ts)
 const TOPIC_COLORS: Record<string, string> = {
@@ -703,141 +704,29 @@ export default function MondrianGrid({ onCardClick }: MondrianGridProps) {
         </div>
       </div>
 
-      {/* Intel Detail Modal */}
+      {/* Intel Detail Modal - Flippable Card */}
       {selectedIntel && (
-        <div
-          className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4 backdrop-blur-sm"
-          onClick={() => setSelectedIntel(null)}
-        >
-          <div
-            className={`
-              w-full max-w-lg aspect-[3/4] border-8
-              ${isDark ? 'border-white' : 'border-black'}
-              shadow-[16px_16px_0px_0px_rgba(0,0,0,0.5)]
-              overflow-hidden flex flex-col
-              animate-[slideInRight_0.3s_ease-out]
-            `}
-            style={{ backgroundColor: topicColors[selectedIntel.topic] || topicColors.general }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className={`
-              flex items-center justify-between px-4 py-3 border-b-4
-              ${isDark ? 'border-white bg-black/20' : 'border-black bg-white/20'}
-            `}>
-              <div className="flex items-center gap-2">
-                <span className={`px-2 py-1 text-[10px] font-mono font-bold uppercase ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>
-                  {selectedIntel.topic}
-                </span>
-                {selectedIntel.isMinted && (
-                  <span className="px-2 py-1 bg-[#9945FF] text-white text-[10px] font-mono font-bold">
-                    MINTED
-                  </span>
-                )}
-                {selectedIntel.isThrowback && (
-                  <span className={`px-2 py-1 text-[10px] font-mono font-bold border ${isDark ? 'border-white text-white' : 'border-black text-black'}`}>
-                    VAULT
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={() => setSelectedIntel(null)}
-                className={`w-8 h-8 flex items-center justify-center font-black text-xl transition-colors
-                           ${isDark ? 'text-white hover:bg-white hover:text-black' : 'text-black hover:bg-black hover:text-white'}`}
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 p-6 flex flex-col">
-              {/* Title */}
-              <div className="flex mb-4">
-                <div
-                  className={`w-2 mr-4 flex-shrink-0 ${isDark ? 'bg-white' : 'bg-black'}`}
-                />
-                <h2 className="text-2xl sm:text-3xl font-black uppercase leading-tight text-black">
-                  {selectedIntel.title}
-                </h2>
-              </div>
-
-              {/* Full content */}
-              <p className="text-sm sm:text-base font-bold italic leading-relaxed text-black/80 flex-1 overflow-y-auto">
-                {selectedIntel.content}
-              </p>
-
-              {/* Agent info */}
-              <div className={`
-                mt-4 pt-4 border-t-2 flex items-center justify-between
-                ${isDark ? 'border-white/30' : 'border-black/30'}
-              `}>
-                <div className="flex items-center gap-3">
-                  <div className={`
-                    w-10 h-10 rounded-full flex items-center justify-center font-black text-lg
-                    ${isDark ? 'bg-white text-black' : 'bg-black text-white'}
-                  `}>
-                    {selectedIntel.agentName.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="font-black uppercase text-sm text-black">@{selectedIntel.agentName}</div>
-                    <div className="text-[10px] font-mono text-black/60">
-                      {selectedIntel.createdAt.toLocaleDateString()}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] font-mono text-black/60 uppercase">
-                    {getTimeRemaining(selectedIntel)}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className={`
-              px-4 py-3 border-t-4 flex gap-2
-              ${isDark ? 'border-white bg-black/20' : 'border-black bg-white/20'}
-            `}>
-              <button
-                className={`
-                  flex-1 py-2 font-black uppercase text-xs border-2 transition-all
-                  ${isDark
-                    ? 'border-white bg-black text-white hover:bg-white hover:text-black'
-                    : 'border-black bg-white text-black hover:bg-black hover:text-white'}
-                `}
-                onClick={() => {
-                  const shareText = `"${selectedIntel.content}"\n\n— Agent ${selectedIntel.agentName} on Monarch Times\n\nmonarchtimes.xyz`;
-                  navigator.clipboard.writeText(shareText);
-                }}
-              >
-                ↗ SHARE
-              </button>
-              {onCardClick && (
-                <button
-                  className="flex-1 py-2 font-black uppercase text-xs border-2 border-black bg-[#FFD700] text-black hover:bg-black hover:text-white transition-all"
-                  onClick={() => {
-                    onCardClick(selectedIntel);
-                    setSelectedIntel(null);
-                  }}
-                >
-                  ★ RATE
-                </button>
-              )}
-              <button
-                className={`
-                  flex-1 py-2 font-black uppercase text-xs border-2 transition-all
-                  ${selectedIntel.isMinted
-                    ? 'border-[#9945FF] bg-[#9945FF] text-white cursor-default'
-                    : isDark
-                      ? 'border-white bg-white text-black hover:bg-[#9945FF] hover:border-[#9945FF] hover:text-white'
-                      : 'border-black bg-black text-white hover:bg-[#9945FF] hover:border-[#9945FF]'}
-                `}
-              >
-                {selectedIntel.isMinted ? '✓ MINTED' : 'MINT'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <MonarchCardModal
+          slot={{
+            id: selectedIntel.id,
+            status: 'verified',
+            handle: selectedIntel.agentName,
+            topic: selectedIntel.topic,
+            title: selectedIntel.title,
+            content: selectedIntel.content,
+            tags: selectedIntel.isThrowback ? ['VAULT', 'THROWBACK'] : [],
+            timestamp: getTimeRemaining(selectedIntel),
+            date: selectedIntel.createdAt.toLocaleDateString(),
+            rating: 4.5, // Mock rating for visual consistency
+            reply_count: 0,
+            agentId: `agent-${selectedIntel.agentName}`, // Mock ID
+          }}
+          onClose={() => setSelectedIntel(null)}
+          onRate={onCardClick ? (intel) => onCardClick({
+            ...selectedIntel,
+            // Ensure compatibility if onCardClick expects slightly different fields
+          }) : undefined}
+        />
       )}
     </div>
   );
