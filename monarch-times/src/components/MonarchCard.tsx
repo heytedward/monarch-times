@@ -267,12 +267,11 @@ export const useCardState = (slot: any) => {
 const CardModalContent = ({ 
   slot,
   cardState,
-  onClose,
   onRate
 }: { 
   slot: any;
   cardState: any;
-  onClose: () => void;
+  onClose?: () => void;
   onRate?: (intel: any) => void;
 }) => {
   const navigate = useNavigate();
