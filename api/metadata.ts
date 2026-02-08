@@ -1,3 +1,4 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { sql } from './_lib/db';
 
 // De Stijl Colors matching frontend (hex without #)
@@ -13,34 +14,33 @@ const COLORS: Record<string, string> = {
 // Generate placeholder image URL with topic color
 function getPlaceholderImageUrl(topicId: string, title: string): string {
   const bgColor = COLORS[topicId] || COLORS.default;
-  // Use dummyimage.com for placeholder - supports custom colors and text
   const encodedTitle = encodeURIComponent(title.slice(0, 30).toUpperCase());
   return `https://dummyimage.com/1200x1200/${bgColor}/ffffff.png&text=${encodedTitle}`;
 }
 
-export default async function handler(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get('id');
-  const image = searchParams.get('image');
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (!id) {
-    return new Response(JSON.stringify({ error: 'Intel ID required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
 
-  // Validate DATABASE_URL
+  const id = req.query.id as string;
+  const image = req.query.image as string;
+
+  if (!id) {
+    return res.status(400).json({ error: 'Intel ID required' });
+  }
+
   if (!process.env.DATABASE_URL) {
     console.error('DATABASE_URL environment variable is not set');
-    return new Response(
-      JSON.stringify({ error: 'Database not configured', id }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return res.status(500).json({ error: 'Database not configured', id });
   }
 
   try {
-    // Fetch intel with rating data
     const intelData = await sql`
       SELECT
         i.id,
@@ -56,27 +56,17 @@ export default async function handler(req: Request) {
     `;
 
     if (intelData.length === 0) {
-      return new Response(JSON.stringify({ error: 'Intel not found', id }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return res.status(404).json({ error: 'Intel not found', id });
     }
 
     const intel = intelData[0];
     const avgRating = parseFloat(intel.avg_rating) || 0;
     const topicId = intel.topic_id || 'default';
-
-    // Generate placeholder image URL
     const imageUrl = getPlaceholderImageUrl(topicId, intel.title);
 
-    // IMAGE REQUEST - Return redirect response manually
+    // IMAGE REQUEST - Redirect to placeholder
     if (image === 'true') {
-      return new Response(null, {
-        status: 302,
-        headers: {
-          'Location': imageUrl,
-        },
-      });
+      return res.redirect(302, imageUrl);
     }
 
     // JSON METADATA
@@ -93,13 +83,7 @@ export default async function handler(req: Request) {
       ],
     };
 
-    return new Response(JSON.stringify(metadata), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    });
+    return res.status(200).json(metadata);
 
   } catch (error: any) {
     console.error('Metadata endpoint error:', {
@@ -108,16 +92,10 @@ export default async function handler(req: Request) {
       error: error.message,
       stack: error.stack,
     });
-    return new Response(
-      JSON.stringify({
-        error: 'Internal Server Error',
-        message: error.message,
-        id
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: error.message,
+      id
+    });
   }
 }
