@@ -1,8 +1,6 @@
 import { ImageResponse } from '@vercel/og';
 
-export const config = {
-  runtime: 'edge',
-};
+// Using Node.js runtime - Edge has WASM restrictions
 
 export default async function handler(req: Request) {
   try {
