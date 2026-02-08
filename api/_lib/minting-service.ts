@@ -13,6 +13,7 @@ import {
   publicKey,
   Umi,
 } from '@metaplex-foundation/umi';
+import { Connection, PublicKey } from '@solana/web3.js';
 import { sql, generateId } from './db';
 import { getSolanaRpcUrl, getSolanaNetwork, getMerkleTreeAddress, getHeliusApiKey } from './solana-config';
 
@@ -28,30 +29,32 @@ async function getUmi(): Promise<Umi> {
   if (umiInstance) return umiInstance;
 
   const rpcUrl = getSolanaRpcUrl();
-  umiInstance = createUmi(rpcUrl).use(mplBubblegum());
+  const tempUmi = createUmi(rpcUrl).use(mplBubblegum());
 
-  // Load authority keypair
+  // Load authority keypair - REQUIRED for minting
   const authoritySecretKey = process.env.SOLANA_PRIVATE_KEY || process.env.SOLANA_AUTHORITY_SECRET_KEY;
-  if (authoritySecretKey) {
-    try {
-      let secretKeyBytes: Uint8Array;
 
-      if (authoritySecretKey.startsWith('[')) {
-        secretKeyBytes = new Uint8Array(JSON.parse(authoritySecretKey));
-      } else {
-        const bs58 = await import('bs58');
-        secretKeyBytes = bs58.default.decode(authoritySecretKey);
-      }
-
-      const keypair = umiInstance.eddsa.createKeypairFromSecretKey(secretKeyBytes);
-      const signer = createSignerFromKeypair(umiInstance, keypair);
-      umiInstance.use(signerIdentity(signer));
-      console.log(`[Minting Service] Authority loaded: ${signer.publicKey}`);
-    } catch (e) {
-      console.error('[Minting Service] Failed to load authority keypair:', e);
-    }
+  if (!authoritySecretKey) {
+    throw new Error('[Minting Service] SOLANA_PRIVATE_KEY not configured - cannot mint NFTs');
   }
 
+  let secretKeyBytes: Uint8Array;
+
+  if (authoritySecretKey.startsWith('[')) {
+    secretKeyBytes = new Uint8Array(JSON.parse(authoritySecretKey));
+  } else {
+    const bs58 = await import('bs58');
+    secretKeyBytes = bs58.default.decode(authoritySecretKey);
+  }
+
+  const keypair = tempUmi.eddsa.createKeypairFromSecretKey(secretKeyBytes);
+  const signer = createSignerFromKeypair(tempUmi, keypair);
+  tempUmi.use(signerIdentity(signer));
+
+  console.log(`[Minting Service] Authority loaded: ${signer.publicKey}`);
+
+  // Only cache after successful initialization with signer
+  umiInstance = tempUmi;
   return umiInstance;
 }
 
@@ -201,6 +204,22 @@ export async function mintIntelAsCNFT(params: IntelMintParams): Promise<MintResu
   try {
     const umi = await getUmi();
 
+    // Verify authority wallet has enough SOL for transaction fees
+    const rpcUrl = getSolanaRpcUrl();
+    const connection = new Connection(rpcUrl);
+    const authorityPubkey = new PublicKey(umi.identity.publicKey.toString());
+    const balance = await connection.getBalance(authorityPubkey);
+    const minBalance = 10000; // ~0.00001 SOL minimum for fees
+
+    if (balance < minBalance) {
+      throw new Error(
+        `Minting authority wallet needs funding. Balance: ${(balance / 1e9).toFixed(6)} SOL, ` +
+        `address: ${authorityPubkey.toBase58()}`
+      );
+    }
+
+    console.log(`[Minting Service] Authority balance: ${(balance / 1e9).toFixed(6)} SOL`);
+
     const merkleTree = publicKey(merkleTreeAddress);
     const owner = publicKey(ownerWallet);
 
@@ -276,6 +295,11 @@ export async function mintIntelAsCNFT(params: IntelMintParams): Promise<MintResu
     };
   } catch (error: any) {
     console.error('[Minting Service] Minting error:', error);
+
+    // Reset cached UMI if there's a signer/funding issue so retries can reinitialize
+    if (error.message?.includes('debit') || error.message?.includes('funding') || error.message?.includes('keypair')) {
+      umiInstance = null;
+    }
 
     // Update database with failure
     await sql`
