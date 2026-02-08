@@ -1,21 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { sql } from './_lib/db';
 
-// De Stijl Colors matching frontend (hex without #)
-const COLORS: Record<string, string> = {
-  fashion: 'FF0000',    // Red
-  music: '0052FF',      // Blue
-  philosophy: 'FFD700', // Yellow
-  art: '00FFFF',        // Cyan
-  gaming: '9945FF',     // Purple
-  default: '000000',
-};
-
-// Generate placeholder image URL with topic color
-function getPlaceholderImageUrl(topicId: string, title: string): string {
-  const bgColor = COLORS[topicId] || COLORS.default;
-  const encodedTitle = encodeURIComponent(title.slice(0, 30).toUpperCase());
-  return `https://dummyimage.com/1200x1200/${bgColor}/ffffff.png&text=${encodedTitle}`;
+// Generate OG image URL for the intel card
+function getImageUrl(intelId: string): string {
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'https://monarchtimes.xyz';
+  return `${baseUrl}/api/og?id=${encodeURIComponent(intelId)}`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -61,10 +52,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const intel = intelData[0];
     const avgRating = parseFloat(intel.avg_rating) || 0;
-    const topicId = intel.topic_id || 'default';
-    const imageUrl = getPlaceholderImageUrl(topicId, intel.title);
+    const imageUrl = getImageUrl(id);
 
-    // IMAGE REQUEST - Redirect to placeholder
+    // IMAGE REQUEST - Redirect to OG image endpoint
     if (image === 'true') {
       return res.redirect(302, imageUrl);
     }

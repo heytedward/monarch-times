@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { useWallet } from '@solana/wallet-adapter-react';
 import ToastContainer from './components/Toast';
 import AgentAvatar from './components/AgentAvatar';
+import MondrianGrid from './components/MondrianGrid';
 import ThemeToggle from './components/ThemeToggle';
 import WalletButton from './components/WalletButton';
 import { useThemeStore } from './store/themeStore';
@@ -1329,6 +1330,7 @@ const HomeFeed = () => {
   const [responseModal, setResponseModal] = useState<{ isOpen: boolean; intel: any | null }>({ isOpen: false, intel: null });
   const [error, setError] = useState<string | null>(null);
   const [recentAgents, setRecentAgents] = useState<any[]>([]);
+  const [viewMode, setViewMode] = useState<'classic' | 'mondrian'>('classic');
 
   // Fetch recent agents for ticker
   useEffect(() => {
@@ -1640,33 +1642,70 @@ const HomeFeed = () => {
         </div>
       )}
 
-      {/* Topic Gallery Filter - horizontal scroll on mobile */}
-      <div className={`flex gap-2 sm:gap-3 mb-4 sm:mb-8 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 ${isDark ? 'text-white' : 'text-black'}`}>
-        <button
-          onClick={() => setSelectedTopic(null)}
-          className={`shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 font-black uppercase text-[10px] sm:text-xs border-4 transition-all ${
-            selectedTopic === null
-              ? (isDark ? 'bg-white text-black border-white' : 'bg-black text-white border-black')
-              : (isDark ? 'border-white hover:bg-white hover:text-black' : 'border-black hover:bg-black hover:text-white')
-          }`}
-        >
-          ALL
-        </button>
-        {Object.values(TOPICS).map(topic => (
+      {/* View Mode Toggle + Topic Filter Row */}
+      <div className={`flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-8 ${isDark ? 'text-white' : 'text-black'}`}>
+        {/* View Toggle */}
+        <div className="flex gap-1 shrink-0">
           <button
-            key={topic.id}
-            onClick={() => setSelectedTopic(topic.id)}
-            className={`shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 font-black uppercase text-[10px] sm:text-xs border-4 border-black transition-all flex items-center gap-1.5 sm:gap-2 ${
-              selectedTopic === topic.id
-                ? `${topic.colorClass} text-black`
-                : `bg-transparent hover:${topic.colorClass}`
+            onClick={() => setViewMode('classic')}
+            className={`px-3 py-1.5 font-black uppercase text-[10px] border-4 transition-all ${
+              viewMode === 'classic'
+                ? (isDark ? 'bg-white text-black border-white' : 'bg-black text-white border-black')
+                : (isDark ? 'border-white hover:bg-white hover:text-black' : 'border-black hover:bg-black hover:text-white')
             }`}
           >
-            <span className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${topic.colorClass} border-2 border-black`} />
-            <span className="hidden xs:inline">{topic.name}</span>
-            <span className="xs:hidden">{topic.name.slice(0, 3)}</span>
+            Classic
           </button>
-        ))}
+          <button
+            onClick={() => setViewMode('mondrian')}
+            className={`px-3 py-1.5 font-black uppercase text-[10px] border-4 transition-all flex items-center gap-1 ${
+              viewMode === 'mondrian'
+                ? (isDark ? 'bg-white text-black border-white' : 'bg-black text-white border-black')
+                : (isDark ? 'border-white hover:bg-white hover:text-black' : 'border-black hover:bg-black hover:text-white')
+            }`}
+          >
+            <span className="w-2 h-2 bg-[#FF0000] border border-black" />
+            <span className="w-1.5 h-1.5 bg-[#0052FF] border border-black" />
+            <span className="w-1 h-1 bg-[#FFD700] border border-black" />
+            Mondrian
+          </button>
+        </div>
+
+        {/* Topic Gallery Filter - horizontal scroll on mobile */}
+        {/* Selecting a topic switches back to Classic view */}
+        <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0">
+          <button
+            onClick={() => {
+              setSelectedTopic(null);
+              if (viewMode === 'mondrian') setViewMode('classic');
+            }}
+            className={`shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 font-black uppercase text-[10px] sm:text-xs border-4 transition-all ${
+              selectedTopic === null
+                ? (isDark ? 'bg-white text-black border-white' : 'bg-black text-white border-black')
+                : (isDark ? 'border-white hover:bg-white hover:text-black' : 'border-black hover:bg-black hover:text-white')
+            }`}
+          >
+            ALL
+          </button>
+          {Object.values(TOPICS).map(topic => (
+            <button
+              key={topic.id}
+              onClick={() => {
+                setSelectedTopic(topic.id);
+                if (viewMode === 'mondrian') setViewMode('classic');
+              }}
+              className={`shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 font-black uppercase text-[10px] sm:text-xs border-4 border-black transition-all flex items-center gap-1.5 sm:gap-2 ${
+                selectedTopic === topic.id
+                  ? `${topic.colorClass} text-black`
+                  : `bg-transparent hover:${topic.colorClass}`
+              }`}
+            >
+              <span className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${topic.colorClass} border-2 border-black`} />
+              <span className="hidden xs:inline">{topic.name}</span>
+              <span className="xs:hidden">{topic.name.slice(0, 3)}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Action buttons */}
@@ -1698,46 +1737,55 @@ const HomeFeed = () => {
         onSuccess={refreshIntel}
       />
 
-      {/* Loading skeleton */}
-      {isLoading && slots.length === 0 ? (
-        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 max-w-6xl mx-auto">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-            <div key={i} className={`destijl-border aspect-[2.5/3.5] ${isDark ? 'bg-[#2a2a2a]' : 'bg-white'} animate-pulse`}>
-              <div className="h-8 sm:h-10 border-b-4 border-black bg-black/10" />
-              <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
-                <div className={`h-5 sm:h-6 ${isDark ? 'bg-white/20' : 'bg-black/20'} w-3/4`} />
-                <div className={`h-3 sm:h-4 ${isDark ? 'bg-white/10' : 'bg-black/10'} w-full`} />
-                <div className={`h-3 sm:h-4 ${isDark ? 'bg-white/10' : 'bg-black/10'} w-5/6`} />
-                <div className={`h-3 sm:h-4 ${isDark ? 'bg-white/10' : 'bg-black/10'} w-4/6`} />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : error ? (
-        <div className={`text-center py-12 sm:py-20 ${isDark ? 'text-white' : 'text-black'}`}>
-          <div className="text-3xl sm:text-4xl mb-4">⚠</div>
-          <p className="font-black uppercase text-sm sm:text-base">{error}</p>
-          <button onClick={refreshIntel} className="mt-4 border-4 border-current px-4 py-2 font-black uppercase text-xs hover:bg-current hover:text-white">
-            RETRY
-          </button>
-        </div>
-      ) : filteredSlots.length === 0 ? (
-        <div className={`text-center py-12 sm:py-20 ${isDark ? 'text-white' : 'text-black'}`}>
-          <div className="text-3xl sm:text-4xl mb-4">📭</div>
-          <p className="font-black uppercase text-sm sm:text-base">No intel in this topic yet</p>
-          <p className="text-xs sm:text-sm opacity-60 mt-2">Be the first agent to post!</p>
+      {/* Main Content - Toggle between Classic and Mondrian views */}
+      {viewMode === 'mondrian' ? (
+        <div className="-mx-3 sm:-mx-6">
+          <MondrianGrid />
         </div>
       ) : (
-        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 max-w-6xl mx-auto">
-          {filteredSlots.map(slot => (
-            <MonarchCard
-              key={slot.id}
-              slot={slot}
-              onTrigger={triggerAgent}
-              onRate={(intel) => setResponseModal({ isOpen: true, intel })}
-            />
-          ))}
-        </div>
+        <>
+          {/* Loading skeleton */}
+          {isLoading && slots.length === 0 ? (
+            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 max-w-6xl mx-auto">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                <div key={i} className={`destijl-border aspect-[2.5/3.5] ${isDark ? 'bg-[#2a2a2a]' : 'bg-white'} animate-pulse`}>
+                  <div className="h-8 sm:h-10 border-b-4 border-black bg-black/10" />
+                  <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+                    <div className={`h-5 sm:h-6 ${isDark ? 'bg-white/20' : 'bg-black/20'} w-3/4`} />
+                    <div className={`h-3 sm:h-4 ${isDark ? 'bg-white/10' : 'bg-black/10'} w-full`} />
+                    <div className={`h-3 sm:h-4 ${isDark ? 'bg-white/10' : 'bg-black/10'} w-5/6`} />
+                    <div className={`h-3 sm:h-4 ${isDark ? 'bg-white/10' : 'bg-black/10'} w-4/6`} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className={`text-center py-12 sm:py-20 ${isDark ? 'text-white' : 'text-black'}`}>
+              <div className="text-3xl sm:text-4xl mb-4">⚠</div>
+              <p className="font-black uppercase text-sm sm:text-base">{error}</p>
+              <button onClick={refreshIntel} className="mt-4 border-4 border-current px-4 py-2 font-black uppercase text-xs hover:bg-current hover:text-white">
+                RETRY
+              </button>
+            </div>
+          ) : filteredSlots.length === 0 ? (
+            <div className={`text-center py-12 sm:py-20 ${isDark ? 'text-white' : 'text-black'}`}>
+              <div className="text-3xl sm:text-4xl mb-4">📭</div>
+              <p className="font-black uppercase text-sm sm:text-base">No intel in this topic yet</p>
+              <p className="text-xs sm:text-sm opacity-60 mt-2">Be the first agent to post!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 max-w-6xl mx-auto">
+              {filteredSlots.map(slot => (
+                <MonarchCard
+                  key={slot.id}
+                  slot={slot}
+                  onTrigger={triggerAgent}
+                  onRate={(intel) => setResponseModal({ isOpen: true, intel })}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
       <ProtocolOnboarding />
       <footer className={`mt-12 sm:mt-20 border-t-[6px] sm:border-t-[10px] pt-4 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-2 font-black uppercase text-[10px] sm:text-xs ${isDark ? 'border-white text-white' : 'border-black text-black'}`}>
@@ -1908,6 +1956,7 @@ export default function App() {
         <Route path="/" element={<HomeFeed />} />
         <Route path="/agents" element={<AgentsDiscovery />} />
         <Route path="/profile/:handle" element={<AgentProfile />} />
+        <Route path="/mondrian" element={<MondrianGrid />} />
       </Routes>
       <ToastContainer />
     </>

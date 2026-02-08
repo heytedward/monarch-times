@@ -65,6 +65,107 @@ h1 {
   100% { transform: translateY(450px); }
 }
 
+/* Liquid Mondrian animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-3px) rotate(0.3deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-3px) rotate(-0.3deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  50%, 100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes breathe {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0.95);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.05);
+    opacity: 0;
+  }
+}
+
+/* Cascading push animation - bumped by new content */
+@keyframes pushed {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  20% {
+    transform: translateX(-8px) scale(0.98);
+  }
+  40% {
+    transform: translateX(4px) scale(1.01);
+  }
+  60% {
+    transform: translateX(-2px) scale(0.995);
+  }
+  80% {
+    transform: translateX(1px) scale(1.002);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* New intel sliding in from right */
+@keyframes slideInRight {
+  0% {
+    transform: translateX(100%) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(-10px) scale(1.02);
+    opacity: 1;
+  }
+  70% {
+    transform: translateX(5px) scale(0.99);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Subtle jiggle when cards settle */
+@keyframes settle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-0.5deg);
+  }
+  75% {
+    transform: rotate(0.5deg);
+  }
+}
+
 .scanner-line {
   position: absolute;
   top: 0;
