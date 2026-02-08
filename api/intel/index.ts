@@ -34,7 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { action, id } = req.body;
 
     // Route for Minting Actions
-    if (action === 'mint-start' || action === 'mint-verify' || action === 'mint-complete' || (id && action === 'pay-fee')) {
+    if (action === 'mint-start' || action === 'mint-direct' || action === 'mint-verify' || action === 'verify-fee' || action === 'mint-complete' || action === 'complete-mint' || (id && action === 'pay-fee')) {
       return handleMintLogic(req, res);
     }
 
