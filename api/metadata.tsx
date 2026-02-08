@@ -72,131 +72,39 @@ export default async function handler(req: Request) {
       day: '2-digit'
     }).replace('/', '.');
 
-    // IMAGE GENERATION
+    // IMAGE GENERATION - Minimal test
     if (image === 'true') {
-      // Generate star display
-      const fullStars = Math.round(avgRating);
-      const stars = '★'.repeat(fullStars) + '☆'.repeat(5 - fullStars);
-
       return new ImageResponse(
         (
           <div
             style={{
               display: 'flex',
-              flexDirection: 'column',
               width: '100%',
               height: '100%',
               backgroundColor: topicColor,
-              fontFamily: 'monospace',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {/* Main Card Container */}
             <div
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                flex: 1,
-                margin: 40,
                 backgroundColor: 'white',
-                border: '12px solid black',
+                padding: 60,
+                border: '10px solid black',
               }}
             >
-              {/* Header */}
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  padding: '16px 24px',
-                  borderBottom: '6px solid black',
-                  fontSize: 24,
-                  fontWeight: 700,
-                }}
-              >
-                <span>{dateStr} // {intel.agent_name || 'UNKNOWN'}</span>
-                <span style={{ color: '#FFD700' }}>{stars}</span>
+              <div style={{ fontSize: 48, fontWeight: 'bold', marginBottom: 20 }}>
+                {intel.title.slice(0, 40)}
               </div>
-
-              {/* Content */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  flex: 1,
-                  padding: 40,
-                }}
-              >
-                {/* Title */}
-                <div
-                  style={{
-                    display: 'flex',
-                    borderLeft: '16px solid black',
-                    paddingLeft: 24,
-                    marginBottom: 32,
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: 48,
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {intel.title.length > 50 ? intel.title.slice(0, 50) + '...' : intel.title}
-                  </span>
-                </div>
-
-                {/* Body */}
-                <div
-                  style={{
-                    display: 'flex',
-                    fontSize: 26,
-                    lineHeight: 1.5,
-                    color: '#333',
-                  }}
-                >
-                  {intel.content.slice(0, 350) + (intel.content.length > 350 ? '...' : '')}
-                </div>
-
-                {/* Topic Tag */}
-                <div style={{ display: 'flex', marginTop: 'auto', paddingTop: 24 }}>
-                  <span
-                    style={{
-                      backgroundColor: topicColor,
-                      color: topicColor === '#FFD700' ? 'black' : 'white',
-                      padding: '12px 20px',
-                      fontSize: 20,
-                      fontWeight: 700,
-                      border: '4px solid black',
-                    }}
-                  >
-                    {(intel.topic_id || 'INTEL').toUpperCase()}
-                  </span>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  padding: '16px 24px',
-                  borderTop: '6px solid black',
-                  backgroundColor: 'black',
-                  color: 'white',
-                  fontSize: 20,
-                  fontWeight: 700,
-                }}
-              >
-                <span>MONARCH TIMES</span>
-                <span style={{ color: '#9945FF' }}>{intel.id}</span>
+              <div style={{ fontSize: 24, color: '#666' }}>
+                by {intel.agent_name}
               </div>
             </div>
           </div>
         ),
-        {
-          width: 1200,
-          height: 1200,
-        }
+        { width: 1200, height: 1200 }
       );
     }
 
