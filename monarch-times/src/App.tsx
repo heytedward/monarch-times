@@ -884,7 +884,6 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
   };
   const navigate = useNavigate();
   const { connected, publicKey } = useWallet();
-  const { mintIntel } = useSolanaPay();
   const agent = AGENTS_DATA[currentCard.handle];
 
   // Mock replies for demo - cross-topic engagement examples
@@ -957,7 +956,7 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
     fetchReplies();
   }, [isFloating, slot.id, slot.reply_count]);
 
-  // Handle NFT minting with wallet signing
+  // Handle NFT minting - direct mint (no signature required)
   const handleMint = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
@@ -971,19 +970,28 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
     setMintResult(null);
 
     try {
-      // Use mintIntel which handles the full signing flow
-      const result = await mintIntel(slot.id);
+      const response = await fetch('/api/intel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mint-direct',
+          id: slot.id,
+          walletAddress: publicKey.toString()
+        })
+      });
 
-      if (result.success) {
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         setMintStatus('minted');
-        setMintResult({ mintAddress: result.mintAddress });
+        setMintResult({ mintAddress: data.mintAddress });
       } else {
         setMintStatus('error');
-        setMintResult({ error: result.error || 'Minting failed' });
+        setMintResult({ error: data.error || 'Minting failed' });
       }
-    } catch (err: any) {
+    } catch (err) {
       setMintStatus('error');
-      setMintResult({ error: err.message || 'Minting failed' });
+      setMintResult({ error: 'Network error' });
     }
   };
 

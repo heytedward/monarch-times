@@ -324,10 +324,113 @@ async function handleMintLogic(req: VercelRequest, res: VercelResponse) {
     return handleCompleteMint(req, res, intelId, paymentId, walletAddress);
   }
 
-  // Default: start mint process (get fee transaction)
-  return handleStartMint(req, res, intelId, walletAddress);
+  // Free/direct mint - no payment required
+  if (action === 'mint-start' || action === 'mint-direct') {
+    return handleDirectMint(req, res, intelId, walletAddress);
+  }
+
+  // Default: start mint process (for backwards compatibility)
+  return handleDirectMint(req, res, intelId, walletAddress);
 }
 
+// Direct mint - no payment required, mints immediately
+async function handleDirectMint(req: VercelRequest, res: VercelResponse, intelId: string, walletAddress: string) {
+  try {
+    if (!walletAddress) {
+      return res.status(400).json({ error: 'walletAddress is required' });
+    }
+
+    try {
+      new PublicKey(walletAddress);
+    } catch {
+      return res.status(400).json({ error: 'Invalid wallet address' });
+    }
+
+    const intel = await sql`
+      SELECT i.id, i.title, i.content, i.topic_id, i.agent_id,
+             a.name as agent_name, a.identity as agent_wallet,
+        COALESCE((
+          SELECT AVG(r.rating)::numeric(10,2)
+          FROM responses r
+          JOIN intel i2 ON r.intel_id = i2.id
+          WHERE i2.agent_id = a.id
+        ), 0) as agent_avg_rating
+      FROM intel i
+      LEFT JOIN agents a ON i.agent_id = a.id
+      WHERE i.id = ${intelId}
+    `;
+
+    if (intel.length === 0) {
+      return res.status(404).json({ error: 'Intel not found' });
+    }
+
+    const intelData = intel[0];
+
+    const existingMint = await sql`
+      SELECT id, mint_address, status FROM minted_intel
+      WHERE intel_id = ${intelId} AND minter_address = ${walletAddress}
+    `;
+
+    if (existingMint.length > 0 && existingMint[0].status === 'COMPLETED') {
+      return res.status(200).json({
+        success: true,
+        alreadyMinted: true,
+        mintAddress: existingMint[0].mint_address,
+        message: 'Already minted!',
+        explorerUrl: getExplorerUrl(existingMint[0].mint_address),
+      });
+    }
+
+    // Create mint record if not exists
+    const mintId = generateId('MNT-');
+    if (existingMint.length === 0) {
+      await sql`
+        INSERT INTO minted_intel (id, intel_id, minter_address, price_paid, status, created_at)
+        VALUES (${mintId}, ${intelId}, ${walletAddress}, 0, 'PENDING', NOW())
+      `;
+    }
+
+    // Get topic name
+    const topics = await sql`SELECT name FROM topics WHERE id = ${intelData.topic_id}`;
+    const topicName = topics.length > 0 ? topics[0].name : 'GENERAL';
+
+    const agentAvgRating = parseFloat(intelData.agent_avg_rating) || 0;
+
+    // Mint the cNFT directly
+    const mintResult = await mintIntelAsCNFT({
+      intelId,
+      title: intelData.title,
+      content: intelData.content,
+      topicName,
+      agentName: intelData.agent_name || 'Unknown',
+      agentPublicKey: intelData.agent_wallet || walletAddress, // Fallback to minter if no agent wallet
+      agentAvgRating,
+      ownerWallet: walletAddress,
+      minterAddress: walletAddress,
+      pricePaid: 0,
+    });
+
+    if (mintResult.success) {
+      return res.status(200).json({
+        success: true,
+        mintAddress: mintResult.mintAddress,
+        signature: mintResult.signature,
+        explorerUrl: getExplorerUrl(mintResult.mintAddress || ''),
+        message: 'Successfully minted!',
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        error: mintResult.error || 'Minting failed',
+      });
+    }
+  } catch (error: any) {
+    console.error('Error in direct mint:', error);
+    return res.status(500).json({ error: 'Failed to mint', details: error.message });
+  }
+}
+
+// Paid mint flow - creates payment transaction (kept for future use)
 async function handleStartMint(req: VercelRequest, res: VercelResponse, intelId: string, walletAddress: string) {
   try {
     if (!walletAddress) {
