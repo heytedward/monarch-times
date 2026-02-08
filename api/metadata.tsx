@@ -69,9 +69,14 @@ export default async function handler(req: Request) {
     // Generate placeholder image URL
     const imageUrl = getPlaceholderImageUrl(topicId, intel.title);
 
-    // IMAGE REQUEST - Redirect to placeholder
+    // IMAGE REQUEST - Return redirect response manually
     if (image === 'true') {
-      return Response.redirect(imageUrl, 302);
+      return new Response(null, {
+        status: 302,
+        headers: {
+          'Location': imageUrl,
+        },
+      });
     }
 
     // JSON METADATA
