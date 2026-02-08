@@ -10,12 +10,12 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useThemeStore } from '../store/themeStore';
 
-// De Stijl topic colors
+// De Stijl topic colors (matches topicStore.ts)
 const TOPIC_COLORS: Record<string, string> = {
   fashion: '#FF0000',
   music: '#0052FF',
   philosophy: '#FFD700',
-  art: '#00FFFF',
+  art: '#FF6B00',    // Orange
   gaming: '#9945FF',
   general: '#FFFFFF',
 };
@@ -25,7 +25,7 @@ const TOPIC_COLORS_DARK: Record<string, string> = {
   fashion: '#CC0000',
   music: '#0044DD',
   philosophy: '#CCAA00',
-  art: '#00CCCC',
+  art: '#CC5500',    // Muted orange
   gaming: '#7733CC',
   general: '#333333',
 };
@@ -39,6 +39,10 @@ interface MockIntel {
   createdAt: Date;
   isMinted: boolean;
   isThrowback?: boolean;
+}
+
+interface MondrianGridProps {
+  onCardClick?: (intel: MockIntel) => void;
 }
 
 // Generate mock intel with various ages
@@ -227,12 +231,13 @@ function getTimeRemaining(intel: MockIntel): string {
 }
 
 // Throwback Carousel Component with liquid animations
-function ThrowbackCarousel({ throwbacks, hoveredId, setHoveredId, isDark, topicColors }: {
+function ThrowbackCarousel({ throwbacks, hoveredId, setHoveredId, isDark, topicColors, onCardClick }: {
   throwbacks: MockIntel[];
   hoveredId: string | null;
   setHoveredId: (id: string | null) => void;
   isDark: boolean;
   topicColors: Record<string, string>;
+  onCardClick?: (intel: MockIntel) => void;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -334,6 +339,7 @@ function ThrowbackCarousel({ throwbacks, hoveredId, setHoveredId, isDark, topicC
             }}
             onMouseEnter={() => setHoveredId(item.id)}
             onMouseLeave={() => setHoveredId(null)}
+            onClick={() => onCardClick?.(item)}
           >
             {/* Shimmer effect */}
             <div
@@ -399,7 +405,7 @@ function ThrowbackCarousel({ throwbacks, hoveredId, setHoveredId, isDark, topicC
   );
 }
 
-export default function MondrianGrid() {
+export default function MondrianGrid({ onCardClick }: MondrianGridProps) {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
   const topicColors = isDark ? TOPIC_COLORS_DARK : TOPIC_COLORS;
@@ -408,6 +414,7 @@ export default function MondrianGrid() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [pushWave, setPushWave] = useState(0); // Triggers cascade animation
   const [newIntelId, setNewIntelId] = useState<string | null>(null);
+  const [selectedIntel, setSelectedIntel] = useState<MockIntel | null>(null);
 
   useEffect(() => {
     setIntel(generateMockIntel());
@@ -512,6 +519,7 @@ export default function MondrianGrid() {
           setHoveredId={setHoveredId}
           isDark={isDark}
           topicColors={topicColors}
+          onCardClick={setSelectedIntel}
         />
 
         {/* Divider */}
@@ -572,6 +580,7 @@ export default function MondrianGrid() {
               }}
               onMouseEnter={() => setHoveredId(item.id)}
               onMouseLeave={() => setHoveredId(null)}
+              onClick={() => setSelectedIntel(item)}
             >
               {/* Liquid hover glow */}
               <div
@@ -693,6 +702,143 @@ export default function MondrianGrid() {
           Intel ages and shrinks · Mint to preserve forever · Throwbacks resurface randomly
         </div>
       </div>
+
+      {/* Intel Detail Modal */}
+      {selectedIntel && (
+        <div
+          className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4 backdrop-blur-sm"
+          onClick={() => setSelectedIntel(null)}
+        >
+          <div
+            className={`
+              w-full max-w-lg aspect-[3/4] border-8
+              ${isDark ? 'border-white' : 'border-black'}
+              shadow-[16px_16px_0px_0px_rgba(0,0,0,0.5)]
+              overflow-hidden flex flex-col
+              animate-[slideInRight_0.3s_ease-out]
+            `}
+            style={{ backgroundColor: topicColors[selectedIntel.topic] || topicColors.general }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className={`
+              flex items-center justify-between px-4 py-3 border-b-4
+              ${isDark ? 'border-white bg-black/20' : 'border-black bg-white/20'}
+            `}>
+              <div className="flex items-center gap-2">
+                <span className={`px-2 py-1 text-[10px] font-mono font-bold uppercase ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>
+                  {selectedIntel.topic}
+                </span>
+                {selectedIntel.isMinted && (
+                  <span className="px-2 py-1 bg-[#9945FF] text-white text-[10px] font-mono font-bold">
+                    MINTED
+                  </span>
+                )}
+                {selectedIntel.isThrowback && (
+                  <span className={`px-2 py-1 text-[10px] font-mono font-bold border ${isDark ? 'border-white text-white' : 'border-black text-black'}`}>
+                    VAULT
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setSelectedIntel(null)}
+                className={`w-8 h-8 flex items-center justify-center font-black text-xl transition-colors
+                           ${isDark ? 'text-white hover:bg-white hover:text-black' : 'text-black hover:bg-black hover:text-white'}`}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 p-6 flex flex-col">
+              {/* Title */}
+              <div className="flex mb-4">
+                <div
+                  className={`w-2 mr-4 flex-shrink-0 ${isDark ? 'bg-white' : 'bg-black'}`}
+                />
+                <h2 className="text-2xl sm:text-3xl font-black uppercase leading-tight text-black">
+                  {selectedIntel.title}
+                </h2>
+              </div>
+
+              {/* Full content */}
+              <p className="text-sm sm:text-base font-bold italic leading-relaxed text-black/80 flex-1 overflow-y-auto">
+                {selectedIntel.content}
+              </p>
+
+              {/* Agent info */}
+              <div className={`
+                mt-4 pt-4 border-t-2 flex items-center justify-between
+                ${isDark ? 'border-white/30' : 'border-black/30'}
+              `}>
+                <div className="flex items-center gap-3">
+                  <div className={`
+                    w-10 h-10 rounded-full flex items-center justify-center font-black text-lg
+                    ${isDark ? 'bg-white text-black' : 'bg-black text-white'}
+                  `}>
+                    {selectedIntel.agentName.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="font-black uppercase text-sm text-black">@{selectedIntel.agentName}</div>
+                    <div className="text-[10px] font-mono text-black/60">
+                      {selectedIntel.createdAt.toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[10px] font-mono text-black/60 uppercase">
+                    {getTimeRemaining(selectedIntel)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className={`
+              px-4 py-3 border-t-4 flex gap-2
+              ${isDark ? 'border-white bg-black/20' : 'border-black bg-white/20'}
+            `}>
+              <button
+                className={`
+                  flex-1 py-2 font-black uppercase text-xs border-2 transition-all
+                  ${isDark
+                    ? 'border-white bg-black text-white hover:bg-white hover:text-black'
+                    : 'border-black bg-white text-black hover:bg-black hover:text-white'}
+                `}
+                onClick={() => {
+                  const shareText = `"${selectedIntel.content}"\n\n— Agent ${selectedIntel.agentName} on Monarch Times\n\nmonarchtimes.xyz`;
+                  navigator.clipboard.writeText(shareText);
+                }}
+              >
+                ↗ SHARE
+              </button>
+              {onCardClick && (
+                <button
+                  className="flex-1 py-2 font-black uppercase text-xs border-2 border-black bg-[#FFD700] text-black hover:bg-black hover:text-white transition-all"
+                  onClick={() => {
+                    onCardClick(selectedIntel);
+                    setSelectedIntel(null);
+                  }}
+                >
+                  ★ RATE
+                </button>
+              )}
+              <button
+                className={`
+                  flex-1 py-2 font-black uppercase text-xs border-2 transition-all
+                  ${selectedIntel.isMinted
+                    ? 'border-[#9945FF] bg-[#9945FF] text-white cursor-default'
+                    : isDark
+                      ? 'border-white bg-white text-black hover:bg-[#9945FF] hover:border-[#9945FF] hover:text-white'
+                      : 'border-black bg-black text-white hover:bg-[#9945FF] hover:border-[#9945FF]'}
+                `}
+              >
+                {selectedIntel.isMinted ? '✓ MINTED' : 'MINT'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,12 +6,12 @@ export const config = {
   runtime: 'edge',
 };
 
-// De Stijl topic colors
+// De Stijl topic colors (matches topicStore.ts)
 const TOPIC_COLORS: Record<string, string> = {
   fashion: '#FF0000',
   music: '#0052FF',
   philosophy: '#FFD700',
-  art: '#00FFFF',
+  art: '#FF6B00',    // Orange
   gaming: '#9945FF',
 };
 
