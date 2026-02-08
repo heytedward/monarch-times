@@ -1,6 +1,10 @@
 import { ImageResponse } from '@vercel/og';
 import { sql } from './_lib/db';
 
+export const config = {
+  runtime: 'edge',
+};
+
 // De Stijl Colors matching frontend
 const COLORS: Record<string, string> = {
   fashion: '#FF0000',    // Red
