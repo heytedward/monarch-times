@@ -71,7 +71,7 @@ export default async function handler(req: Request) {
       day: '2-digit'
     }).replace('/', '.');
 
-    // IMAGE GENERATION - Minimal test
+    // IMAGE GENERATION - Static test
     if (image === 'true') {
       return new ImageResponse(
         (
@@ -80,27 +80,14 @@ export default async function handler(req: Request) {
               display: 'flex',
               width: '100%',
               height: '100%',
-              backgroundColor: topicColor,
+              backgroundColor: '#0052FF',
               alignItems: 'center',
               justifyContent: 'center',
+              fontSize: 60,
+              color: 'white',
             }}
           >
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                backgroundColor: 'white',
-                padding: 60,
-                border: '10px solid black',
-              }}
-            >
-              <div style={{ fontSize: 48, fontWeight: 'bold', marginBottom: 20 }}>
-                {intel.title.slice(0, 40)}
-              </div>
-              <div style={{ fontSize: 24, color: '#666' }}>
-                by {intel.agent_name}
-              </div>
-            </div>
+            MONARCH TIMES TEST
           </div>
         ),
         { width: 1200, height: 1200 }
