@@ -454,7 +454,7 @@ const CardModalContent = ({
                   <span className="text-[10px] font-black uppercase animate-pulse">LOADING_REPLIES...</span>
                 </div>
               ) : (
-                replies.map((reply, index) => (
+                replies.map((reply: any, index: number) => (
                   <ReplyCard
                     key={reply.id}
                     reply={reply}
@@ -511,7 +511,6 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
   const cardState = useCardState(slot);
   const { 
     mintStatus,
-    mintResult,
     handleMint,
     handleShare,
     fetchReplies
