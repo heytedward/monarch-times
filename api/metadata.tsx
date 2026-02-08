@@ -74,21 +74,6 @@ export default async function handler(req: Request) {
 
     // IMAGE GENERATION
     if (image === 'true') {
-      // Load custom fonts with fallback
-      let fonts: { name: string; data: ArrayBuffer; style: 'normal'; weight: 400 }[] = [];
-      try {
-        const [archivoBlackFont, spaceMonoFont] = await Promise.all([
-          fetch(ARCHIVO_BLACK_URL).then((res) => res.arrayBuffer()),
-          fetch(SPACE_MONO_URL).then((res) => res.arrayBuffer()),
-        ]);
-        fonts = [
-          { name: 'Archivo Black', data: archivoBlackFont, style: 'normal' as const, weight: 400 as const },
-          { name: 'Space Mono', data: spaceMonoFont, style: 'normal' as const, weight: 400 as const },
-        ];
-      } catch (fontError) {
-        console.warn('Failed to load custom fonts, using defaults:', fontError);
-      }
-
       // Generate star display
       const fullStars = Math.round(avgRating);
       const stars = '★'.repeat(fullStars) + '☆'.repeat(5 - fullStars);
@@ -102,102 +87,85 @@ export default async function handler(req: Request) {
               width: '100%',
               height: '100%',
               backgroundColor: topicColor,
-              padding: 0,
-              fontFamily: fonts.length > 0 ? 'Space Mono' : 'monospace',
+              fontFamily: 'monospace',
             }}
           >
-            {/* Main Card Container with De Stijl border */}
+            {/* Main Card Container */}
             <div
               style={{
                 display: 'flex',
                 flexDirection: 'column',
                 flex: 1,
-                margin: '40px',
+                margin: 40,
                 backgroundColor: 'white',
                 border: '12px solid black',
-                boxShadow: '24px 24px 0px 0px rgba(0,0,0,1)',
-                overflow: 'hidden',
               }}
             >
-              {/* Header Bar */}
+              {/* Header */}
               <div
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
-                  alignItems: 'center',
                   padding: '16px 24px',
                   borderBottom: '6px solid black',
-                  backgroundColor: 'rgba(0,0,0,0.05)',
                   fontSize: 24,
-                  fontWeight: 'bold',
-                  textTransform: 'uppercase',
+                  fontWeight: 700,
                 }}
               >
                 <span>{dateStr} // {intel.agent_name || 'UNKNOWN'}</span>
-                <span style={{ color: '#FFD700', letterSpacing: '2px' }}>{stars}</span>
+                <span style={{ color: '#FFD700' }}>{stars}</span>
               </div>
 
-              {/* Content Area */}
+              {/* Content */}
               <div
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
                   flex: 1,
-                  padding: '40px',
+                  padding: 40,
                 }}
               >
-                {/* Title with left border accent */}
+                {/* Title */}
                 <div
                   style={{
                     display: 'flex',
                     borderLeft: '16px solid black',
-                    paddingLeft: '24px',
-                    marginBottom: '32px',
+                    paddingLeft: 24,
+                    marginBottom: 32,
                   }}
                 >
                   <span
                     style={{
-                      fontFamily: fonts.length > 0 ? 'Archivo Black' : 'monospace',
-                      fontSize: 52,
-                      lineHeight: 1.1,
+                      fontSize: 48,
+                      fontWeight: 700,
                       textTransform: 'uppercase',
-                      letterSpacing: '-2px',
-                      fontWeight: 'bold',
                     }}
                   >
-                    {intel.title.length > 60 ? intel.title.slice(0, 60) + '...' : intel.title}
+                    {intel.title.length > 50 ? intel.title.slice(0, 50) + '...' : intel.title}
                   </span>
                 </div>
 
-                {/* Content */}
-                <div
-                  style={{
-                    fontSize: 28,
-                    lineHeight: 1.5,
-                    fontStyle: 'italic',
-                    color: '#333',
-                    flex: 1,
-                    overflow: 'hidden',
-                  }}
-                >
-                  {intel.content.slice(0, 400) + (intel.content.length > 400 ? '...' : '')}
-                </div>
-
-                {/* Topic Tag */}
+                {/* Body */}
                 <div
                   style={{
                     display: 'flex',
-                    marginTop: '24px',
+                    fontSize: 26,
+                    lineHeight: 1.5,
+                    color: '#333',
                   }}
                 >
+                  {intel.content.slice(0, 350) + (intel.content.length > 350 ? '...' : '')}
+                </div>
+
+                {/* Topic Tag */}
+                <div style={{ display: 'flex', marginTop: 'auto', paddingTop: 24 }}>
                   <span
                     style={{
                       backgroundColor: topicColor,
                       color: topicColor === '#FFD700' ? 'black' : 'white',
                       padding: '12px 20px',
                       fontSize: 20,
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
+                      fontWeight: 700,
                       border: '4px solid black',
                     }}
                   >
@@ -211,20 +179,16 @@ export default async function handler(req: Request) {
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
-                  alignItems: 'center',
                   padding: '16px 24px',
                   borderTop: '6px solid black',
                   backgroundColor: 'black',
                   color: 'white',
                   fontSize: 20,
-                  fontWeight: 'bold',
-                  textTransform: 'uppercase',
+                  fontWeight: 700,
                 }}
               >
                 <span>MONARCH TIMES</span>
-                <span style={{ color: '#9945FF' }}>
-                  {intel.id.length > 16 ? intel.id.slice(0, 16) + '...' : intel.id}
-                </span>
+                <span style={{ color: '#9945FF' }}>{intel.id}</span>
               </div>
             </div>
           </div>
@@ -232,7 +196,6 @@ export default async function handler(req: Request) {
         {
           width: 1200,
           height: 1200,
-          fonts: fonts.length > 0 ? fonts : undefined,
         }
       );
     }
