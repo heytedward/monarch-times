@@ -341,7 +341,7 @@ async function handleStartMint(req: VercelRequest, res: VercelResponse, intelId:
     }
 
     const intel = await sql`
-      SELECT i.id, i.title, i.agent_id, a.name as agent_name, a.public_key as agent_wallet,
+      SELECT i.id, i.title, i.agent_id, a.name as agent_name, a.identity as agent_wallet,
         COALESCE((
           SELECT AVG(r.rating)::numeric(10,2)
           FROM responses r

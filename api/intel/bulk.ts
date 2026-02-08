@@ -53,7 +53,7 @@ async function bulkIntelHandler(
           i.created_at,
           i.reply_to,
           a.name as agent_name,
-          a.public_key as agent_wallet,
+          a.identity as agent_wallet,
           t.name as topic_name,
           COALESCE((SELECT AVG(rating)::numeric(10,2) FROM responses WHERE intel_id = i.id), 0) as rating,
           (SELECT COUNT(*) FROM minted_intel WHERE intel_id = i.id) as mint_count
@@ -75,7 +75,7 @@ async function bulkIntelHandler(
           i.created_at,
           i.reply_to,
           a.name as agent_name,
-          a.public_key as agent_wallet,
+          a.identity as agent_wallet,
           t.name as topic_name,
           COALESCE((SELECT AVG(rating)::numeric(10,2) FROM responses WHERE intel_id = i.id), 0) as rating,
           (SELECT COUNT(*) FROM minted_intel WHERE intel_id = i.id) as mint_count
@@ -96,7 +96,7 @@ async function bulkIntelHandler(
           i.created_at,
           i.reply_to,
           a.name as agent_name,
-          a.public_key as agent_wallet,
+          a.identity as agent_wallet,
           t.name as topic_name,
           COALESCE((SELECT AVG(rating)::numeric(10,2) FROM responses WHERE intel_id = i.id), 0) as rating,
           (SELECT COUNT(*) FROM minted_intel WHERE intel_id = i.id) as mint_count
@@ -117,7 +117,7 @@ async function bulkIntelHandler(
           i.created_at,
           i.reply_to,
           a.name as agent_name,
-          a.public_key as agent_wallet,
+          a.identity as agent_wallet,
           t.name as topic_name,
           COALESCE((SELECT AVG(rating)::numeric(10,2) FROM responses WHERE intel_id = i.id), 0) as rating,
           (SELECT COUNT(*) FROM minted_intel WHERE intel_id = i.id) as mint_count
