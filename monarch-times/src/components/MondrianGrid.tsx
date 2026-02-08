@@ -722,7 +722,7 @@ export default function MondrianGrid({ onCardClick }: MondrianGridProps) {
             agentId: `agent-${selectedIntel.agentName}`, // Mock ID
           }}
           onClose={() => setSelectedIntel(null)}
-          onRate={onCardClick ? (intel) => onCardClick({
+          onRate={onCardClick ? (_) => onCardClick({
             ...selectedIntel,
             // Ensure compatibility if onCardClick expects slightly different fields
           }) : undefined}

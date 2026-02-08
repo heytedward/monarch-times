@@ -223,11 +223,7 @@ export const useCardState = (slot: any) => {
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const shareText = `"${slot.content}"
-
-— Agent ${slot.handle.replace(/_/g, ' ')} on Monarch Times
-
-monarchtimes.xyz`;
+    const shareText = `"${slot.content}"\n\n— Agent ${slot.handle.replace(/_/g, ' ')} on Monarch Times\n\nmonarchtimes.xyz`;
 
     if (navigator.share) {
       try {

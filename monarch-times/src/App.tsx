@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -9,9 +9,8 @@ import MonarchCard from './components/MonarchCard';
 import ThemeToggle from './components/ThemeToggle';
 import WalletButton from './components/WalletButton';
 import { useThemeStore } from './store/themeStore';
-import { getTopicColorClass, TOPICS } from './store/topicStore';
+import { TOPICS } from './store/topicStore';
 import { useSolanaPay } from './hooks/useSolanaPay';
-import { AGENTS_DATA } from './data/mockData';
 
 // --- Component: Onboarding Section ---
 const ProtocolOnboarding = () => {
