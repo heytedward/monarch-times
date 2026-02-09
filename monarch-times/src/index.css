@@ -254,20 +254,20 @@ h1 {
   opacity: 0.7;
 }
 
-/* COMMON - no effect (0 stars / no ratings) */
-[data-rarity="common"] .card__shine,
-[data-rarity="common"] .card__glare {
+/* LARVA - no effect (0 stars / unrated) */
+[data-rarity="larva"] .card__shine,
+[data-rarity="larva"] .card__glare {
   display: none;
 }
 
-/* GALAXY - no effect (< 1.5 stars) */
-[data-rarity="galaxy"] .card__shine,
-[data-rarity="galaxy"] .card__glare {
+/* CATERPILLAR - no effect (1 star) */
+[data-rarity="caterpillar"] .card__shine,
+[data-rarity="caterpillar"] .card__glare {
   display: none;
 }
 
-/* AMAZING RARE - rainbow with grain (1.5 - 2.5 stars) */
-[data-rarity="amazing"] .card__shine {
+/* CHRYSALIS - rainbow shimmer (2 stars) */
+[data-rarity="chrysalis"] .card__shine {
   background:
     repeating-linear-gradient(
       133deg,
@@ -281,8 +281,8 @@ h1 {
   mix-blend-mode: overlay;
 }
 
-/* TRAINER GALLERY - diagonal color shift (2.5 - 3.5 stars) */
-[data-rarity="trainer-gallery"] .card__shine {
+/* EMERGENCE - diagonal color shift (3 stars) */
+[data-rarity="emergence"] .card__shine {
   background: repeating-linear-gradient(
     -22deg,
     rgba(174,102,202,0.75) 0%,
@@ -298,8 +298,8 @@ h1 {
   filter: brightness(0.7) contrast(2) saturate(1.1);
 }
 
-/* VMAX - subtle diagonal shift (3.5 - 4.5 stars) */
-[data-rarity="vmax"] .card__shine {
+/* PAPILLON - iridescent wings (4 stars) */
+[data-rarity="papillon"] .card__shine {
   background: repeating-linear-gradient(
     -22deg,
     rgba(174,102,202,0.5) 0%,
@@ -315,27 +315,27 @@ h1 {
   filter: brightness(0.8) contrast(1.5) saturate(0.8);
 }
 
-[data-rarity="vmax"] .card__glare {
+[data-rarity="papillon"] .card__glare {
   display: none;
 }
 
-/* FULL ART - subtle diagonal shift (4.5 - 5 stars) */
-[data-rarity="full-art"] .card__shine {
+/* MONARCH - full holographic (5 stars) */
+[data-rarity="monarch"] .card__shine {
   background: repeating-linear-gradient(
     -22deg,
-    rgba(174,102,202,0.5) 0%,
-    rgba(228,77,72,0.5) 14%,
-    rgba(216,197,55,0.5) 28%,
-    rgba(124,201,62,0.5) 42%,
-    rgba(80,177,170,0.5) 56%,
-    rgba(136,160,255,0.5) 70%,
-    rgba(176,105,204,0.5) 84%
+    rgba(255,140,0,0.6) 0%,
+    rgba(255,69,0,0.6) 14%,
+    rgba(255,215,0,0.6) 28%,
+    rgba(255,165,0,0.6) 42%,
+    rgba(255,99,71,0.6) 56%,
+    rgba(255,140,0,0.6) 70%,
+    rgba(255,69,0,0.6) 84%
   );
   background-size: 200% 400%;
   background-position: 0% var(--posy);
-  filter: brightness(0.8) contrast(1.5) saturate(0.8);
+  filter: brightness(0.9) contrast(1.8) saturate(1.2);
 }
 
-[data-rarity="full-art"] .card__glare {
+[data-rarity="monarch"] .card__glare {
   display: none;
 }

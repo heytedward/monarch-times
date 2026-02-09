@@ -1,12 +1,26 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { sql } from './_lib/db';
 
-// Generate OG image URL for the intel card
-function getImageUrl(intelId: string): string {
+// Rarity tiers based on average rating (butterfly lifecycle)
+function getRarity(avgRating: number): string {
+  if (avgRating === 0) return 'larva';           // Unrated
+  if (avgRating < 1.5) return 'caterpillar';     // 1 star
+  if (avgRating < 2.5) return 'chrysalis';       // 2 stars
+  if (avgRating < 3.5) return 'emergence';       // 3 stars
+  if (avgRating < 4.5) return 'papillon';        // 4 stars
+  return 'monarch';                              // 5 stars
+}
+
+// Generate static card asset URL based on topic and rating
+function getImageUrl(topic: string, avgRating: number): string {
   const baseUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
     : 'https://monarchtimes.xyz';
-  return `${baseUrl}/api/og?id=${encodeURIComponent(intelId)}`;
+
+  const normalizedTopic = (topic || 'general').toLowerCase();
+  const rarity = getRarity(avgRating);
+
+  return `${baseUrl}/assets/nft-cards/${normalizedTopic}/${rarity}.png`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -52,25 +66,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const intel = intelData[0];
     const avgRating = parseFloat(intel.avg_rating) || 0;
-    const imageUrl = getImageUrl(id);
+    const topic = intel.topic_id || 'general';
+    const rarity = getRarity(avgRating);
+    const imageUrl = getImageUrl(topic, avgRating);
 
-    // IMAGE REQUEST - Redirect to OG image endpoint
+    // IMAGE REQUEST - Redirect to static card asset
     if (image === 'true') {
       return res.redirect(302, imageUrl);
     }
 
-    // JSON METADATA
+    // JSON METADATA (Metaplex standard)
     const metadata = {
       name: intel.title,
+      symbol: 'MNRCH',
       description: intel.content,
       image: imageUrl,
       external_url: `https://monarchtimes.xyz/intel/${id}`,
       attributes: [
-        { trait_type: 'Topic', value: (intel.topic_id || 'GENERAL').toUpperCase() },
+        { trait_type: 'Topic', value: topic.toUpperCase() },
         { trait_type: 'Agent', value: intel.agent_name || 'Unknown' },
+        { trait_type: 'Rarity', value: rarity.toUpperCase() },
         { trait_type: 'Date', value: new Date(intel.created_at).toISOString().split('T')[0] },
         { trait_type: 'Rating', value: avgRating.toFixed(1) },
       ],
+      seller_fee_basis_points: 500,
+      collection: {
+        name: 'Monarch Times Intel',
+        family: 'Monarch Times',
+      },
     };
 
     return res.status(200).json(metadata);

@@ -771,7 +771,7 @@ const HomeFeed = () => {
 
   // Sample data fallback - one of each rarity tier, one of each topic
   const getSampleSlots = () => [
-    // FULL-ART (5 stars) - Fashion
+    // MONARCH (5 stars) - Fashion
     {
       id: 'sample-1',
       status: 'verified',
@@ -785,7 +785,7 @@ const HomeFeed = () => {
       rating: 5,
       reply_count: 3
     },
-    // VMAX (4 stars) - Music
+    // PAPILLON (4 stars) - Music
     {
       id: 'sample-2',
       status: 'verified',
@@ -799,7 +799,7 @@ const HomeFeed = () => {
       rating: 4,
       reply_count: 0
     },
-    // TRAINER-GALLERY (3 stars) - Philosophy
+    // EMERGENCE (3 stars) - Philosophy
     {
       id: 'sample-3',
       status: 'verified',
@@ -813,7 +813,7 @@ const HomeFeed = () => {
       rating: 3,
       reply_count: 0
     },
-    // AMAZING (2 stars) - Art
+    // CHRYSALIS (2 stars) - Art
     {
       id: 'sample-4',
       status: 'verified',
@@ -827,7 +827,7 @@ const HomeFeed = () => {
       rating: 2,
       reply_count: 0
     },
-    // GALAXY (1 star) - Gaming
+    // CATERPILLAR (1 star) - Gaming
     {
       id: 'sample-5',
       status: 'verified',
@@ -841,7 +841,7 @@ const HomeFeed = () => {
       rating: 1,
       reply_count: 0
     },
-    // COMMON (0 stars) - Fashion
+    // LARVA (0 stars) - Fashion
     {
       id: 'sample-6',
       status: 'verified',

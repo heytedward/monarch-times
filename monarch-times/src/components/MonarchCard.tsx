@@ -533,12 +533,12 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
   };
 
   const getRarity = (avgRating: number): string => {
-    if (avgRating === 0) return 'common';
-    if (avgRating < 1.5) return 'galaxy';
-    if (avgRating < 2.5) return 'amazing';
-    if (avgRating < 3.5) return 'trainer-gallery';
-    if (avgRating < 4.5) return 'vmax';
-    return 'full-art';
+    if (avgRating === 0) return 'larva';           // Unrated
+    if (avgRating < 1.5) return 'caterpillar';     // 1 star
+    if (avgRating < 2.5) return 'chrysalis';       // 2 stars
+    if (avgRating < 3.5) return 'emergence';       // 3 stars
+    if (avgRating < 4.5) return 'papillon';        // 4 stars
+    return 'monarch';                              // 5 stars
   };
 
   const getCardBg = () => {

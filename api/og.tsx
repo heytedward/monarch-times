@@ -11,15 +11,25 @@ const TOPIC_COLORS: Record<string, string> = {
   fashion: '#FF0000',
   music: '#0052FF',
   philosophy: '#FFD700',
-  art: '#FF6B00',    // Orange
+  art: '#FF6B00',
   gaming: '#9945FF',
+  general: '#FFFFFF',
 };
 
-// Get star display for rating
-function getStars(rating: number): string {
-  const fullStars = Math.floor(rating);
-  const hasHalf = rating - fullStars >= 0.5;
-  return '★'.repeat(fullStars) + (hasHalf ? '☆' : '') + '☆'.repeat(5 - fullStars - (hasHalf ? 1 : 0));
+// Rarity tiers based on average rating (butterfly lifecycle)
+function getRarity(avgRating: number): string {
+  if (avgRating === 0) return 'larva';
+  if (avgRating < 1.5) return 'caterpillar';
+  if (avgRating < 2.5) return 'chrysalis';
+  if (avgRating < 3.5) return 'emergence';
+  if (avgRating < 4.5) return 'papillon';
+  return 'monarch';
+}
+
+// Get filled/empty stars display
+function getFilledStars(rating: number): { filled: number; empty: number } {
+  const filled = Math.round(rating);
+  return { filled, empty: 5 - filled };
 }
 
 export default async function handler(req: VercelRequest) {
@@ -53,14 +63,20 @@ export default async function handler(req: VercelRequest) {
     }
 
     const intel = intelData[0];
-    const topicId = (intel.topic_id || 'art').toLowerCase();
-    const topicColor = TOPIC_COLORS[topicId] || '#00FFFF';
+    const topicId = (intel.topic_id || 'general').toLowerCase();
+    const topicColor = TOPIC_COLORS[topicId] || '#FFFFFF';
     const avgRating = parseFloat(intel.avg_rating) || 0;
-    const stars = getStars(avgRating);
+    const rarity = getRarity(avgRating);
+    const { filled, empty } = getFilledStars(avgRating);
+
+    // Text color based on background
+    const isLightBg = topicId === 'philosophy' || topicId === 'general';
+    const textColor = isLightBg ? '#000' : '#000';
+    const starFillColor = topicId === 'general' ? '#FF0000' : '#000';
 
     // Truncate content for display
-    const contentPreview = intel.content.length > 200
-      ? intel.content.slice(0, 200) + '...'
+    const contentPreview = intel.content.length > 180
+      ? intel.content.slice(0, 180) + '...'
       : intel.content;
 
     return new ImageResponse(
@@ -71,192 +87,156 @@ export default async function handler(req: VercelRequest) {
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            backgroundColor: '#FFFEF5',
+            backgroundColor: '#000',
+            padding: '16px',
             fontFamily: 'system-ui, sans-serif',
           }}
         >
-          {/* Top color bar */}
-          <div
-            style={{
-              width: '100%',
-              height: '80px',
-              backgroundColor: topicColor,
-              borderBottom: '8px solid #000',
-            }}
-          />
-
-          {/* Main content area */}
+          {/* Inner card */}
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
               flex: 1,
-              padding: '48px',
-              borderLeft: '8px solid #000',
-              borderRight: '8px solid #000',
+              backgroundColor: topicColor,
+              border: '8px solid #000',
             }}
           >
-            {/* Header with logo and topic */}
+            {/* Top banner with stars */}
             <div
               style={{
                 display: 'flex',
-                justifyContent: 'space-between',
+                justifyContent: 'flex-end',
                 alignItems: 'center',
-                marginBottom: '32px',
+                padding: '24px 32px',
+                borderBottom: '6px solid #000',
               }}
             >
-              <div
+              {/* Stars */}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {Array.from({ length: filled }).map((_, i) => (
+                  <span key={`filled-${i}`} style={{ fontSize: '48px', color: starFillColor }}>★</span>
+                ))}
+                {Array.from({ length: empty }).map((_, i) => (
+                  <span key={`empty-${i}`} style={{ fontSize: '48px', color: 'rgba(255,255,255,0.5)' }}>★</span>
+                ))}
+              </div>
+            </div>
+
+            {/* MONARCH TIMES header */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                padding: '24px',
+                borderBottom: '6px solid #000',
+              }}
+            >
+              <span
                 style={{
-                  fontSize: '48px',
+                  fontSize: '56px',
                   fontWeight: 900,
-                  letterSpacing: '-2px',
-                  color: '#000',
+                  letterSpacing: '4px',
+                  color: textColor,
                 }}
               >
                 MONARCH TIMES
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  backgroundColor: topicColor,
-                  color: topicId === 'philosophy' ? '#000' : '#fff',
-                  padding: '12px 24px',
-                  fontSize: '24px',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  border: '4px solid #000',
-                }}
-              >
-                {topicId}
-              </div>
+              </span>
             </div>
 
-            {/* Title with left accent */}
+            {/* Main content area */}
             <div
               style={{
                 display: 'flex',
-                marginBottom: '32px',
-              }}
-            >
-              <div
-                style={{
-                  width: '12px',
-                  backgroundColor: topicColor,
-                  marginRight: '24px',
-                  flexShrink: 0,
-                }}
-              />
-              <div
-                style={{
-                  fontSize: '72px',
-                  fontWeight: 900,
-                  lineHeight: 1.1,
-                  color: '#000',
-                  letterSpacing: '-1px',
-                }}
-              >
-                {intel.title}
-              </div>
-            </div>
-
-            {/* Content preview */}
-            <div
-              style={{
-                fontSize: '32px',
-                lineHeight: 1.5,
-                color: '#333',
-                marginBottom: '48px',
+                flexDirection: 'column',
                 flex: 1,
+                padding: '40px',
               }}
             >
-              {contentPreview}
-            </div>
-
-            {/* Footer with agent and rating */}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderTop: '4px solid #000',
-                paddingTop: '24px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
-                }}
-              >
+              {/* Vertical accent line + Title */}
+              <div style={{ display: 'flex', marginBottom: '32px' }}>
                 <div
                   style={{
-                    width: '64px',
-                    height: '64px',
+                    width: '8px',
                     backgroundColor: '#000',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontSize: '28px',
-                    fontWeight: 700,
+                    marginRight: '24px',
+                    minHeight: '100px',
                   }}
-                >
-                  {(intel.agent_name || 'A').charAt(0).toUpperCase()}
-                </div>
+                />
                 <div
                   style={{
-                    fontSize: '28px',
-                    fontWeight: 700,
-                    color: '#000',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flex: 1,
                   }}
                 >
-                  {intel.agent_name || 'Anonymous'}
+                  <span
+                    style={{
+                      fontSize: '52px',
+                      fontWeight: 900,
+                      lineHeight: 1.1,
+                      color: textColor,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {intel.title}
+                  </span>
                 </div>
               </div>
+
+              {/* Content preview */}
+              <div
+                style={{
+                  fontSize: '28px',
+                  lineHeight: 1.6,
+                  color: textColor,
+                  opacity: 0.8,
+                  flex: 1,
+                }}
+              >
+                {contentPreview}
+              </div>
+
+              {/* Footer with agent and rarity */}
               <div
                 style={{
                   display: 'flex',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
-                  gap: '12px',
+                  marginTop: '32px',
+                  paddingTop: '24px',
+                  borderTop: '4px solid rgba(0,0,0,0.3)',
                 }}
               >
-                <div
-                  style={{
-                    fontSize: '32px',
-                    color: '#FFD700',
-                    letterSpacing: '4px',
-                  }}
-                >
-                  {stars}
-                </div>
-                <div
+                <span
                   style={{
                     fontSize: '28px',
                     fontWeight: 700,
-                    color: '#000',
+                    color: textColor,
                   }}
                 >
-                  {avgRating.toFixed(1)}
-                </div>
+                  @{intel.agent_name || 'Anonymous'}
+                </span>
+                <span
+                  style={{
+                    fontSize: '24px',
+                    fontWeight: 700,
+                    color: textColor,
+                    backgroundColor: 'rgba(0,0,0,0.2)',
+                    padding: '8px 16px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {rarity}
+                </span>
               </div>
             </div>
           </div>
-
-          {/* Bottom bar */}
-          <div
-            style={{
-              width: '100%',
-              height: '40px',
-              backgroundColor: '#000',
-            }}
-          />
         </div>
       ),
       {
-        width: 1200,
-        height: 1200,
+        width: 1000,
+        height: 1400,
       }
     );
   } catch (error: any) {
