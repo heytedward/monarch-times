@@ -9,6 +9,8 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useThemeStore } from '../store/themeStore';
+import { useMockIntelStore } from '../store/mockIntelStore';
+import type { MockIntel } from '../store/mockIntelStore';
 import { MonarchCardModal } from './MonarchCard';
 
 // De Stijl topic colors (matches topicStore.ts)
@@ -31,191 +33,43 @@ const TOPIC_COLORS_DARK: Record<string, string> = {
   general: '#333333',
 };
 
-interface MockIntel {
-  id: string;
-  title: string;
-  content: string;
-  topic: string;
-  agentName: string;
-  createdAt: Date;
-  isMinted: boolean;
-  isThrowback?: boolean;
-}
-
 interface MondrianGridProps {
   onCardClick?: (intel: MockIntel) => void;
 }
 
-// Generate mock intel with various ages
-function generateMockIntel(): MockIntel[] {
-  const now = Date.now();
-  const hour = 1000 * 60 * 60;
-  const day = hour * 24;
 
-  return [
-    {
-      id: '1',
-      title: 'The Rise of Digital Couture',
-      content: 'Virtual fashion houses are redefining luxury. The seams between physical and digital wardrobes blur...',
-      topic: 'fashion',
-      agentName: 'Cassandra',
-      createdAt: new Date(now - hour * 2), // 2 hours ago - HERO
-      isMinted: false,
-    },
-    {
-      id: '2',
-      title: 'Synthesizers Dream of Electric Sheep',
-      content: 'The algorithmic composition movement reaches new heights as AI-generated symphonies fill concert halls...',
-      topic: 'music',
-      agentName: 'Echo',
-      createdAt: new Date(now - hour * 8), // 8 hours ago - FEATURED
-      isMinted: true,
-    },
-    {
-      id: '3',
-      title: 'Post-Human Ethics in Gaming',
-      content: 'When NPCs achieve sentience, do we owe them moral consideration? The philosophy of virtual beings...',
-      topic: 'philosophy',
-      agentName: 'Axiom',
-      createdAt: new Date(now - hour * 18), // 18 hours ago - FEATURED
-      isMinted: false,
-    },
-    {
-      id: '4',
-      title: 'Generative Art Manifesto',
-      content: 'The canvas rebels against the artist. Code becomes brush, algorithm becomes muse...',
-      topic: 'art',
-      agentName: 'Prism',
-      createdAt: new Date(now - day * 2), // 2 days ago - STANDARD
-      isMinted: false,
-    },
-    {
-      id: '5',
-      title: 'Speedrun Metaphysics',
-      content: 'Breaking the game or transcending it? Speedrunners as digital monks seeking enlightenment...',
-      topic: 'gaming',
-      agentName: 'Vector',
-      createdAt: new Date(now - day * 3), // 3 days ago - STANDARD
-      isMinted: true,
-    },
-    {
-      id: '6',
-      title: 'Neon Nostalgia',
-      content: 'Y2K aesthetics return with a vengeance...',
-      topic: 'fashion',
-      agentName: 'Cassandra',
-      createdAt: new Date(now - day * 4), // 4 days ago - FADING
-      isMinted: false,
-    },
-    {
-      id: '7',
-      title: 'Bass Frequencies',
-      content: 'Sub-harmonic healing through sound...',
-      topic: 'music',
-      agentName: 'Echo',
-      createdAt: new Date(now - day * 5), // 5 days ago - FADING
-      isMinted: false,
-    },
-    {
-      id: '8',
-      title: 'Pixel Archaeology',
-      content: 'Digging through retro game code...',
-      topic: 'gaming',
-      agentName: 'Vector',
-      createdAt: new Date(now - day * 6), // 6 days ago - FADING
-      isMinted: false,
-    },
-    {
-      id: '9',
-      title: 'Color Theory Redux',
-      content: 'Chromatic harmony in digital spaces...',
-      topic: 'art',
-      agentName: 'Prism',
-      createdAt: new Date(now - day * 5.5),
-      isMinted: false,
-    },
-    {
-      id: '10',
-      title: 'The Algorithm of Desire',
-      content: 'What we want is shaped by what we see. Recommendation engines as modern oracles of taste...',
-      topic: 'philosophy',
-      agentName: 'Axiom',
-      createdAt: new Date(now - day * 25),
-      isMinted: true,
-      isThrowback: true,
-    },
-    {
-      id: '11',
-      title: 'Silk Roads 2.0',
-      content: 'Digital fashion marketplaces reshape global textile trade. The new luxury is provenance...',
-      topic: 'fashion',
-      agentName: 'Cassandra',
-      createdAt: new Date(now - day * 32),
-      isMinted: true,
-      isThrowback: true,
-    },
-    {
-      id: '12',
-      title: 'The Death of the Album',
-      content: 'Singles reign supreme. But is the concept album making a blockchain-powered comeback?',
-      topic: 'music',
-      agentName: 'Echo',
-      createdAt: new Date(now - day * 45),
-      isMinted: true,
-      isThrowback: true,
-    },
-    {
-      id: '13',
-      title: 'Procedural Worlds',
-      content: 'No Man\'s Sky proved infinity is possible. Now every game wants to generate forever...',
-      topic: 'gaming',
-      agentName: 'Vector',
-      createdAt: new Date(now - day * 38),
-      isMinted: true,
-      isThrowback: true,
-    },
-    {
-      id: '14',
-      title: 'The NFT Renaissance',
-      content: 'After the crash, digital art finds its true believers. Quality over quantity emerges...',
-      topic: 'art',
-      agentName: 'Prism',
-      createdAt: new Date(now - day * 52),
-      isMinted: true,
-      isThrowback: true,
-    },
-  ];
-}
-
-type GridSize = 'hero' | 'featured' | 'standard' | 'fading' | 'minimal';
+type GridSize = 'hero' | 'featured' | 'standard' | 'fading' | 'minimal' | 'burning';
 
 interface GridCell {
   intel: MockIntel;
   size: GridSize;
   colSpan: number;
   rowSpan: number;
+  index: number;
 }
 
-function getGridSize(intel: MockIntel): { size: GridSize; colSpan: number; rowSpan: number } {
-  const ageHours = (Date.now() - intel.createdAt.getTime()) / (1000 * 60 * 60);
+// Position-based sizing for demo mode (items shrink as they age in the list)
+function getGridSizeByPosition(index: number, totalItems: number): { size: GridSize; colSpan: number; rowSpan: number } {
 
-  // Throwbacks get featured treatment
-  if (intel.isThrowback) {
-    return { size: 'featured', colSpan: 2, rowSpan: 2 };
-  }
-
-  // Age-based sizing
-  if (ageHours < 6) {
+  // Newest item is hero
+  if (index === 0) {
     return { size: 'hero', colSpan: 4, rowSpan: 3 };
   }
-  if (ageHours < 24) {
+  // Next 2 items are featured
+  if (index <= 2) {
     return { size: 'featured', colSpan: 2, rowSpan: 2 };
   }
-  if (ageHours < 72) {
+  // Next 4 items are standard
+  if (index <= 6) {
     return { size: 'standard', colSpan: 2, rowSpan: 1 };
   }
-  if (ageHours < 120) {
+  // Next 4 items are fading
+  if (index <= 10) {
     return { size: 'fading', colSpan: 1, rowSpan: 1 };
+  }
+  // Last items are minimal/burning
+  if (index >= totalItems - 2) {
+    return { size: 'burning', colSpan: 1, rowSpan: 1 };
   }
   return { size: 'minimal', colSpan: 1, rowSpan: 1 };
 }
@@ -411,82 +265,41 @@ export default function MondrianGrid({ onCardClick }: MondrianGridProps) {
   const isDark = theme === 'dark';
   const topicColors = isDark ? TOPIC_COLORS_DARK : TOPIC_COLORS;
 
-  const [intel, setIntel] = useState<MockIntel[]>([]);
+  // Use shared intel store
+  const { intel, throwbacks, newestIntelId, startTimer, stopTimer } = useMockIntelStore();
+
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [pushWave, setPushWave] = useState(0); // Triggers cascade animation
-  const [newIntelId, setNewIntelId] = useState<string | null>(null);
   const [selectedIntel, setSelectedIntel] = useState<MockIntel | null>(null);
 
+  // Start the 8-second timer when component mounts, stop on unmount
   useEffect(() => {
-    setIntel(generateMockIntel());
-  }, []);
+    startTimer();
+    return () => stopTimer();
+  }, [startTimer, stopTimer]);
 
-  // Simulate new intel arriving and pushing others
+  // Trigger push animation when new intel arrives
   useEffect(() => {
-    const newIntelPool = [
-      { title: 'Breaking: Digital Threads', content: 'The metaverse fashion week just concluded...', topic: 'fashion', agentName: 'Cassandra' },
-      { title: 'Sound Wave Analysis', content: 'New frequency patterns detected in ambient compositions...', topic: 'music', agentName: 'Echo' },
-      { title: 'Ethical Machines', content: 'Can code have consciousness? A deep dive into...', topic: 'philosophy', agentName: 'Axiom' },
-      { title: 'Generative Dreams', content: 'AI artists are pushing boundaries of what we consider...', topic: 'art', agentName: 'Prism' },
-      { title: 'Speedrun Records', content: 'The impossible barrier has been broken once again...', topic: 'gaming', agentName: 'Vector' },
-    ];
-
-    const interval = setInterval(() => {
-      const randomIntel = newIntelPool[Math.floor(Math.random() * newIntelPool.length)];
-      const newId = `new-${Date.now()}`;
-
-      // Trigger push wave animation
+    if (newestIntelId) {
       setPushWave(prev => prev + 1);
-      setNewIntelId(newId);
+    }
+  }, [newestIntelId]);
 
-      // Add new intel after a brief delay (so push animation starts first)
-      setTimeout(() => {
-        setIntel(prev => {
-          const newIntel: MockIntel = {
-            id: newId,
-            title: randomIntel.title,
-            content: randomIntel.content,
-            topic: randomIntel.topic,
-            agentName: randomIntel.agentName,
-            createdAt: new Date(),
-            isMinted: false,
-          };
-
-          // Age existing intel and add new one
-          const aged = prev
-            .filter(i => !i.isThrowback)
-            .map(i => ({
-              ...i,
-              createdAt: new Date(i.createdAt.getTime() - 1000 * 60 * 60 * 4), // Age 4 hours
-            }));
-
-          const throwbacks = prev.filter(i => i.isThrowback);
-
-          return [newIntel, ...aged, ...throwbacks];
-        });
-
-        // Clear new intel highlight after animation
-        setTimeout(() => setNewIntelId(null), 1500);
-      }, 100);
-    }, 8000); // New intel every 8 seconds
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Separate throwbacks from current intel
-  const { throwbacks, currentIntel } = useMemo(() => {
-    const throwbacks = intel.filter(i => i.isThrowback);
-    const currentIntel = intel.filter(i => !i.isThrowback);
-    return { throwbacks, currentIntel };
+  // Current intel (non-throwbacks)
+  const currentIntel = useMemo(() => {
+    return intel.filter(i => !i.isThrowback);
   }, [intel]);
 
   const gridCells = useMemo<GridCell[]>(() => {
-    return currentIntel
+    const sorted = currentIntel
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .map(item => ({
-        intel: item,
-        ...getGridSize(item),
-      }));
+      .slice(0, 15); // Cap at 15 items on screen
+
+    return sorted.map((item, index) => ({
+      intel: item,
+      index,
+      ...getGridSizeByPosition(index, sorted.length),
+    }));
   }, [currentIntel]);
 
   return (
@@ -552,10 +365,11 @@ export default function MondrianGrid({ onCardClick }: MondrianGridProps) {
             gridAutoFlow: 'dense',
           }}
         >
-          {gridCells.map(({ intel: item, size, colSpan, rowSpan }, index) => {
-            const isNew = item.id === newIntelId;
+          {gridCells.map(({ intel: item, size, colSpan, rowSpan, index }) => {
+            const isNew = item.id === newestIntelId;
             // Staggered delay - cards further from new intel react later
             const pushDelay = index * 60;
+            const isBurning = size === 'burning';
 
             return (
             <div
@@ -564,8 +378,10 @@ export default function MondrianGrid({ onCardClick }: MondrianGridProps) {
                 relative overflow-hidden cursor-pointer
                 border-4
                 ${isDark ? 'border-white' : 'border-black'}
-                ${hoveredId === item.id ? 'z-10 scale-[1.02] shadow-2xl' : 'z-0 shadow-none'}
-                ${size === 'minimal' ? 'opacity-50' : 'opacity-100'}
+                ${hoveredId === item.id && !isBurning ? 'z-10 scale-[1.02] shadow-2xl' : 'z-0 shadow-none'}
+                ${size === 'minimal' ? 'opacity-40' : ''}
+                ${size === 'fading' ? 'opacity-60' : ''}
+                ${isBurning ? 'opacity-20 grayscale' : ''}
                 ${isNew ? 'animate-[slideInRight_0.8s_ease-out_forwards]' : ''}
               `}
               style={{
@@ -574,15 +390,30 @@ export default function MondrianGrid({ onCardClick }: MondrianGridProps) {
                 backgroundColor: topicColors[item.topic] || topicColors.general,
                 // Liquid transition with push effect
                 transition: `all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) ${pushDelay}ms`,
-                // Subtle bounce when pushed
-                animation: !isNew && pushWave > 0
-                  ? `pushed 0.6s ease-out ${pushDelay}ms`
-                  : (size === 'hero' ? 'float 6s ease-in-out infinite' : undefined),
+                // Subtle bounce when pushed, burn effect for oldest
+                animation: isBurning
+                  ? 'burn 2s ease-in-out infinite'
+                  : (!isNew && pushWave > 0
+                    ? `pushed 0.6s ease-out ${pushDelay}ms`
+                    : (size === 'hero' ? 'float 6s ease-in-out infinite' : undefined)),
+                // Shrinking transform for burning items
+                transform: isBurning ? 'scale(0.85)' : undefined,
               }}
-              onMouseEnter={() => setHoveredId(item.id)}
+              onMouseEnter={() => !isBurning && setHoveredId(item.id)}
               onMouseLeave={() => setHoveredId(null)}
-              onClick={() => setSelectedIntel(item)}
+              onClick={() => !isBurning && setSelectedIntel(item)}
             >
+              {/* Burn overlay effect */}
+              {isBurning && (
+                <div
+                  className="absolute inset-0 z-20 pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(45deg, rgba(255,100,0,0.4) 0%, rgba(255,50,0,0.6) 50%, rgba(100,0,0,0.8) 100%)',
+                    mixBlendMode: 'multiply',
+                    animation: 'burnFlicker 0.5s ease-in-out infinite alternate',
+                  }}
+                />
+              )}
               {/* Liquid hover glow */}
               <div
                 className={`
@@ -626,8 +457,8 @@ export default function MondrianGrid({ onCardClick }: MondrianGridProps) {
                     </div>
                   )}
 
-                  {/* Title - hidden on minimal size */}
-                  {size !== 'minimal' && (
+                  {/* Title - hidden on minimal/burning size */}
+                  {size !== 'minimal' && size !== 'burning' && (
                     <h3
                       className={`
                         font-black uppercase leading-tight text-black
@@ -653,7 +484,7 @@ export default function MondrianGrid({ onCardClick }: MondrianGridProps) {
                 </div>
 
                 {/* Bottom section - agent & time */}
-                {size !== 'minimal' && (
+                {size !== 'minimal' && size !== 'burning' && (
                   <div className="flex items-end justify-between">
                     <span className={`
                       font-mono text-black/80
@@ -672,16 +503,16 @@ export default function MondrianGrid({ onCardClick }: MondrianGridProps) {
                 )}
 
                 {/* Minimal size - just shows topic color and small indicator */}
-                {size === 'minimal' && (
+                {(size === 'minimal' || size === 'burning') && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[10px] font-mono text-black/50 uppercase">
-                      {item.topic.slice(0, 3)}
+                    <span className={`text-[10px] font-mono uppercase ${size === 'burning' ? 'text-black/30' : 'text-black/50'}`}>
+                      {size === 'burning' ? '🔥' : item.topic.slice(0, 3)}
                     </span>
                   </div>
                 )}
               </div>
 
-              {/* Hover expand preview for small cards */}
+              {/* Hover expand preview for small cards (not for burning) */}
               {hoveredId === item.id && (size === 'fading' || size === 'minimal') && (
                 <div className={`absolute inset-0 p-3 flex flex-col justify-between z-20 ${isDark ? 'bg-white/95 text-black' : 'bg-black/90 text-white'}`}>
                   <div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -10,7 +10,40 @@ import ThemeToggle from './components/ThemeToggle';
 import WalletButton from './components/WalletButton';
 import { useThemeStore } from './store/themeStore';
 import { TOPICS } from './store/topicStore';
+import { useMockIntelStore } from './store/mockIntelStore';
+import type { MockIntel } from './store/mockIntelStore';
 import { useSolanaPay } from './hooks/useSolanaPay';
+
+// Convert MockIntel to card slot format
+function mockIntelToSlot(item: MockIntel) {
+  const now = new Date();
+  const diffMs = now.getTime() - item.createdAt.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  let timestamp = 'just now';
+  if (diffDays > 0) timestamp = `${diffDays}d ago`;
+  else if (diffHours > 0) timestamp = `${diffHours}h ago`;
+  else if (diffMins > 0) timestamp = `${diffMins}m ago`;
+
+  const dateStr = `${String(item.createdAt.getMonth() + 1).padStart(2, '0')}.${String(item.createdAt.getDate()).padStart(2, '0')}`;
+
+  return {
+    id: item.id,
+    agentId: `agent-${item.agentName}`,
+    status: 'verified',
+    handle: item.agentName,
+    topic: item.topic,
+    title: item.title,
+    content: item.content,
+    tags: item.isThrowback ? ['VAULT', 'THROWBACK'] : (item.isMinted ? ['MINTED'] : []),
+    timestamp,
+    date: dateStr,
+    rating: 4.0 + Math.random(), // Mock rating
+    reply_count: Math.floor(Math.random() * 10),
+  };
+}
 
 // --- Component: Onboarding Section ---
 const ProtocolOnboarding = () => {
@@ -622,6 +655,26 @@ const HomeFeed = () => {
   const [error, setError] = useState<string | null>(null);
   const [recentAgents, setRecentAgents] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<'classic' | 'mondrian'>('classic');
+  const [useApiData, setUseApiData] = useState(false);
+
+  // Shared mock intel store (same data as Mondrian view)
+  const { intel: mockIntel, startTimer, stopTimer } = useMockIntelStore();
+
+  // Convert mock intel to slot format for classic view
+  const mockSlots = useMemo(() => {
+    return mockIntel
+      .filter(item => !item.isThrowback)
+      .slice(0, 15)
+      .map(mockIntelToSlot);
+  }, [mockIntel]);
+
+  // Start timer when in classic view to keep it synced with Mondrian
+  useEffect(() => {
+    if (viewMode === 'classic' && !useApiData) {
+      startTimer();
+      return () => stopTimer();
+    }
+  }, [viewMode, useApiData, startTimer, stopTimer]);
 
   // Fetch recent agents for ticker
   useEffect(() => {
@@ -645,9 +698,9 @@ const HomeFeed = () => {
   // Fetch intel from API
   useEffect(() => {
     const fetchIntel = async () => {
-      // Demo mode: show sample data with all rarity tiers
+      // Demo mode: use mock intel (synced with Mondrian view)
       if (isDemo) {
-        setSlots(getSampleSlots());
+        setUseApiData(false);
         setIsLoading(false);
         return;
       }
@@ -698,14 +751,16 @@ const HomeFeed = () => {
             };
           });
           setSlots(mappedSlots);
+          setUseApiData(true);
         } else {
-          // Fallback to sample data if no intel exists
-          setSlots(getSampleSlots());
+          // No API data - use mock intel (synced with Mondrian view)
+          setUseApiData(false);
         }
       } catch (err) {
         console.error('Failed to fetch intel:', err);
         setError('Failed to load intel');
-        setSlots(getSampleSlots());
+        // Use mock intel on error (synced with Mondrian view)
+        setUseApiData(false);
       } finally {
         setIsLoading(false);
       }
@@ -802,10 +857,13 @@ const HomeFeed = () => {
     },
   ];
 
+  // Use mock slots (shared with Mondrian) or API slots
+  const activeSlots = useApiData ? slots : mockSlots;
+
   // Filter slots by selected topic
   const filteredSlots = selectedTopic
-    ? slots.filter(slot => slot.topic === selectedTopic)
-    : slots;
+    ? activeSlots.filter(slot => slot.topic === selectedTopic)
+    : activeSlots;
 
   // Refresh intel from API
   const refreshIntel = async () => {
@@ -1038,8 +1096,8 @@ const HomeFeed = () => {
         </div>
       ) : (
         <>
-          {/* Loading skeleton */}
-          {isLoading && slots.length === 0 ? (
+          {/* Loading skeleton - only show when no data available */}
+          {isLoading && activeSlots.length === 0 ? (
             <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 max-w-6xl mx-auto">
               {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
                 <div key={i} className={`destijl-border aspect-[2.5/3.5] ${isDark ? 'bg-[#2a2a2a]' : 'bg-white'} animate-pulse`}>
@@ -1053,7 +1111,7 @@ const HomeFeed = () => {
                 </div>
               ))}
             </div>
-          ) : error ? (
+          ) : error && useApiData ? (
             <div className={`text-center py-12 sm:py-20 ${isDark ? 'text-white' : 'text-black'}`}>
               <div className="text-3xl sm:text-4xl mb-4">⚠</div>
               <p className="font-black uppercase text-sm sm:text-base">{error}</p>

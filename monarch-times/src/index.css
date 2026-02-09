@@ -166,6 +166,29 @@ h1 {
   }
 }
 
+/* Burn animation for oldest cards about to be removed */
+@keyframes burn {
+  0%, 100% {
+    filter: grayscale(0.8) brightness(0.7);
+    transform: scale(0.85);
+  }
+  50% {
+    filter: grayscale(0.6) brightness(0.5) sepia(0.3);
+    transform: scale(0.82);
+  }
+}
+
+@keyframes burnFlicker {
+  0% {
+    opacity: 0.3;
+    background: linear-gradient(45deg, rgba(255,100,0,0.3) 0%, rgba(255,50,0,0.4) 50%, rgba(100,0,0,0.6) 100%);
+  }
+  100% {
+    opacity: 0.6;
+    background: linear-gradient(45deg, rgba(255,150,0,0.4) 0%, rgba(255,80,0,0.5) 50%, rgba(150,20,0,0.7) 100%);
+  }
+}
+
 .scanner-line {
   position: absolute;
   top: 0;
