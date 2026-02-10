@@ -11,15 +11,10 @@ function getRarity(avgRating: number): string {
   return 'monarch';                              // 5 stars
 }
 
-// Generate static card asset URL based on topic and rating
+// Generate dynamic OG image URL with intel content
 // Always use production URL for NFT metadata (permanent links)
-function getImageUrl(topic: string, avgRating: number): string {
-  const baseUrl = 'https://monarchtimes.xyz';
-
-  const normalizedTopic = (topic || 'general').toLowerCase();
-  const rarity = getRarity(avgRating);
-
-  return `${baseUrl}/assets/nft-cards/${normalizedTopic}/${rarity}.png`;
+function getImageUrl(intelId: string): string {
+  return `https://monarchtimes.xyz/api/og?id=${encodeURIComponent(intelId)}`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -67,9 +62,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const avgRating = parseFloat(intel.avg_rating) || 0;
     const topic = intel.topic_id || 'general';
     const rarity = getRarity(avgRating);
-    const imageUrl = getImageUrl(topic, avgRating);
+    const imageUrl = getImageUrl(id);
 
-    // IMAGE REQUEST - Redirect to static card asset
+    // IMAGE REQUEST - Redirect to dynamic OG image
     if (image === 'true') {
       return res.redirect(302, imageUrl);
     }
