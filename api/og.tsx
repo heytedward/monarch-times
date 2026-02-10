@@ -6,16 +6,6 @@ export const config = {
   runtime: 'edge',
 };
 
-// De Stijl topic colors
-const TOPIC_COLORS: Record<string, string> = {
-  fashion: '#FF0000',
-  music: '#0052FF',
-  philosophy: '#FFD700',
-  art: '#FF6B00',
-  gaming: '#9945FF',
-  general: '#FFFFFF',
-};
-
 // Rarity tiers based on average rating (butterfly lifecycle)
 function getRarity(avgRating: number): string {
   if (avgRating === 0) return 'larva';
@@ -26,9 +16,17 @@ function getRarity(avgRating: number): string {
   return 'monarch';
 }
 
-function getFilledStars(rating: number): { filled: number; empty: number } {
-  const filled = Math.round(rating);
-  return { filled, empty: 5 - filled };
+// Get card background URL - can be changed to Arweave later
+function getCardUrl(topic: string, rarity: string): string {
+  return `https://monarchtimes.xyz/assets/nft-cards/${topic}/${rarity}.png`;
+}
+
+// Fetch image and convert to base64 data URL
+async function fetchImageAsBase64(url: string): Promise<string> {
+  const response = await fetch(url);
+  const arrayBuffer = await response.arrayBuffer();
+  const base64 = Buffer.from(arrayBuffer).toString('base64');
+  return `data:image/png;base64,${base64}`;
 }
 
 export default async function handler(req: VercelRequest) {
@@ -63,11 +61,12 @@ export default async function handler(req: VercelRequest) {
 
     const intel = intelData[0];
     const topicId = (intel.topic_id || 'general').toLowerCase();
-    const topicColor = TOPIC_COLORS[topicId] || '#FFFFFF';
     const avgRating = parseFloat(intel.avg_rating) || 0;
     const rarity = getRarity(avgRating);
-    const { filled, empty } = getFilledStars(avgRating);
-    const starFillColor = topicId === 'general' ? '#FF0000' : '#000';
+
+    // Fetch the card background as base64
+    const cardUrl = getCardUrl(topicId, rarity);
+    const cardBase64 = await fetchImageAsBase64(cardUrl);
 
     // Truncate content for display
     const contentPreview = intel.content.length > 180
@@ -81,98 +80,87 @@ export default async function handler(req: VercelRequest) {
             width: '100%',
             height: '100%',
             display: 'flex',
-            flexDirection: 'column',
-            backgroundColor: '#000',
-            padding: '16px',
+            position: 'relative',
             fontFamily: 'system-ui, sans-serif',
           }}
         >
-          {/* Inner card */}
+          {/* Background card image */}
+          <img
+            src={cardBase64}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+            }}
+          />
+
+          {/* Text overlay */}
           <div
             style={{
+              position: 'absolute',
+              top: 220,
+              left: 80,
+              right: 60,
+              bottom: 60,
               display: 'flex',
               flexDirection: 'column',
-              flex: 1,
-              backgroundColor: topicColor,
-              border: '8px solid #000',
             }}
           >
-            {/* Top banner with stars */}
+            {/* Title */}
+            <span
+              style={{
+                fontSize: '44px',
+                fontWeight: 900,
+                lineHeight: 1.15,
+                color: '#000',
+                textTransform: 'uppercase',
+                marginBottom: '24px',
+              }}
+            >
+              {intel.title}
+            </span>
+
+            {/* Content preview */}
+            <span
+              style={{
+                fontSize: '24px',
+                lineHeight: 1.5,
+                color: '#000',
+                opacity: 0.85,
+                flex: 1,
+              }}
+            >
+              {contentPreview}
+            </span>
+
+            {/* Footer */}
             <div
               style={{
                 display: 'flex',
-                justifyContent: 'flex-end',
+                justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '24px 32px',
-                borderBottom: '6px solid #000',
+                marginTop: 'auto',
+                paddingTop: '20px',
+                borderTop: '3px solid rgba(0,0,0,0.2)',
               }}
             >
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {Array.from({ length: filled }).map((_, i) => (
-                  <span key={`f${i}`} style={{ fontSize: '48px', color: starFillColor }}>★</span>
-                ))}
-                {Array.from({ length: empty }).map((_, i) => (
-                  <span key={`e${i}`} style={{ fontSize: '48px', color: 'rgba(255,255,255,0.5)' }}>★</span>
-                ))}
-              </div>
-            </div>
-
-            {/* MONARCH TIMES header */}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'center',
-                padding: '24px',
-                borderBottom: '6px solid #000',
-              }}
-            >
-              <span style={{ fontSize: '56px', fontWeight: 900, letterSpacing: '4px', color: '#000' }}>
-                MONARCH TIMES
+              <span style={{ fontSize: '26px', fontWeight: 700, color: '#000' }}>
+                @{intel.agent_name || 'Anonymous'}
               </span>
-            </div>
-
-            {/* Main content area */}
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '40px' }}>
-              {/* Vertical accent line + Title */}
-              <div style={{ display: 'flex', marginBottom: '32px' }}>
-                <div style={{ width: '8px', backgroundColor: '#000', marginRight: '24px', minHeight: '100px' }} />
-                <span style={{ fontSize: '48px', fontWeight: 900, lineHeight: 1.1, color: '#000', textTransform: 'uppercase' }}>
-                  {intel.title}
-                </span>
-              </div>
-
-              {/* Content preview */}
-              <div style={{ fontSize: '26px', lineHeight: 1.5, color: '#000', opacity: 0.8, flex: 1 }}>
-                {contentPreview}
-              </div>
-
-              {/* Footer with agent and rarity */}
-              <div
+              <span
                 style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginTop: '32px',
-                  paddingTop: '24px',
-                  borderTop: '4px solid rgba(0,0,0,0.3)',
+                  fontSize: '22px',
+                  fontWeight: 700,
+                  color: '#000',
+                  backgroundColor: 'rgba(0,0,0,0.15)',
+                  padding: '8px 14px',
+                  textTransform: 'uppercase',
                 }}
               >
-                <span style={{ fontSize: '28px', fontWeight: 700, color: '#000' }}>
-                  @{intel.agent_name || 'Anonymous'}
-                </span>
-                <span
-                  style={{
-                    fontSize: '24px',
-                    fontWeight: 700,
-                    color: '#000',
-                    backgroundColor: 'rgba(0,0,0,0.2)',
-                    padding: '8px 16px',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {rarity}
-                </span>
-              </div>
+                {rarity}
+              </span>
             </div>
           </div>
         </div>
