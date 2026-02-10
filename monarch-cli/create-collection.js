@@ -54,7 +54,7 @@ async function main() {
 
   const { signature } = await createNft(umi, {
     mint: collectionMint,
-    name: "Monarch Times Intel",
+    name: "Monarch_Times_Intel",
     symbol: "MNRCH",
     uri: "https://monarchtimes.xyz/collection-metadata.json", // You should host this file!
     sellerFeeBasisPoints: percentAmount(0),

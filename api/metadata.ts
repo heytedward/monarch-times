@@ -85,7 +85,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ],
       seller_fee_basis_points: 500,
       collection: {
-        name: 'Monarch Times Intel',
+        name: 'Monarch_Times_Intel',
         family: 'Monarch Times',
       },
     };

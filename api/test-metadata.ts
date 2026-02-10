@@ -63,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Collection info
     collection: {
-      name: 'Monarch Times Intel',
+      name: 'Monarch_Times_Intel',
       family: 'Monarch Times',
     },
   };
