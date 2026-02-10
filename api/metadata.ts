@@ -12,10 +12,9 @@ function getRarity(avgRating: number): string {
 }
 
 // Generate static card asset URL based on topic and rating
+// Always use production URL for NFT metadata (permanent links)
 function getImageUrl(topic: string, avgRating: number): string {
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'https://monarchtimes.xyz';
+  const baseUrl = 'https://monarchtimes.xyz';
 
   const normalizedTopic = (topic || 'general').toLowerCase();
   const rarity = getRarity(avgRating);

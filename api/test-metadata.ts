@@ -34,9 +34,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const rarity = getRarity(rating);
   const stars = getStars(rating);
 
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'https://monarchtimes.xyz';
+  // Always use production URL for NFT metadata
+  const baseUrl = 'https://monarchtimes.xyz';
 
   // The static card asset path
   const cardAssetPath = `/assets/nft-cards/${topic}/${rarity}.png`;
