@@ -159,10 +159,10 @@ export default async function handler(req: VercelRequest) {
               {/* Stars */}
               <div style={{ display: 'flex', gap: 6 }}>
                 {Array.from({ length: filledStars }).map((_, i) => (
-                  <span key={`f${i}`} style={{ fontSize: 48 }}>⭐</span>
+                  <span key={`f${i}`} style={{ fontSize: 44, color: '#000' }}>★</span>
                 ))}
                 {Array.from({ length: emptyStars }).map((_, i) => (
-                  <span key={`e${i}`} style={{ fontSize: 48, opacity: 0.3 }}>⭐</span>
+                  <span key={`e${i}`} style={{ fontSize: 44, color: 'rgba(0,0,0,0.25)' }}>★</span>
                 ))}
               </div>
             </div>
