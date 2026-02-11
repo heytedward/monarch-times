@@ -105,6 +105,9 @@ export default async function handler(req: VercelRequest) {
       ? intel.content.slice(0, 200) + '...'
       : intel.content;
 
+    // Build stars string
+    const starsStr = '★'.repeat(filledStars) + '☆'.repeat(emptyStars);
+
     return new ImageResponse(
       (
         <div
@@ -114,8 +117,8 @@ export default async function handler(req: VercelRequest) {
             display: 'flex',
             flexDirection: 'column',
             backgroundColor: '#000',
-            padding: '16px',
-            fontFamily: 'system-ui, sans-serif',
+            padding: 16,
+            fontFamily: 'system-ui',
           }}
         >
           <div
@@ -127,44 +130,37 @@ export default async function handler(req: VercelRequest) {
               border: '8px solid #000',
             }}
           >
-            {/* Top banner - De Stijl Stamp + Stars */}
+            {/* Top banner */}
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '24px 32px',
+                padding: 24,
                 borderBottom: '6px solid #000',
               }}
             >
               {/* De Stijl 3x3 Stamp */}
               <div style={{ display: 'flex', flexDirection: 'column', border: '4px solid #000' }}>
                 <div style={{ display: 'flex' }}>
-                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[0], border: '2px solid #000' }} />
-                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[1], border: '2px solid #000' }} />
-                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[2], border: '2px solid #000' }} />
+                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[0], borderWidth: 2, borderColor: '#000', borderStyle: 'solid' }} />
+                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[1], borderWidth: 2, borderColor: '#000', borderStyle: 'solid' }} />
+                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[2], borderWidth: 2, borderColor: '#000', borderStyle: 'solid' }} />
                 </div>
                 <div style={{ display: 'flex' }}>
-                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[3], border: '2px solid #000' }} />
-                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[4], border: '2px solid #000' }} />
-                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[5], border: '2px solid #000' }} />
+                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[3], borderWidth: 2, borderColor: '#000', borderStyle: 'solid' }} />
+                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[4], borderWidth: 2, borderColor: '#000', borderStyle: 'solid' }} />
+                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[5], borderWidth: 2, borderColor: '#000', borderStyle: 'solid' }} />
                 </div>
                 <div style={{ display: 'flex' }}>
-                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[6], border: '2px solid #000' }} />
-                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[7], border: '2px solid #000' }} />
-                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[8], border: '2px solid #000' }} />
+                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[6], borderWidth: 2, borderColor: '#000', borderStyle: 'solid' }} />
+                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[7], borderWidth: 2, borderColor: '#000', borderStyle: 'solid' }} />
+                  <div style={{ width: 28, height: 28, backgroundColor: stampColors[8], borderWidth: 2, borderColor: '#000', borderStyle: 'solid' }} />
                 </div>
               </div>
 
               {/* Stars */}
-              <div style={{ display: 'flex', gap: 6 }}>
-                {Array.from({ length: filledStars }).map((_, i) => (
-                  <span key={`f${i}`} style={{ fontSize: 44, color: '#000' }}>★</span>
-                ))}
-                {Array.from({ length: emptyStars }).map((_, i) => (
-                  <span key={`e${i}`} style={{ fontSize: 44, color: 'rgba(0,0,0,0.25)' }}>★</span>
-                ))}
-              </div>
+              <div style={{ fontSize: 44, color: '#000', letterSpacing: 4 }}>{starsStr}</div>
             </div>
 
             {/* Header */}
@@ -172,23 +168,23 @@ export default async function handler(req: VercelRequest) {
               style={{
                 display: 'flex',
                 justifyContent: 'center',
-                padding: '24px',
+                padding: 24,
                 borderBottom: '6px solid #000',
               }}
             >
-              <span style={{ fontSize: 56, fontWeight: 900, letterSpacing: 4, color: '#000' }}>
+              <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: 4, color: '#000' }}>
                 MONARCH TIMES
-              </span>
+              </div>
             </div>
 
             {/* Content */}
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '40px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: 40 }}>
               {/* Title with accent bar */}
               <div style={{ display: 'flex', marginBottom: 32 }}>
-                <div style={{ width: 8, backgroundColor: '#000', marginRight: 24, minHeight: 100 }} />
-                <span style={{ fontSize: 46, fontWeight: 900, lineHeight: 1.1, color: '#000', textTransform: 'uppercase' }}>
+                <div style={{ width: 8, backgroundColor: '#000', marginRight: 24 }} />
+                <div style={{ fontSize: 46, fontWeight: 900, lineHeight: 1.1, color: '#000', textTransform: 'uppercase' }}>
                   {intel.title}
-                </span>
+                </div>
               </div>
 
               {/* Content preview */}
@@ -208,11 +204,11 @@ export default async function handler(req: VercelRequest) {
                 }}
               >
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: 20, fontWeight: 600, color: '#000', opacity: 0.6 }}>{dateStr}</span>
-                  <span style={{ fontSize: 28, fontWeight: 700, color: '#000' }}>@{intel.agent_name || 'Anonymous'}</span>
+                  <div style={{ fontSize: 20, fontWeight: 600, color: '#000', opacity: 0.6 }}>{dateStr}</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: '#000' }}>@{intel.agent_name || 'Anonymous'}</div>
                 </div>
 
-                <span
+                <div
                   style={{
                     fontSize: 24,
                     fontWeight: 700,
@@ -223,7 +219,7 @@ export default async function handler(req: VercelRequest) {
                   }}
                 >
                   {rarity}
-                </span>
+                </div>
               </div>
             </div>
           </div>
