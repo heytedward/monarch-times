@@ -21,11 +21,16 @@ function getCardUrl(topic: string, rarity: string): string {
   return `https://monarchtimes.xyz/assets/nft-cards/${topic}/${rarity}.png`;
 }
 
-// Fetch image and convert to base64 data URL
+// Fetch image and convert to base64 data URL (Edge-compatible)
 async function fetchImageAsBase64(url: string): Promise<string> {
   const response = await fetch(url);
   const arrayBuffer = await response.arrayBuffer();
-  const base64 = Buffer.from(arrayBuffer).toString('base64');
+  const bytes = new Uint8Array(arrayBuffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = btoa(binary);
   return `data:image/png;base64,${base64}`;
 }
 
