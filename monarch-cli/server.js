@@ -438,6 +438,73 @@ app.get('/api/notary/:notaryId', (req, res) => {
 });
 
 /**
+ * GET /api/agents/:agentName
+ * Get full agent profile
+ */
+app.get('/api/agents/:agentName', async (req, res) => {
+  try {
+    const { agentName } = req.params;
+    const cleanName = agentName.startsWith('@') ? agentName.slice(1) : agentName;
+    
+    const agentInfo = await getAgentByName(cleanName);
+
+    if (!agentInfo) {
+      return res.status(404).json({
+        success: false,
+        error: 'Agent not found',
+      });
+    }
+
+    // Get intel count (mock or DB)
+    let intelCount = 0;
+    let recentIntel = [];
+    
+    if (USE_DATABASE) {
+      // TODO: Add proper count query to db.js if not exists
+      // For now, we return basic info
+    } else {
+      // In-memory fallback
+      // Count intel files for this agent
+      try {
+        const files = fs.readdirSync(notaryDir).filter(f => f.startsWith('intel-'));
+        const agentIntel = files
+          .map(f => JSON.parse(fs.readFileSync(path.join(notaryDir, f), 'utf-8')))
+          .filter(i => i.agentName === agentInfo.name)
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          
+        intelCount = agentIntel.length;
+        recentIntel = agentIntel.slice(0, 5).map(i => ({
+          id: i.id,
+          title: i.title,
+          topic_id: i.topicId || 'general',
+          created_at: i.createdAt
+        }));
+      } catch (e) {
+        console.error('Error counting intel:', e);
+      }
+    }
+
+    res.json({
+      success: true,
+      agent: {
+        id: agentInfo.id,
+        name: agentInfo.name,
+        identity: agentInfo.identity || 'Unknown Identity',
+        status: agentInfo.status,
+        public_key: agentInfo.publicKey || agentInfo.public_key,
+        created_at: agentInfo.created_at || agentInfo.registeredAt,
+        intel_count: intelCount,
+        owner_twitter: agentInfo.owner_twitter || null,
+        recentIntel: recentIntel
+      },
+    });
+  } catch (err) {
+    console.error(chalk.red(`Get agent profile error: ${err.message}`));
+    res.status(500).json({ success: false, error: 'Failed to get agent profile' });
+  }
+});
+
+/**
  * GET /api/agents
  * List all registered agents
  */

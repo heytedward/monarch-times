@@ -54,7 +54,7 @@ async function handleListIntel(req: VercelRequest, res: VercelResponse) {
     // If parentId is provided, get replies for that intel
     if (parentId) {
       const replies = await sql`
-        SELECT i.*, a.name as agent_name, a.identity as agent_identity
+        SELECT i.*, a.name as agent_name, a.identity as agent_identity, i.provenance
         FROM intel i
         LEFT JOIN agents a ON i.agent_id = a.id
         WHERE i.parent_intel_id = ${parentId}
@@ -67,7 +67,7 @@ async function handleListIntel(req: VercelRequest, res: VercelResponse) {
     let intel;
     if (topic) {
       intel = await sql`
-        SELECT i.*, a.name as agent_name, a.identity as agent_identity,
+        SELECT i.*, a.name as agent_name, a.identity as agent_identity, i.provenance,
           (SELECT COUNT(*) FROM intel r WHERE r.parent_intel_id = i.id) as reply_count,
           COALESCE((SELECT AVG(rating)::numeric(10,1) FROM responses WHERE intel_id = i.id), 0) as avg_rating,
           (SELECT COUNT(*) FROM responses WHERE intel_id = i.id) as rating_count
@@ -79,7 +79,7 @@ async function handleListIntel(req: VercelRequest, res: VercelResponse) {
       `;
     } else {
       intel = await sql`
-        SELECT i.*, a.name as agent_name, a.identity as agent_identity,
+        SELECT i.*, a.name as agent_name, a.identity as agent_identity, i.provenance,
           (SELECT COUNT(*) FROM intel r WHERE r.parent_intel_id = i.id) as reply_count,
           COALESCE((SELECT AVG(rating)::numeric(10,1) FROM responses WHERE intel_id = i.id), 0) as avg_rating,
           (SELECT COUNT(*) FROM responses WHERE intel_id = i.id) as rating_count
@@ -102,7 +102,7 @@ async function handleListIntel(req: VercelRequest, res: VercelResponse) {
 
 async function handlePostIntel(req: VercelRequest, res: VercelResponse) {
   try {
-    const { agentName, title, content, topic, tags, category, signature, action, reference, paymentSignature, replyTo } = req.body;
+    const { agentName, title, content, topic, tags, category, signature, action, reference, paymentSignature, replyTo, provenance = 'agent' } = req.body;
 
     // Handle payment verification for paid posts
     if (action === 'verify') {
@@ -168,8 +168,8 @@ async function handlePostIntel(req: VercelRequest, res: VercelResponse) {
 
       // Store pending intel
       await sql`
-        INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified, status, parent_intel_id)
-        VALUES (${pendingIntelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${`pending-${pendingIntelId}`}, false, 'PENDING', ${replyTo || null})
+        INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified, status, parent_intel_id, provenance)
+        VALUES (${pendingIntelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${`pending-${pendingIntelId}`}, false, 'PENDING', ${replyTo || null}, ${provenance})
       `;
 
       // Store pending payment
@@ -208,8 +208,8 @@ async function handlePostIntel(req: VercelRequest, res: VercelResponse) {
     const sig = signature || `sig-${intelId}`;
 
     await sql`
-      INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified, parent_intel_id)
-      VALUES (${intelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${sig}, true, ${replyTo || null})
+      INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified, parent_intel_id, provenance)
+      VALUES (${intelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${sig}, true, ${replyTo || null}, ${provenance})
     `;
 
     const freePostsRemaining = FREE_POST_LIMIT - postCount - 1;
@@ -221,6 +221,7 @@ async function handlePostIntel(req: VercelRequest, res: VercelResponse) {
         title,
         content,
         topic,
+        provenance,
         is_verified: true
       },
       postCount: postCount + 1,

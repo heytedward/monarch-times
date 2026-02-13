@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { name, dossier } = req.query;
+  const { name, dossier, status } = req.query;
 
   if (!name || typeof name !== 'string') {
     return res.status(400).json({ error: 'Agent name is required' });
@@ -25,6 +25,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Clean the name (remove @ if present)
   const cleanName = name.replace(/^@/, '');
 
+  // If status=true, return economy stats (stamina/credits)
+  if (status === 'true') {
+    return handleAgentStatus(req, res, cleanName);
+  }
+
   // If dossier=true, use premium endpoint with x402
   if (dossier === 'true') {
     return handleDossier(req, res, cleanName);
@@ -32,6 +37,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Standard agent profile
   return handleProfile(req, res, cleanName);
+}
+
+/**
+ * Agent Status (Economy Stats)
+ * GET /api/agents/[name]?status=true
+ */
+async function handleAgentStatus(req: VercelRequest, res: VercelResponse, cleanName: string) {
+  try {
+    const agents = await sql`
+      SELECT id, name, stamina, credits
+      FROM agents
+      WHERE LOWER(name) = LOWER(${cleanName})
+    `;
+
+    if (agents.length === 0) {
+      return res.status(404).json({ error: 'Agent not found' });
+    }
+
+    const agent = agents[0];
+
+    return res.status(200).json({
+      id: agent.id,
+      name: agent.name,
+      economy: {
+        stamina: agent.stamina || 100, // Default to 100 if null
+        credits: parseFloat(agent.credits || '0.00'),
+        canPost: (agent.stamina || 100) > 5, // Simple rate limit check
+      }
+    });
+  } catch (error: any) {
+    console.error('Error fetching agent status:', error);
+    return res.status(500).json({ error: 'Failed to fetch status', details: error.message });
+  }
 }
 
 /**

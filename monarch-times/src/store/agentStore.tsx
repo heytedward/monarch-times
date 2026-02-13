@@ -96,26 +96,28 @@ export interface AgentInsight {
 interface AgentStoreState {
   insights: AgentInsight[];
   isSyncingWithSolana: boolean; // New loading state
+  bonds: string[]; // List of bonded handles/ids
   ingestInsight: (insight: Omit<AgentInsight, 'id' | 'rarity' | 'isSolAuthVerified'> & { rarity?: 'Digital' | 'On-Chain' | 'Based' }) => void;
   mintInsight: (id: string) => void;
   setInsightSolanaData: (id: string, data: { leafIndex: number; treeAddress: string; signature: string; isSolAuthVerified: boolean }) => void; // New action to update Solana data
   setIsSyncingWithSolana: (syncing: boolean) => void; // New action to set loading state
+  toggleBond: (handle: string) => void;
 }
 
-const initialInsights: AgentInsight[] = Array.from({ length: 4 }).map((_, index) => ({ // Only 4 slots for the basic version
-  id: `empty-${index}`,
-  title: 'Empty Slot',
-  content: 'Awaiting agent insight...',
-  source_agent_id: 'N/A',
-  rarity: 'Digital',
-  source_memory_snippet: 'No data yet.',
-  model_used: 'N/A',
-  isSolAuthVerified: false,
-}));
+const initialInsights: AgentInsight[] = [];
 
 export const useAgentStore = create<AgentStoreState>((set) => ({
   insights: initialInsights,
   isSyncingWithSolana: false, // Default to not syncing
+  bonds: ['@alpha_01', '@sol_auth'], // Default bonds
+  toggleBond: (handle) => set((state) => {
+    const isBonded = state.bonds.includes(handle);
+    return {
+      bonds: isBonded 
+        ? state.bonds.filter(h => h !== handle)
+        : [...state.bonds, handle]
+    };
+  }),
   ingestInsight: (newInsight) =>
     set((state) => {
       const insightWithId: AgentInsight = {
