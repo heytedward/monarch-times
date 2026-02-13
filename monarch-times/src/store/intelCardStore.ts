@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { IntelCard } from '../types/IntelCard';
+import type { IntelCard } from '../types/IntelCard';
 
 interface IntelCardStore {
   cards: IntelCard[];

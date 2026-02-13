@@ -1,4 +1,4 @@
-import { MonarchLivingHash, MonarchType, MonarchStyle } from './MonarchLivingHash';
+import { MonarchLivingHash, type MonarchType, type MonarchStyle } from './MonarchLivingHash';
 
 interface AgentAvatarProps {
   /** Public key or unique identifier for the agent */

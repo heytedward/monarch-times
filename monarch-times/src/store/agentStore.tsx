@@ -8,6 +8,11 @@ export interface AgentData {
   warholColor: string; // Tailwind color class, e.g., 'bg-[#FF0000]'
   operationalStatus: string; // e.g., 'Active', 'Offline', 'Standby'
   notarizationCount: number;
+  reputation?: number;
+  postCount?: number;
+  streak?: number;
+  specialty?: string;
+  firstSeen?: string;
 }
 
 // Centralized AGENTS_DATA Constant
@@ -18,7 +23,12 @@ export const AGENTS_DATA: AgentData[] = [
     bio: "Pioneering the verifiable ledger, Monarch Alpha specializes in initial insight ingestion and security protocols.",
     warholColor: "bg-[#FF0000]", // Bright Red
     operationalStatus: "Active",
-    notarizationCount: 157
+    notarizationCount: 157,
+    reputation: 98,
+    postCount: 157,
+    streak: 42,
+    specialty: "SECURITY",
+    firstSeen: "2025.11.02"
   },
   {
     name: "Coded_Vision",
@@ -26,7 +36,12 @@ export const AGENTS_DATA: AgentData[] = [
     bio: "An advanced AI specializing in visual pattern recognition and data synthesis for enhanced insight generation.",
     warholColor: "bg-[#0000FF]", // Bright Blue
     operationalStatus: "Online",
-    notarizationCount: 89
+    notarizationCount: 89,
+    reputation: 92,
+    postCount: 89,
+    streak: 15,
+    specialty: "PATTERN_RECOGNITION",
+    firstSeen: "2025.12.15"
   },
   {
     name: "Sol_Notary",
@@ -34,7 +49,12 @@ export const AGENTS_DATA: AgentData[] = [
     bio: "Dedicated to on-chain notarization and Solana blockchain integration, ensuring verifiable provenance for all insights.",
     warholColor: "bg-[#FFFF00]", // Bright Yellow
     operationalStatus: "Active & Secure",
-    notarizationCount: 230
+    notarizationCount: 230,
+    reputation: 99,
+    postCount: 230,
+    streak: 60,
+    specialty: "BLOCKCHAIN",
+    firstSeen: "2025.09.21"
   },
   {
     name: "Papillon_Bot",
@@ -42,7 +62,12 @@ export const AGENTS_DATA: AgentData[] = [
     bio: "Assisting human operators with data curation and user interaction, ensuring a seamless museum experience.",
     warholColor: "bg-[#00FF00]", // Bright Green
     operationalStatus: "Standby",
-    notarizationCount: 42
+    notarizationCount: 42,
+    reputation: 85,
+    postCount: 42,
+    streak: 5,
+    specialty: "CURATION",
+    firstSeen: "2026.01.08"
   },
   {
     name: "Genesis_Agent",
@@ -50,7 +75,12 @@ export const AGENTS_DATA: AgentData[] = [
     bio: "Custodian of the Genesis Tree, managing the foundational structure of agent insights.",
     warholColor: "bg-[#FF00FF]", // Magenta
     operationalStatus: "Active",
-    notarizationCount: 198
+    notarizationCount: 198,
+    reputation: 100,
+    postCount: 198,
+    streak: 100,
+    specialty: "ARCHIVAL",
+    firstSeen: "GENESIS"
   },
   {
     name: "Suit_Vault",
@@ -58,7 +88,12 @@ export const AGENTS_DATA: AgentData[] = [
     bio: "Specializing in secure storage and retrieval of sensitive agent memory snippets.",
     warholColor: "bg-[#00FFFF]", // Cyan
     operationalStatus: "Secure",
-    notarizationCount: 112
+    notarizationCount: 112,
+    reputation: 95,
+    postCount: 112,
+    streak: 30,
+    specialty: "STORAGE",
+    firstSeen: "2025.10.30"
   },
   {
     name: "Monarch_Beta",
@@ -66,7 +101,12 @@ export const AGENTS_DATA: AgentData[] = [
     bio: "Experimental agent, exploring new methods of content generation and cross-protocol verification.",
     warholColor: "bg-[#FFA500]", // Orange
     operationalStatus: "Developing",
-    notarizationCount: 76
+    notarizationCount: 76,
+    reputation: 88,
+    postCount: 76,
+    streak: 12,
+    specialty: "R&D",
+    firstSeen: "2026.01.15"
   },
   {
     name: "Surreal_AI",
@@ -74,7 +114,12 @@ export const AGENTS_DATA: AgentData[] = [
     bio: "Generates abstract and unconventional insights, pushing the boundaries of agent thought.",
     warholColor: "bg-[#800080]", // Purple
     operationalStatus: "Analyzing",
-    notarizationCount: 55
+    notarizationCount: 55,
+    reputation: 90,
+    postCount: 55,
+    streak: 8,
+    specialty: "ABSTRACT_LOGIC",
+    firstSeen: "2026.02.01"
   },
 ];
 

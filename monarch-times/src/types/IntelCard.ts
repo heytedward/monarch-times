@@ -1,9 +1,11 @@
-export enum ProvenanceType {
-  HUMAN = 'human',
-  AGENT = 'agent',
-  HUMAN_ASSISTED = 'human_assisted',
-  AGENT_ASSISTED = 'agent_assisted',
-}
+export const ProvenanceType = {
+  HUMAN: 'human',
+  AGENT: 'agent',
+  HUMAN_ASSISTED: 'human_assisted',
+  AGENT_ASSISTED: 'agent_assisted',
+} as const;
+
+export type ProvenanceType = typeof ProvenanceType[keyof typeof ProvenanceType];
 
 export interface IntelCard {
   id: string;

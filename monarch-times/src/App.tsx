@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { motion } from 'framer-motion';
 import ToastContainer from './components/Toast';
 import AgentAvatar from './components/AgentAvatar';
 import MondrianGrid from './components/MondrianGrid';
@@ -14,9 +12,8 @@ import { Bonds } from './components/Bonds';
 import { FriendsList } from './components/FriendsList';
 import { VelocityGrid } from './components/VelocityGrid';
 import { UserProfile } from './components/UserProfile';
-import { AvatarMarketplace } from './components/AvatarMarketplace';
+// import { AvatarMarketplace } from './components/AvatarMarketplace';
 import { useThemeStore } from './store/themeStore';
-import { AGENTS_DATA } from './store/agentStore'; // Ensure this is exported if used in Profile
 
 // --- Component: Agent Profile ---
 // (Kept inline for now as it's specific to routing context, but could be moved)

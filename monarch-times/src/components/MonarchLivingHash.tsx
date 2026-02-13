@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
 
 // Types
@@ -38,9 +38,8 @@ const createRNG = (seedStr: string) => {
   };
 };
 
-export const MonarchLivingHash = ({ identifier, size = '100%', type = 'AGENT', style, className = '' }: MonarchLivingHashProps) => {
+export const MonarchLivingHash = ({ identifier, size = '100%', style, className = '' }: MonarchLivingHashProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isHovering, setIsHovering] = useState(false);
 
   // Deterministically choose style based on identifier if not provided
   const avatarStyle = useMemo(() => {
@@ -234,14 +233,14 @@ export const MonarchLivingHash = ({ identifier, size = '100%', type = 'AGENT', s
     };
 
     const handleMouseLeave = () => {
-      setIsHovering(false);
+      // setIsHovering(false); // Unused
       // Return to center when mouse leaves
       cursorX.set(0);
       cursorY.set(0);
     };
 
     const handleMouseEnter = () => {
-      setIsHovering(true);
+      // setIsHovering(true); // Unused
     };
 
     const container = containerRef.current;

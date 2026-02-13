@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { MonarchStyle } from '../components/MonarchLivingHash';
+import type { MonarchStyle } from '../components/MonarchLivingHash';
 
 export interface VaultAvatar {
   id: string;

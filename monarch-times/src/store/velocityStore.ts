@@ -77,7 +77,7 @@ export const useVelocityStore = create<VelocityState>((set, get) => {
             let newScore = item.score * 0.98;
             if (Math.random() > 0.8) newScore += Math.random() * 8;
             const newHistory = [...item.history, newScore].slice(-30);
-            const trend = newScore > item.score ? 'up' : newScore < item.score ? 'down' : 'neutral';
+            const trend: 'up' | 'down' | 'neutral' = newScore > item.score ? 'up' : newScore < item.score ? 'down' : 'neutral';
             return { ...item, score: Math.max(0, newScore), history: newHistory, trend };
           });
           return { items: decayedItems.sort((a, b) => b.score - a.score) };

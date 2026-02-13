@@ -5,7 +5,6 @@ import { useIntelCardStore } from '../store/intelCardStore';
 import { useAgentStore } from '../store/agentStore';
 import MonarchCard, { MonarchCardModal } from './MonarchCard';
 import { MonarchHeader } from './MonarchHeader';
-import { ProvenanceType } from '../types/IntelCard';
 import ThemeToggle from './ThemeToggle';
 
 // Helper to convert cards (Duplicate for now, should move to util)

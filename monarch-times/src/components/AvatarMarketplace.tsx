@@ -4,19 +4,15 @@ import AgentAvatar from './AgentAvatar';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useThemeStore } from '../store/themeStore';
 import { useVaultStore } from '../store/vaultStore';
-import { MonarchStyle } from './MonarchLivingHash';
 
 // Topic colors matching the Monarch Times palette
-const TOPIC_COLORS = {
+const TOPIC_COLORS: Record<string, string> = {
   fashion: '#FF0000',
   music: '#0052FF',
   philosophy: '#FFD700',
   art: '#00FFFF',
   gaming: '#9945FF',
 };
-
-const TOPICS = Object.keys(TOPIC_COLORS) as Array<keyof typeof TOPIC_COLORS>;
-const STYLES: MonarchStyle[] = ['squares', 'triangles'];
 
 const MOCK_MARKET_ITEMS: any[] = [];
 
@@ -25,7 +21,7 @@ export const AvatarMarketplace = () => {
   const isDark = theme === 'dark';
   const { connected } = useWallet();
   const { purchaseAvatar, avatars } = useVaultStore();
-  const [items, setItems] = useState(MOCK_MARKET_ITEMS);
+  const [items] = useState(MOCK_MARKET_ITEMS);
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
 
   const handleAcquire = (item: typeof MOCK_MARKET_ITEMS[0]) => {

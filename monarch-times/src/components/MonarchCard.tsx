@@ -93,7 +93,6 @@ export const useCardState = (slot: any) => {
   const [mintAllStatus, setMintAllStatus] = useState<'idle' | 'minting' | 'minted' | 'error'>('idle');
   const [mintResult, setMintResult] = useState<{ mintAddress?: string; error?: string } | null>(null);
   const [replies, setReplies] = useState<any[]>([]);
-  const [isRepliesExpanded, setIsRepliesExpanded] = useState(false);
   const [isLoadingReplies, setIsLoadingReplies] = useState(false);
   const [displayedCard, setDisplayedCard] = useState<any>(slot);
   const { connected, publicKey } = useWallet();
@@ -316,8 +315,6 @@ export const useCardState = (slot: any) => {
     mintAllStatus,
     mintResult,
     replies,
-    isRepliesExpanded,
-    setIsRepliesExpanded,
     isLoadingReplies,
     displayedCard,
     handleSwap,
@@ -348,8 +345,6 @@ const CardModalContent = ({
     mintAllStatus,
     mintResult,
     replies,
-    isRepliesExpanded,
-    setIsRepliesExpanded,
     isLoadingReplies,
     displayedCard,
     handleSwap,
@@ -371,7 +366,7 @@ const CardModalContent = ({
 
   const renderStars = (rating: number, size: 'sm' | 'md' = 'md') => {
     const sizeClass = size === 'sm' ? 'text-sm' : 'text-lg';
-    return Array.from({ length: 5 }, (_, i) => (
+    return Array.from({ length: 5 }, (_, i: number) => (
       <span key={i} className={`${sizeClass} ${i < rating ? 'text-black' : 'text-black/30'}`}>★</span>
     ));
   };
@@ -405,7 +400,7 @@ const CardModalContent = ({
                   <div className="border-l-[10px] border-black pl-3 mb-2 mt-2 font-black text-2xl md:text-4xl leading-none uppercase text-left">{currentCard.title}</div>
                   <p className="font-bold text-sm italic flex-grow overflow-auto custom-scrollbar leading-relaxed">{currentCard.content}</p>
                   <div className="mt-auto pt-3 flex flex-wrap gap-1">
-                    {currentCard.tags?.map((tag: string, i) => (
+                    {currentCard.tags?.map((tag: string, i: number) => (
                       <span key={i} className="bg-black/20 text-[10px] px-2 py-1 font-bold uppercase">{tag}</span>
                     ))}
                   </div>
@@ -638,7 +633,7 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
 
   const renderStars = (rating: number, size: 'sm' | 'md' = 'md') => {
     const sizeClass = size === 'sm' ? 'text-sm' : 'text-lg';
-    return Array.from({ length: 5 }, (_, i) => (
+    return Array.from({ length: 5 }, (_, i: number) => (
       <span key={i} className={`${sizeClass} ${i < rating ? 'text-black' : 'text-black/30'}`}>★</span>
     ));
   };
@@ -704,7 +699,7 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
                 <div className="border-l-[10px] border-black pl-3 mb-2 mt-2 font-black text-lg md:text-2xl leading-none uppercase text-left text-black">{slot.title}</div>
                 <p className="font-bold text-[9px] md:text-[11px] italic flex-grow overflow-auto custom-scrollbar leading-relaxed text-black">{slot.content}</p>
                 <div className="mt-auto pt-2 flex flex-wrap gap-1">
-                  {slot.tags?.map((tag: string, i) => (
+                  {slot.tags?.map((tag: string, i: number) => (
                     <span key={i} className="bg-black/20 text-[8px] px-1.5 py-0.5 font-bold uppercase">{tag}</span>
                   ))}
                 </div>

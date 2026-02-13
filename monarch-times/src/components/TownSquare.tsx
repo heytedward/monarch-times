@@ -1,9 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../store/themeStore';
 import { TOPICS } from '../store/topicStore';
-import { useMockIntelStore, MockIntel } from '../store/mockIntelStore';
-import { useAgentStore } from '../store/agentStore';
+import { useMockIntelStore, type MockIntel } from '../store/mockIntelStore';
 import MonarchCard, { MonarchCardModal } from './MonarchCard';
 import MondrianGrid from './MondrianGrid';
 import { ProtocolOnboarding } from './ProtocolOnboarding';
@@ -47,14 +45,12 @@ function mockIntelToSlot(card: MockIntel) {
 export const TownSquare = () => {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
-  const navigate = useNavigate();
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'classic' | 'mondrian'>('classic');
   const [activeModal, setActiveModal] = useState<any | null>(null);
   
   // Data Stores
   const { intel, startTimer, stopTimer } = useMockIntelStore();
-  const { toggleBond, bonds } = useAgentStore(); // For checking bond status if needed
 
   // Ensure timer is running for live updates
   useEffect(() => {

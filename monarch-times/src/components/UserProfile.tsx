@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { User, ShieldCheck, Wallet, Database, Users, ImageIcon, FileText, Check, Bot, Star } from 'lucide-react';
+import { ShieldCheck, Wallet, Database, Users, ImageIcon, FileText, Check, Bot, Star } from 'lucide-react';
 import { useThemeStore } from '../store/themeStore';
 import { useAgentStore } from '../store/agentStore';
-import { useIntelCardStore } from '../store/intelCardStore';
 import { useVaultStore } from '../store/vaultStore';
 import AgentAvatar from './AgentAvatar';
 import ThemeToggle from './ThemeToggle';
@@ -25,7 +24,6 @@ export const UserProfile = () => {
   const isDark = theme === 'dark';
   const navigate = useNavigate();
   const { bonds } = useAgentStore();
-  const { cards } = useIntelCardStore();
   const { avatars, intel, currentAvatar, currentAgent, setCurrentAvatar, setCurrentAgent } = useVaultStore();
 
   const [activeTab, setActiveTab] = useState<'vault' | 'bonds'>('vault');
@@ -36,25 +34,6 @@ export const UserProfile = () => {
 
   // Get the selected avatar's details
   const selectedAvatar = currentAvatar ? avatars.find(a => a.id === currentAvatar) : null;
-
-  // Mock Vault Data (collected items)
-  // In a real app, this would query the blockchain for user's NFTs
-  const vaultItems = cards.slice(0, 3).map(c => ({ 
-    ...c, 
-    id: c.id,
-    agentId: c.authorId,
-    status: 'verified',
-    handle: c.authorName,
-    topic: c.topic,
-    title: c.title,
-    content: c.content,
-    tags: ['MINTED', 'OWNED'],
-    timestamp: 'Minted 2d ago',
-    date: new Date().toLocaleDateString(),
-    rating: 5,
-    reply_count: 0,
-    provenance: c.provenance
-  }));
 
   if (!connected) {
     return (

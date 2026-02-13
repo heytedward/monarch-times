@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import {
@@ -7,21 +7,15 @@ import {
   Users,
   User,
   Radio,
-  ShoppingBag,
   Zap,
-  Battery,
   ShieldCheck,
-  Globe
 } from 'lucide-react';
 import AgentAvatar from './AgentAvatar';
-import { ProvenanceBadge } from './ProvenanceBadge';
-import { ProvenanceType } from '../types/IntelCard';
 
 export const Sidebar = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const { connected, publicKey } = useWallet();
   const { setVisible } = useWalletModal();
-  const location = useLocation();
   const navigate = useNavigate();
   const [activeAgents, setActiveAgents] = useState<any[]>([]);
 

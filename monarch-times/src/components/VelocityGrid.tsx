@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useVelocityStore, VelocityItem } from '../store/velocityStore';
-import { TrendingUp, Zap } from 'lucide-react';
+import { useVelocityStore, type VelocityItem } from '../store/velocityStore';
+import { TrendingUp } from 'lucide-react';
 import { ProvenanceType } from '../types/IntelCard';
 import { MonarchCardModal } from './MonarchCard';
 
