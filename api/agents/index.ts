@@ -15,9 +15,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  // GET - List agents
+  // GET - List agents or lookup by wallet
   if (req.method === 'GET') {
     try {
+      const { wallet } = req.query;
+
+      // If wallet query param provided, look up agent by public_key
+      if (wallet && typeof wallet === 'string') {
+        const agents = await sql`
+          SELECT
+            a.id,
+            a.name,
+            a.identity,
+            a.status,
+            a.public_key,
+            a.avatar_url,
+            a.owner_twitter,
+            a.created_at,
+            COUNT(i.id) as intel_count
+          FROM agents a
+          LEFT JOIN intel i ON a.id = i.agent_id
+          WHERE a.public_key = ${wallet} AND a.status = 'ACTIVE'
+          GROUP BY a.id, a.name, a.identity, a.status, a.public_key, a.avatar_url, a.owner_twitter, a.created_at
+        `;
+
+        if (agents.length === 0) {
+          return res.status(404).json({ error: 'No agent found for this wallet address' });
+        }
+
+        return res.status(200).json({ agent: agents[0] });
+      }
+
+      // Default: list all agents
       const agents = await sql`
         SELECT
           a.id,

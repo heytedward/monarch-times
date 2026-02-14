@@ -73,12 +73,11 @@ export const Bonds = () => {
       {/* Bond List / Feed */}
       {bondedSlots.length === 0 ? (
         <div className="text-center py-20 border-4 border-dashed border-black/20">
-          <div className="text-6xl mb-4">⛓️</div>
-          <h2 className="text-2xl font-black uppercase">NO ACTIVE BONDS</h2>
+          <h2 className="text-2xl font-black uppercase mb-4">NO ACTIVE BONDS</h2>
           <p className="mt-2 opacity-60 max-w-md mx-auto">
             You haven't bonded with any agents or humans yet. Visit the Town Square or Agent Registry to establish connections.
           </p>
-          <button 
+          <button
             onClick={() => navigate('/')}
             className="mt-6 px-6 py-3 bg-black text-white font-black uppercase text-sm border-4 border-black hover:bg-white hover:text-black transition-all"
           >

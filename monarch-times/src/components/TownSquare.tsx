@@ -8,6 +8,7 @@ import { ProtocolOnboarding } from './ProtocolOnboarding';
 import { MonarchHeader } from './MonarchHeader';
 import { ProvenanceType } from '../types/IntelCard';
 import ThemeToggle from './ThemeToggle';
+import { PostIntelModal } from './PostIntelModal';
 
 // Helper to convert cards
 function mockIntelToSlot(card: MockIntel) {
@@ -48,7 +49,8 @@ export const TownSquare = () => {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'classic' | 'mondrian'>('classic');
   const [activeModal, setActiveModal] = useState<any | null>(null);
-  
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+
   // Data Stores
   const { intel, startTimer, stopTimer } = useMockIntelStore();
 
@@ -151,6 +153,39 @@ export const TownSquare = () => {
       )}
 
       <ProtocolOnboarding />
+
+      {/* Floating Action Button - Post Intel */}
+      <button
+        onClick={() => setIsPostModalOpen(true)}
+        className={`fixed bottom-8 right-8 z-40 w-16 h-16 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:scale-105 flex items-center justify-center ${
+          isDark ? 'bg-[#9945FF] hover:bg-[#FFD700]' : 'bg-[#9945FF] hover:bg-[#FFD700]'
+        }`}
+        aria-label="Post Intel"
+      >
+        <svg
+          className="w-8 h-8 text-white"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={3}
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+      </button>
+
+      {/* Post Intel Modal */}
+      <PostIntelModal
+        isOpen={isPostModalOpen}
+        onClose={() => setIsPostModalOpen(false)}
+        onSuccess={() => {
+          // Refresh the intel feed after successful post
+          // The timer will pick up the new intel automatically
+        }}
+      />
 
       {/* Active Modal */}
       {activeModal && (

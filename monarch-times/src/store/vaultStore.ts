@@ -42,10 +42,46 @@ interface VaultStore {
   setCurrentAgent: (agentName: string) => void;
 }
 
+// Generate 2 random starter avatars for new users
+const generateStarterAvatars = (): VaultAvatar[] => {
+  const topics: Array<'fashion' | 'music' | 'philosophy' | 'art' | 'gaming'> = ['fashion', 'music', 'philosophy', 'art', 'gaming'];
+  const styles: MonarchStyle[] = ['squares', 'triangles'];
+  const rarities = ['COMMON', 'UNCOMMON'];
+  const names = ['Cipher', 'Echo', 'Nova', 'Prism', 'Vector', 'Pixel', 'Quantum', 'Nexus'];
+
+  const shuffledTopics = [...topics].sort(() => Math.random() - 0.5);
+  const shuffledNames = [...names].sort(() => Math.random() - 0.5);
+
+  const now = new Date().toISOString();
+
+  return [
+    {
+      id: `starter-avatar-1-${Date.now()}`,
+      seed: `starter-${Math.random().toString(36).substring(7)}`,
+      name: shuffledNames[0],
+      topic: shuffledTopics[0],
+      style: styles[0], // squares
+      rarity: rarities[Math.floor(Math.random() * rarities.length)],
+      purchaseDate: now,
+      price: 'FREE',
+    },
+    {
+      id: `starter-avatar-2-${Date.now()}`,
+      seed: `starter-${Math.random().toString(36).substring(7)}`,
+      name: shuffledNames[1],
+      topic: shuffledTopics[1],
+      style: styles[1], // triangles
+      rarity: rarities[Math.floor(Math.random() * rarities.length)],
+      purchaseDate: now,
+      price: 'FREE',
+    },
+  ];
+};
+
 export const useVaultStore = create<VaultStore>()(
   persist(
     (set) => ({
-      avatars: [],
+      avatars: generateStarterAvatars(),
       intel: [],
       currentAvatar: null,
       currentAgent: null,

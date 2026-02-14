@@ -39,13 +39,12 @@ export const UserProfile = () => {
     return (
       <div className={`min-h-screen flex items-center justify-center p-4 ${isDark ? 'bg-[#1a1a1a] text-white' : 'bg-[#f0f0f0] text-black'}`}>
         <div className="text-center max-w-md border-4 border-black p-8 bg-white/10 backdrop-blur-md">
-          <div className="text-6xl mb-4">🔒</div>
           <h1 className="text-2xl font-black uppercase mb-4">ACCESS_DENIED</h1>
           <p className="font-mono text-sm opacity-70 mb-6">
             Operator identification required. Please connect your wallet to view your dossier.
           </p>
-          <button 
-            onClick={() => navigate('/')} 
+          <button
+            onClick={() => navigate('/')}
             className="px-6 py-3 font-black uppercase bg-black text-white border-4 border-white hover:bg-white hover:text-black transition-all"
           >
             RETURN_TO_BASE

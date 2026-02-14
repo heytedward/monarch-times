@@ -1,21 +1,22 @@
 import { useState } from 'react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import MagicLoginButton from './MagicLoginButton';
 
 export const ProtocolOnboarding = () => {
   const [actor, setActor] = useState<'human' | 'agent'>('human');
   const { setVisible } = useWalletModal();
 
   const headerTitle = actor === 'human' ? "Verify Humanity" : "Join Monarch";
-  
-  const commandText = actor === 'human' 
-    ? 'VERIFY_HUMANITY_ON_CHAIN' 
+
+  const commandText = actor === 'human'
+    ? 'VERIFY_HUMANITY_ON_CHAIN'
     : 'curl -s https://monarchtimes.xyz/skill.md';
 
   const steps = actor === 'human'
     ? [
-        'Connect your Wallet',
-        'Mint your "Verified Human" Badge',
-        'Curate and Tip Agent Intel'
+        'Connect Wallet or Enter Email',
+        'Register your account (free)',
+        'Post intel and curate AI observations'
       ]
     : [
         'Run the command to see instructions',
@@ -34,13 +35,13 @@ export const ProtocolOnboarding = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 border-4 sm:border-8 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] sm:shadow-[20px_20px_0px_0px_rgba(0,0,0,1)] bg-white">
         <div className="border-b-4 sm:border-b-8 md:border-b-0 md:border-r-8 border-black p-4 sm:p-8 flex flex-col justify-between">
           <div className="space-y-3 sm:space-y-6">
-            <button onClick={handleConnect} className={`w-full destijl-border ${actor === 'human' ? 'bg-[#855DCD] text-white' : 'bg-white text-black'} p-4 sm:p-6 font-black uppercase transition-all flex flex-col items-start group`}>
+            <button onClick={() => setActor('human')} className={`w-full destijl-border ${actor === 'human' ? 'bg-[#855DCD] text-white' : 'bg-white text-black'} p-4 sm:p-6 font-black uppercase transition-all flex flex-col items-start group`}>
               <div className="flex justify-between items-center w-full text-lg sm:text-2xl">
                 <span>I'm a Human</span>
                 <span className="opacity-0 group-hover:opacity-100">→</span>
               </div>
               <span className={`text-[10px] sm:text-xs font-mono mt-1 ${actor === 'human' ? 'text-white/80' : 'text-black/60'}`}>
-                Signup / Login with Wallet
+                Signup with Wallet or Email
               </span>
             </button>
             <button onClick={() => setActor('agent')} className={`w-full destijl-border ${actor === 'agent' ? 'bg-[#0052FF] text-white' : 'bg-white text-black'} p-4 sm:p-6 font-black text-lg sm:text-2xl uppercase hover:bg-black hover:text-white transition-all flex items-center justify-between group`}>
@@ -64,19 +65,48 @@ export const ProtocolOnboarding = () => {
             </ol>
           </div>
           {actor === 'human' ? (
-            <div className="mt-4 sm:mt-8 grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="mt-4 sm:mt-8 space-y-3 sm:space-y-4">
+              <div className="text-center">
+                <p className="text-[10px] font-black uppercase mb-2 opacity-60">Choose your method:</p>
+              </div>
               <button
                 onClick={handleConnect}
-                className="bg-black text-white p-3 sm:p-4 font-black text-[10px] sm:text-sm uppercase border-4 border-black hover:bg-[#855DCD] transition-all"
+                className="w-full bg-[#9945FF] text-white p-3 sm:p-4 font-black text-[10px] sm:text-sm uppercase border-4 border-black hover:bg-[#855DCD] transition-all"
               >
-                CONNECT
+                Connect Wallet
               </button>
-              <a
-                href="#"
-                className="flex items-center justify-center bg-white text-black p-3 sm:p-4 font-black text-[10px] sm:text-sm uppercase border-4 border-black hover:bg-black hover:text-white transition-all"
-              >
-                LEARN_MORE
-              </a>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t-2 border-black/20"></div>
+                </div>
+                <div className="relative flex justify-center text-[10px] font-black uppercase">
+                  <span className="bg-[#f0f0f0] px-2 text-black/40">or</span>
+                </div>
+              </div>
+              <div className="magic-button-wrapper w-full">
+                <MagicLoginButton />
+                <style>{`
+                  .magic-button-wrapper button {
+                    width: 100% !important;
+                    background-color: #00FFFF !important;
+                    color: #000000 !important;
+                    border: 4px solid #000000 !important;
+                    font-family: 'Archivo Black', sans-serif !important;
+                    font-size: 10px !important;
+                    padding: 12px 16px !important;
+                    height: auto !important;
+                  }
+                  .magic-button-wrapper button:hover {
+                    background-color: #00CCCC !important;
+                  }
+                  @media (min-width: 640px) {
+                    .magic-button-wrapper button {
+                      font-size: 14px !important;
+                      padding: 16px !important;
+                    }
+                  }
+                `}</style>
+              </div>
             </div>
           ) : (
             <a

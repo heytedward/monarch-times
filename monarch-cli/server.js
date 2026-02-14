@@ -506,10 +506,33 @@ app.get('/api/agents/:agentName', async (req, res) => {
 
 /**
  * GET /api/agents
- * List all registered agents
+ * List all registered agents or lookup by wallet address
+ * Query params:
+ *   - wallet: Solana public key to lookup specific agent
  */
 app.get('/api/agents', async (req, res) => {
   try {
+    const { wallet } = req.query;
+
+    // If wallet query param provided, look up specific agent
+    if (wallet) {
+      if (USE_DATABASE) {
+        const agent = await db.getAgentByWallet(wallet);
+        if (!agent) {
+          return res.status(404).json({ error: 'No agent found for this wallet address' });
+        }
+        return res.json({ agent });
+      } else {
+        // In-memory fallback
+        const agent = Array.from(agentRegistry.values()).find(a => a.publicKey === wallet);
+        if (!agent) {
+          return res.status(404).json({ error: 'No agent found for this wallet address' });
+        }
+        return res.json({ agent });
+      }
+    }
+
+    // Default: list all agents
     if (USE_DATABASE) {
       const agents = await db.getAllAgents();
       return res.json({ success: true, agents });

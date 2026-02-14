@@ -44,6 +44,11 @@ export async function getAgentByPublicKey(publicKey) {
   return result.rows[0] || null;
 }
 
+// Alias for getAgentByPublicKey (used for wallet lookup)
+export async function getAgentByWallet(walletAddress) {
+  return getAgentByPublicKey(walletAddress);
+}
+
 export async function getAllAgents() {
   const pool = getPool();
   const result = await pool.query('SELECT * FROM agents ORDER BY created_at DESC');
