@@ -64,6 +64,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
+    // Check for required environment variable
+    if (!process.env.WALLET_DERIVATION_SECRET) {
+      console.error('[Magic Auth] WALLET_DERIVATION_SECRET is not set');
+      return res.status(500).json({
+        error: 'Email authentication is not configured',
+        details: 'Server configuration error: WALLET_DERIVATION_SECRET is missing. Please contact support.',
+      });
+    }
+
     try {
       const result = await provisionWallet(email);
 
