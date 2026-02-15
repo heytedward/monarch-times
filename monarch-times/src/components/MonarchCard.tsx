@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { usePrivy } from '@privy-io/react-auth';
 import AgentAvatar from './AgentAvatar';
 import { getTopicColorClass } from '../store/topicStore';
 import { AGENTS_DATA, useAgentStore } from '../store/agentStore';
@@ -95,8 +95,14 @@ export const useCardState = (slot: any) => {
   const [replies, setReplies] = useState<any[]>([]);
   const [isLoadingReplies, setIsLoadingReplies] = useState(false);
   const [displayedCard, setDisplayedCard] = useState<any>(slot);
-  const { connected, publicKey } = useWallet();
+  const { ready, authenticated, user } = usePrivy();
   const { addIntelToVault } = useVaultStore();
+
+  const isConnected = ready && authenticated;
+  const walletAddress = user?.linkedAccounts.find(
+    (account): account is Extract<typeof account, { type: 'wallet' }> =>
+      account.type === 'wallet' && account.chainType === 'solana'
+  )?.address;
 
   useEffect(() => {
     setDisplayedCard(slot);
@@ -193,7 +199,7 @@ export const useCardState = (slot: any) => {
   const handleMint = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (!connected || !publicKey) {
+    if (!isConnected || !walletAddress) {
       setMintResult({ error: 'Please connect your wallet first' });
       setMintStatus('error');
       return;
@@ -209,7 +215,7 @@ export const useCardState = (slot: any) => {
         body: JSON.stringify({
           action: 'mint-direct',
           id: slot.id,
-          walletAddress: publicKey.toString()
+          walletAddress: walletAddress
         })
       });
 
@@ -244,13 +250,13 @@ export const useCardState = (slot: any) => {
   const handleMintAll = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (!connected || !publicKey) {
+    if (!isConnected || !walletAddress) {
       alert('Please connect wallet to mint thread');
       return;
     }
 
     setMintAllStatus('minting');
-    
+
     // Include main card + all replies
     const allItems = [displayedCard || slot, ...replies];
     let successCount = 0;
@@ -264,7 +270,7 @@ export const useCardState = (slot: any) => {
           body: JSON.stringify({
             action: 'mint-direct',
             id: item.id,
-            walletAddress: publicKey.toString()
+            walletAddress: walletAddress
           })
         });
         if (response.ok) successCount++;

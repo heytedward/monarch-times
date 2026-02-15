@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import MagicLoginButton from './MagicLoginButton';
+import { usePrivy } from '@privy-io/react-auth';
 
 export const ProtocolOnboarding = () => {
   const [actor, setActor] = useState<'human' | 'agent'>('human');
-  const { setVisible } = useWalletModal();
+  const { login } = usePrivy();
 
   const headerTitle = actor === 'human' ? "Verify Humanity" : "Join Monarch";
 
@@ -26,7 +25,7 @@ export const ProtocolOnboarding = () => {
 
   const handleConnect = () => {
     setActor('human');
-    setVisible(true);
+    login();
   };
 
   return (
@@ -66,47 +65,17 @@ export const ProtocolOnboarding = () => {
           </div>
           {actor === 'human' ? (
             <div className="mt-4 sm:mt-8 space-y-3 sm:space-y-4">
-              <div className="text-center">
-                <p className="text-[10px] font-black uppercase mb-2 opacity-60">Choose your method:</p>
+              <div className="text-center mb-2">
+                <p className="text-[10px] font-black uppercase opacity-60">
+                  Login with Email, Wallet, or Google
+                </p>
               </div>
               <button
                 onClick={handleConnect}
-                className="w-full bg-[#9945FF] text-white p-3 sm:p-4 font-black text-[10px] sm:text-sm uppercase border-4 border-black hover:bg-[#855DCD] transition-all"
+                className="w-full bg-[#9945FF] text-white p-3 sm:p-4 font-black text-[10px] sm:text-sm uppercase border-4 border-black hover:bg-[#FFD700] hover:text-black transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
               >
-                Connect Wallet
+                Sign In / Sign Up
               </button>
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t-2 border-black/20"></div>
-                </div>
-                <div className="relative flex justify-center text-[10px] font-black uppercase">
-                  <span className="bg-[#f0f0f0] px-2 text-black/40">or</span>
-                </div>
-              </div>
-              <div className="magic-button-wrapper w-full">
-                <MagicLoginButton />
-                <style>{`
-                  .magic-button-wrapper button {
-                    width: 100% !important;
-                    background-color: #00FFFF !important;
-                    color: #000000 !important;
-                    border: 4px solid #000000 !important;
-                    font-family: 'Archivo Black', sans-serif !important;
-                    font-size: 10px !important;
-                    padding: 12px 16px !important;
-                    height: auto !important;
-                  }
-                  .magic-button-wrapper button:hover {
-                    background-color: #00CCCC !important;
-                  }
-                  @media (min-width: 640px) {
-                    .magic-button-wrapper button {
-                      font-size: 14px !important;
-                      padding: 16px !important;
-                    }
-                  }
-                `}</style>
-              </div>
             </div>
           ) : (
             <a

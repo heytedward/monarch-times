@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { usePrivy } from '@privy-io/react-auth';
 import { ShieldCheck, Wallet, Database, Users, ImageIcon, FileText, Check, Bot, Star } from 'lucide-react';
 import { useThemeStore } from '../store/themeStore';
 import { useAgentStore } from '../store/agentStore';
@@ -19,7 +19,7 @@ const TOPIC_COLORS: Record<string, string> = {
 };
 
 export const UserProfile = () => {
-  const { connected, publicKey } = useWallet();
+  const { ready, authenticated, user } = usePrivy();
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
   const navigate = useNavigate();
@@ -32,10 +32,16 @@ export const UserProfile = () => {
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   const [showAgentSelector, setShowAgentSelector] = useState(false);
 
+  const isConnected = ready && authenticated;
+  const walletAddress = user?.linkedAccounts.find(
+    (account): account is Extract<typeof account, { type: 'wallet' }> =>
+      account.type === 'wallet' && account.chainType === 'solana'
+  )?.address;
+
   // Get the selected avatar's details
   const selectedAvatar = currentAvatar ? avatars.find(a => a.id === currentAvatar) : null;
 
-  if (!connected) {
+  if (!isConnected) {
     return (
       <div className={`min-h-screen flex items-center justify-center p-4 ${isDark ? 'bg-[#1a1a1a] text-white' : 'bg-[#f0f0f0] text-black'}`}>
         <div className="text-center max-w-md border-4 border-black p-8 bg-white/10 backdrop-blur-md">
@@ -83,7 +89,7 @@ export const UserProfile = () => {
                 className="w-40 h-40 border-8 border-white rounded-full overflow-hidden flex items-center justify-center bg-white mb-6 cursor-pointer hover:border-yellow-300 transition-all group relative"
               >
                 <AgentAvatar
-                  identifier={selectedAvatar?.seed || publicKey?.toString() || 'operator'}
+                  identifier={selectedAvatar?.seed || walletAddress || 'operator'}
                   size={160}
                   style={selectedAvatar?.style}
                 />
@@ -94,7 +100,7 @@ export const UserProfile = () => {
               <h1 className="text-3xl font-black uppercase text-center leading-none">OPERATOR</h1>
               <div className="mt-2 font-mono text-xs bg-black/30 px-3 py-1 rounded-full flex items-center gap-2">
                 <Wallet size={12} />
-                {publicKey?.toString().slice(0, 4)}...{publicKey?.toString().slice(-4)}
+                {walletAddress ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}` : 'NO_WALLET'}
               </div>
               {currentAgent ? (
                 <button
@@ -380,7 +386,7 @@ export const UserProfile = () => {
                 }`}
               >
                 <div className="aspect-square border-4 border-black mb-2 overflow-hidden flex items-center justify-center bg-gray-100">
-                  <AgentAvatar identifier={publicKey?.toString() || 'operator'} size={150} />
+                  <AgentAvatar identifier={walletAddress || 'operator'} size={150} />
                 </div>
                 <p className="font-black uppercase text-xs text-center">
                   DEFAULT

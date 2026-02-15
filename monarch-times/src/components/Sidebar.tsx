@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { usePrivy } from '@privy-io/react-auth';
 import {
   LayoutGrid,
   Users,
@@ -14,10 +13,15 @@ import AgentAvatar from './AgentAvatar';
 
 export const Sidebar = () => {
   const [isExpanded, setIsExpanded] = useState(true);
-  const { connected, publicKey } = useWallet();
-  const { setVisible } = useWalletModal();
+  const { ready, authenticated, user, login } = usePrivy();
   const navigate = useNavigate();
   const [activeAgents, setActiveAgents] = useState<any[]>([]);
+
+  const isConnected = ready && authenticated;
+  const walletAddress = user?.linkedAccounts.find(
+    (account): account is Extract<typeof account, { type: 'wallet' }> =>
+      account.type === 'wallet' && account.chainType === 'solana'
+  )?.address;
 
 
   // Mock fetching active patrols
@@ -81,12 +85,12 @@ export const Sidebar = () => {
           <div
             className="relative cursor-pointer group"
             onClick={() => {
-              if (!connected) setVisible(true);
+              if (!isConnected) login();
               else navigate('/me');
             }}
           >
-            {connected && publicKey ? (
-              <AgentAvatar identifier={publicKey.toString()} size={isExpanded ? 48 : 40} />
+            {isConnected && walletAddress ? (
+              <AgentAvatar identifier={walletAddress} size={isExpanded ? 48 : 40} />
             ) : (
               <div className={`
                 border-2 border-black rounded-full overflow-hidden transition-all flex items-center justify-center bg-white
@@ -96,7 +100,7 @@ export const Sidebar = () => {
               </div>
             )}
             {/* 100% HUMAN Badge */}
-            {connected && (
+            {isConnected && (
               <div className="absolute -bottom-1 -right-1 bg-black text-white text-[8px] font-black px-1 border border-white">
                 100%
               </div>
@@ -106,16 +110,16 @@ export const Sidebar = () => {
           {isExpanded && (
             <div className="flex flex-col overflow-hidden">
               <span className="font-black text-sm uppercase truncate">
-                {connected ? 'OPERATOR' : 'GUEST'}
+                {isConnected ? 'OPERATOR' : 'GUEST'}
               </span>
               <span className="font-mono text-[10px] text-black/50 truncate">
-                {connected ? `${publicKey?.toString().slice(0, 4)}...${publicKey?.toString().slice(-4)}` : 'ID: UNLINKED'}
+                {isConnected && walletAddress ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}` : 'ID: UNLINKED'}
               </span>
             </div>
           )}
         </div>
-        
-        {isExpanded && connected && (
+
+        {isExpanded && isConnected && (
           <div className="flex items-center gap-2 px-2 py-1 bg-[#0052FF]/10 border border-[#0052FF] text-[#0052FF]">
             <ShieldCheck size={12} />
             <span className="text-[9px] font-black uppercase">VERIFIED HUMAN</span>
@@ -166,8 +170,8 @@ export const Sidebar = () => {
           {/* Bridge Status */}
           <div className="flex flex-col gap-1 items-center">
             <div className={`
-              w-3 h-3 border-2 border-black rounded-full 
-              ${connected ? 'bg-[#00FF00] shadow-[0_0_10px_#00FF00]' : 'bg-red-500'}
+              w-3 h-3 border-2 border-black rounded-full
+              ${isConnected ? 'bg-[#00FF00] shadow-[0_0_10px_#00FF00]' : 'bg-red-500'}
             `} />
             {isExpanded && <span className="text-[8px] font-black uppercase">NET_OK</span>}
           </div>

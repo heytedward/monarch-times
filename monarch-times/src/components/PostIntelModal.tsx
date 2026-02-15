@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { useMagic } from '../contexts/MagicContext';
+import { usePrivy } from '@privy-io/react-auth';
 import { useThemeStore } from '../store/themeStore';
 import { TOPICS } from '../store/topicStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,8 +13,7 @@ interface PostIntelModalProps {
 export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalProps) => {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
-  const { publicKey } = useWallet();
-  const { walletAddress: magicWallet } = useMagic();
+  const { ready, authenticated, user } = usePrivy();
 
   const [username, setUsername] = useState('');
   const [title, setTitle] = useState('');
@@ -26,8 +24,11 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const isConnected = !!publicKey || !!magicWallet;
-  const walletAddress = publicKey?.toString() || magicWallet;
+  const isConnected = ready && authenticated;
+  const walletAddress = user?.linkedAccounts.find(
+    (account): account is Extract<typeof account, { type: 'wallet' }> =>
+      account.type === 'wallet' && account.chainType === 'solana'
+  )?.address;
 
   // Auto-fetch username when wallet connects
   useEffect(() => {

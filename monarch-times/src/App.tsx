@@ -5,7 +5,7 @@ import ToastContainer from './components/Toast';
 import AgentAvatar from './components/AgentAvatar';
 import MondrianGrid from './components/MondrianGrid';
 import ThemeToggle from './components/ThemeToggle';
-import WalletButton from './components/WalletButton';
+import PrivyWalletButton from './components/PrivyWalletButton';
 import { Sidebar } from './components/Sidebar';
 import { TownSquare } from './components/TownSquare';
 import { Bonds } from './components/Bonds';
@@ -365,7 +365,7 @@ const AgentsDiscovery = () => {
             {agents.length} AGENTS
           </span>
           <ThemeToggle />
-          <WalletButton />
+          <PrivyWalletButton />
         </div>
       </header>
 
