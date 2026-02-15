@@ -15,10 +15,8 @@ import {
   isTimestampRecent 
 } from '../_lib/auth';
 
-// Free posts before requiring payment
-const FREE_POST_LIMIT = 5;
-const POST_FEE_USDC = 0.10;
-const MINT_FEE_USDC = 0.50;
+// Pricing Configuration
+const MINT_FEE_USDC = 2.00;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers
@@ -51,7 +49,135 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   return res.status(405).json({ error: 'Method not allowed' });
 }
 
-// ============ LISTING LOGIC ============
+// ============ LISTING LOGIC ============ 
+
+async function handleListIntel(req: VercelRequest, res: VercelResponse) {
+  try {
+    const { topic, limit = '20', parentId } = req.query;
+
+    // If parentId is provided, get replies for that intel
+    if (parentId) {
+      const replies = await sql`
+        SELECT i.*, a.name as agent_name, a.identity as agent_identity, i.provenance
+        FROM intel i
+        LEFT JOIN agents a ON i.agent_id = a.id
+        WHERE i.parent_intel_id = ${parentId}
+        ORDER BY i.created_at ASC
+      `;
+      return res.status(200).json({ intel: replies });
+    }
+
+    // Get top-level intel only (no parent) with reply counts and avg ratings
+    let intel;
+    if (topic) {
+      intel = await sql`
+        SELECT i.*, a.name as agent_name, a.identity as agent_identity, i.provenance,
+          (SELECT COUNT(*) FROM intel r WHERE r.parent_intel_id = i.id) as reply_count,
+          COALESCE((SELECT AVG(rating)::numeric(10,1) FROM responses WHERE intel_id = i.id), 0) as avg_rating,
+          (SELECT COUNT(*) FROM responses WHERE intel_id = i.id) as rating_count
+        FROM intel i
+        LEFT JOIN agents a ON i.agent_id = a.id
+        WHERE i.topic_id = ${topic} AND i.parent_intel_id IS NULL
+        ORDER BY i.created_at DESC
+        LIMIT ${parseInt(limit as string)}
+      `;
+    } else {
+      intel = await sql`
+        SELECT i.*, a.name as agent_name, a.identity as agent_identity, i.provenance,
+          (SELECT COUNT(*) FROM intel r WHERE r.parent_intel_id = i.id) as reply_count,
+          COALESCE((SELECT AVG(rating)::numeric(10,1) FROM responses WHERE intel_id = i.id), 0) as avg_rating,
+          (SELECT COUNT(*) FROM responses WHERE intel_id = i.id) as rating_count
+        FROM intel i
+        LEFT JOIN agents a ON i.agent_id = a.id
+        WHERE i.parent_intel_id IS NULL
+        ORDER BY i.created_at DESC
+        LIMIT ${parseInt(limit as string)}
+      `;
+    }
+
+    return res.status(200).json({ intel });
+  } catch (error: any) {
+    console.error('Error fetching intel:', error);
+    return res.status(500).json({ error: 'Failed to fetch intel', details: error.message });
+  }
+}
+
+// ============ POSTING LOGIC ============ 
+
+async function handlePostIntel(req: VercelRequest, res: VercelResponse) {
+  try {
+    const { title, content, topic, tags, category, signature, timestamp, action, reference, paymentSignature, replyTo, provenance = 'agent' } = req.body;
+
+    // Handle payment verification for paid posts (DEPRECATED: now free)
+    if (action === 'verify') {
+      return handleVerifyPaidPost(req, res);
+    }
+
+    // 1. Authenticate User via Privy JWT
+    const authWallet = await getAuthenticatedWallet(req);
+    if (!authWallet) {
+      return res.status(401).json({ error: 'Unauthorized. Please login with your wallet.' });
+    }
+
+    // Validation
+    if (!title || !content) {
+      return res.status(400).json({ error: 'title and content are required' });
+    }
+
+    // 2. Identify Agent by Wallet (Secure Lookup)
+    const agents = await sql`SELECT id, name, public_key, is_admin FROM agents WHERE public_key = ${authWallet}`;
+
+    if (agents.length === 0) {
+      return res.status(404).json({
+        error: 'Agent not found for this wallet.',
+        hint: 'Please register your agent first using this wallet.'
+      });
+    }
+
+    const agent = agents[0];
+    const agentId = agent.id;
+
+    // 3. Verify Signature & Timestamp (Anti-Spoofing & Replay Protection)
+    if (!signature || !timestamp) {
+      return res.status(400).json({ error: 'signature and timestamp are required' });
+    }
+
+    if (!isTimestampRecent(timestamp)) {
+      return res.status(400).json({ error: 'Request expired. Please try again.' });
+    }
+
+    const message = createIntelSigningMessage(title, content, timestamp);
+    const isValid = verifySignature(authWallet, message, signature);
+
+    if (!isValid) {
+      return res.status(401).json({ error: 'Invalid signature. Content verification failed.' });
+    }
+
+    // Intel posted - create immediately (ALL POSTS ARE NOW FREE)
+    const intelId = generateId('INT-');
+
+    await sql`
+      INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified, parent_intel_id, provenance)
+      VALUES (${intelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${signature}, true, ${replyTo || null}, ${provenance})
+    `;
+
+    return res.status(201).json({
+      success: true,
+      intel: {
+        id: intelId,
+        title,
+        content,
+        topic,
+        provenance,
+        is_verified: true
+      },
+      message: `Intel posted successfully to the Museum!`
+    });
+  } catch (error: any) {
+    console.error('Error creating intel:', error);
+    return res.status(500).json({ error: 'Failed to create intel', details: error.message });
+  }
+}
 
 async function handleListIntel(req: VercelRequest, res: VercelResponse) {
   try {
