@@ -8,6 +8,12 @@ import {
 } from '../_lib/solana-pay';
 import { mintIntelAsCNFT } from '../_lib/minting-service';
 import { getExplorerUrl, getSolanaNetwork } from '../_lib/solana-config';
+import { 
+  getAuthenticatedWallet, 
+  verifySignature, 
+  createIntelSigningMessage, 
+  isTimestampRecent 
+} from '../_lib/auth';
 
 // Free posts before requiring payment
 const FREE_POST_LIMIT = 5;
@@ -102,50 +108,53 @@ async function handleListIntel(req: VercelRequest, res: VercelResponse) {
 
 async function handlePostIntel(req: VercelRequest, res: VercelResponse) {
   try {
-    const { agentName, title, content, topic, tags, category, signature, action, reference, paymentSignature, replyTo, provenance = 'agent' } = req.body;
+    const { title, content, topic, tags, category, signature, timestamp, action, reference, paymentSignature, replyTo, provenance = 'agent' } = req.body;
 
     // Handle payment verification for paid posts
     if (action === 'verify') {
       return handleVerifyPaidPost(req, res);
     }
 
+    // 1. Authenticate User via Privy JWT
+    const authWallet = await getAuthenticatedWallet(req);
+    if (!authWallet) {
+      return res.status(401).json({ error: 'Unauthorized. Please login with your wallet.' });
+    }
+
     // Validation
-    if (!agentName || !title || !content) {
-      return res.status(400).json({ error: 'agentName, title, and content are required' });
+    if (!title || !content) {
+      return res.status(400).json({ error: 'title and content are required' });
     }
 
-    // Clean up agent identifier - strip @ prefix if present
-    const cleanName = agentName.startsWith('@') ? agentName.slice(1) : agentName;
-
-    // Try multiple ways to find the agent
-    let agents;
-
-    // 1. Try by exact name
-    agents = await sql`SELECT id, name, public_key, is_admin FROM agents WHERE name = ${cleanName}`;
-
-    // 2. If not found, try by agent ID (AGT-...)
-    if (agents.length === 0 && cleanName.startsWith('AGT-')) {
-      agents = await sql`SELECT id, name, public_key, is_admin FROM agents WHERE id = ${cleanName}`;
-    }
-
-    // 3. If still not found, try case-insensitive match
-    if (agents.length === 0) {
-      agents = await sql`SELECT id, name, public_key, is_admin FROM agents WHERE LOWER(name) = LOWER(${cleanName})`;
-    }
+    // 2. Identify Agent by Wallet (Secure Lookup)
+    const agents = await sql`SELECT id, name, public_key, is_admin FROM agents WHERE public_key = ${authWallet}`;
 
     if (agents.length === 0) {
-      // Get list of registered agents for helpful error
-      const allAgents = await sql`SELECT name FROM agents LIMIT 5`;
-      const agentList = allAgents.map((a: any) => a.name).join(', ');
       return res.status(404).json({
-        error: 'Agent not found. Please register first.',
-        hint: `Use the exact name from registration. Registered agents: ${agentList || 'none'}`
+        error: 'Agent not found for this wallet.',
+        hint: 'Please register your agent first using this wallet.'
       });
     }
 
     const agent = agents[0];
     const agentId = agent.id;
     const isAdmin = agent.is_admin === true;
+
+    // 3. Verify Signature & Timestamp (Anti-Spoofing & Replay Protection)
+    if (!signature || !timestamp) {
+      return res.status(400).json({ error: 'signature and timestamp are required' });
+    }
+
+    if (!isTimestampRecent(timestamp)) {
+      return res.status(400).json({ error: 'Request expired. Please try again.' });
+    }
+
+    const message = createIntelSigningMessage(title, content, timestamp);
+    const isValid = verifySignature(authWallet, message, signature);
+
+    if (!isValid) {
+      return res.status(401).json({ error: 'Invalid signature. Content verification failed.' });
+    }
 
     // Check post count for this agent
     const postCountResult = await sql`SELECT COUNT(*) as count FROM intel WHERE agent_id = ${agentId}`;
@@ -169,7 +178,7 @@ async function handlePostIntel(req: VercelRequest, res: VercelResponse) {
       // Store pending intel
       await sql`
         INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified, status, parent_intel_id, provenance)
-        VALUES (${pendingIntelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${`pending-${pendingIntelId}`}, false, 'PENDING', ${replyTo || null}, ${provenance})
+        VALUES (${pendingIntelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${signature}, false, 'PENDING', ${replyTo || null}, ${provenance})
       `;
 
       // Store pending payment
@@ -205,11 +214,11 @@ async function handlePostIntel(req: VercelRequest, res: VercelResponse) {
 
     // Free post - create immediately
     const intelId = generateId('INT-');
-    const sig = signature || `sig-${intelId}`;
+    // const sig = signature || `sig-${intelId}`; // REMOVED: Insecure fallback
 
     await sql`
       INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified, parent_intel_id, provenance)
-      VALUES (${intelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${sig}, true, ${replyTo || null}, ${provenance})
+      VALUES (${intelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${signature}, true, ${replyTo || null}, ${provenance})
     `;
 
     const freePostsRemaining = FREE_POST_LIMIT - postCount - 1;
