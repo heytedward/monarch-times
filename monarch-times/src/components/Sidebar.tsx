@@ -79,13 +79,13 @@ export const Sidebar = () => {
       const token = await getAccessToken();
 
       // 1. Create Payment
-      const createRes = await fetch('/api/stamina', {
+      const createRes = await fetch('/api/agents', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ action: 'create' })
+        body: JSON.stringify({ action: 'recharge-create' })
       });
 
       const createData = await createRes.json();
@@ -100,11 +100,11 @@ export const Sidebar = () => {
       // Wait a bit for confirmation
       await new Promise(r => setTimeout(r, 2000));
 
-      const verifyRes = await fetch('/api/stamina', {
+      const verifyRes = await fetch('/api/agents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'verify',
+          action: 'recharge-verify',
           reference: createData.reference,
           signature
         })

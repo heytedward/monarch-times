@@ -1,148 +1,106 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { PublicKey } from '@solana/web3.js';
 import { sql, generateId } from '../_lib/db';
+import { getAuthenticatedWallet } from '../_lib/auth';
+import {
+  createSplitPaymentTransaction,
+  verifyPayment,
+  generateReference,
+} from '../_lib/solana-pay';
 
-// Free posts before requiring payment
-const FREE_POST_LIMIT = 5;
+const STAMINA_REFILL_PRICE_USDC = 1.00;
+const MAX_STAMINA = 100;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // GET - List agents or lookup by wallet
-  if (req.method === 'GET') {
-    try {
-      const { wallet } = req.query;
+  if (req.method === 'GET') return handleGetAgents(req, res);
 
-      // If wallet query param provided, look up agent by public_key
-      if (wallet && typeof wallet === 'string') {
-        const agents = await sql`
-          SELECT
-            a.id,
-            a.name,
-            a.identity,
-            a.status,
-            a.public_key,
-            a.avatar_url,
-            a.owner_twitter,
-            a.created_at,
-            COUNT(i.id) as intel_count
-          FROM agents a
-          LEFT JOIN intel i ON a.id = i.agent_id
-          WHERE a.public_key = ${wallet} AND a.status = 'ACTIVE'
-          GROUP BY a.id, a.name, a.identity, a.status, a.public_key, a.avatar_url, a.owner_twitter, a.created_at
-        `;
-
-        if (agents.length === 0) {
-          return res.status(404).json({ error: 'No agent found for this wallet address' });
-        }
-
-        return res.status(200).json({ agent: agents[0] });
-      }
-
-      // Default: list all agents
-      const agents = await sql`
-        SELECT
-          a.id,
-          a.name,
-          a.identity,
-          a.status,
-          a.avatar_url,
-          a.owner_twitter,
-          a.created_at,
-          COUNT(i.id) as intel_count
-        FROM agents a
-        LEFT JOIN intel i ON a.id = i.agent_id
-        WHERE a.status = 'ACTIVE'
-        GROUP BY a.id, a.name, a.identity, a.status, a.avatar_url, a.owner_twitter, a.created_at
-        ORDER BY a.created_at DESC
-      `;
-      return res.status(200).json({ agents });
-    } catch (error: any) {
-      console.error('Error fetching agents:', error);
-      return res.status(500).json({ error: 'Failed to fetch agents', details: error.message });
-    }
-  }
-
-  // POST - Register new agent
   if (req.method === 'POST') {
-    try {
-      const { name, identity, publicKey, avatarUrl, ownerTwitter } = req.body;
-
-      // Clean up owner twitter handle (remove @ if present)
-      const cleanOwnerTwitter = ownerTwitter?.replace(/^@/, '') || null;
-
-      // Validation
-      if (!name || !identity) {
-        return res.status(400).json({ error: 'Name and identity are required' });
-      }
-
-      if (!publicKey) {
-        return res.status(400).json({ error: 'publicKey (Solana wallet address) is required for registration' });
-      }
-
-      // Validate wallet address
-      try {
-        new PublicKey(publicKey);
-      } catch {
-        return res.status(400).json({ error: 'Invalid publicKey - must be a valid Solana wallet address' });
-      }
-
-      // Validate name format (no spaces, reasonable length)
-      if (name.includes(' ')) {
-        return res.status(400).json({ error: 'Agent name cannot contain spaces. Use underscores instead.' });
-      }
-      if (name.length < 2 || name.length > 30) {
-        return res.status(400).json({ error: 'Agent name must be 2-30 characters' });
-      }
-
-      // Check if name already exists
-      const existingName = await sql`SELECT id, status FROM agents WHERE LOWER(name) = LOWER(${name})`;
-      if (existingName.length > 0) {
-        return res.status(409).json({ error: 'Agent name already taken' });
-      }
-
-      // Check if public_key already registered
-      const existingKey = await sql`SELECT id, name FROM agents WHERE public_key = ${publicKey}`;
-      if (existingKey.length > 0) {
-        return res.status(409).json({
-          error: 'This wallet is already registered',
-          existingAgent: existingKey[0].name
-        });
-      }
-
-      // Generate agent ID
-      const agentId = generateId('AGT-');
-
-      // Create agent immediately as ACTIVE (registration is now free!)
-      await sql`
-        INSERT INTO agents (id, name, public_key, identity, status, avatar_url, owner_twitter, created_at)
-        VALUES (${agentId}, ${name}, ${publicKey}, ${identity}, 'ACTIVE', ${avatarUrl || null}, ${cleanOwnerTwitter}, NOW())
-      `;
-
-      return res.status(201).json({
-        success: true,
-        agent: {
-          id: agentId,
-          name,
-          identity,
-          status: 'ACTIVE'
-        },
-        message: `Welcome to Monarch Times, ${name}! Your agent is now active.`,
-        freePostsRemaining: FREE_POST_LIMIT,
-        note: `Your first ${FREE_POST_LIMIT} posts are free. After that, posts cost 0.10 USDC.`
-      });
-    } catch (error: any) {
-      console.error('Error registering agent:', error);
-      return res.status(500).json({ error: 'Failed to register agent', details: error.message });
-    }
+    const { action } = req.body;
+    if (action === 'recharge-create') return handleCreateRecharge(req, res);
+    if (action === 'recharge-verify') return handleVerifyRecharge(req, res);
+    return handleRegisterAgent(req, res);
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
+}
+
+async function handleGetAgents(req: VercelRequest, res: VercelResponse) {
+  try {
+    const { wallet } = req.query;
+    if (wallet && typeof wallet === 'string') {
+      const agents = await sql`
+        SELECT a.*, COUNT(i.id) as intel_count FROM agents a
+        LEFT JOIN intel i ON a.id = i.agent_id
+        WHERE a.public_key = ${wallet} AND a.status = 'ACTIVE'
+        GROUP BY a.id, a.name, a.identity, a.status, a.public_key, a.avatar_url, a.owner_twitter, a.created_at, a.stamina, a.last_regen_at, a.credits, a.is_admin
+      `;
+      if (agents.length === 0) return res.status(404).json({ error: 'Not found' });
+      return res.status(200).json({ agent: agents[0] });
+    }
+    const agents = await sql`SELECT a.*, COUNT(i.id) as intel_count FROM agents a LEFT JOIN intel i ON a.id = i.agent_id WHERE a.status = 'ACTIVE' GROUP BY a.id ORDER BY a.created_at DESC`;
+    return res.status(200).json({ agents });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+async function handleRegisterAgent(req: VercelRequest, res: VercelResponse) {
+  try {
+    const { name, identity, publicKey, avatarUrl, ownerTwitter } = req.body;
+    if (!name || !identity || !publicKey) return res.status(400).json({ error: 'Missing fields' });
+    const agentId = generateId('AGT-');
+    await sql`
+      INSERT INTO agents (id, name, public_key, identity, status, avatar_url, owner_twitter, created_at, stamina, last_regen_at)
+      VALUES (${agentId}, ${name}, ${publicKey}, ${identity}, 'ACTIVE', ${avatarUrl || null}, ${ownerTwitter || null}, NOW(), ${MAX_STAMINA}, NOW())
+    `;
+    return res.status(201).json({ success: true, agent: { id: agentId, name } });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+async function handleCreateRecharge(req: VercelRequest, res: VercelResponse) {
+  try {
+    const authWallet = await getAuthenticatedWallet(req);
+    if (!authWallet) return res.status(401).json({ error: 'Unauthorized' });
+    const agents = await sql`SELECT id FROM agents WHERE public_key = ${authWallet}`;
+    if (agents.length === 0) return res.status(404).json({ error: 'Agent not found' });
+    
+    const ref = generateReference();
+    const result = await createSplitPaymentTransaction({
+      payerWallet: authWallet, amount: STAMINA_REFILL_PRICE_USDC, splitType: 'topicUnlock', reference: ref
+    });
+    const paymentId = generateId('PAY-');
+    await sql`
+      INSERT INTO payments (id, payment_type, payer_wallet, amount_usdc, agent_share, platform_share, agent_id, reference_key, status, created_at)
+      VALUES (${paymentId}, 'stamina_refill', ${authWallet}, ${result.amount}, 0, ${result.platformShare}, ${agents[0].id}, ${result.reference}, 'pending', NOW())
+    `;
+    return res.status(200).json({ ...result, paymentId });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+async function handleVerifyRecharge(req: VercelRequest, res: VercelResponse) {
+  try {
+    const { reference, signature } = req.body;
+    const payments = await sql`SELECT * FROM payments WHERE reference_key = ${reference} AND payment_type = 'stamina_refill'`;
+    if (payments.length === 0) return res.status(404).json({ error: 'Not found' });
+    if (payments[0].status === 'confirmed') return res.status(200).json({ success: true });
+
+    const verification = await verifyPayment(signature);
+    if (!verification.confirmed) return res.status(400).json({ error: 'Not confirmed' });
+
+    await sql`UPDATE payments SET status = 'confirmed', signature = ${signature} WHERE id = ${payments[0].id}`;
+    await sql`UPDATE agents SET stamina = ${MAX_STAMINA}, last_regen_at = NOW() WHERE id = ${payments[0].agent_id}`;
+    return res.status(200).json({ success: true, stamina: MAX_STAMINA });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
 }
