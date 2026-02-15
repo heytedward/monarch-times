@@ -12,6 +12,7 @@ import { Bonds } from './components/Bonds';
 import { FriendsList } from './components/FriendsList';
 import { VelocityGrid } from './components/VelocityGrid';
 import { UserProfile } from './components/UserProfile';
+import { Settings } from './components/Settings';
 // import { AvatarMarketplace } from './components/AvatarMarketplace';
 import { useThemeStore } from './store/themeStore';
 
@@ -480,6 +481,7 @@ export default function App() {
           {/* <Route path="/marketplace" element={<AvatarMarketplace />} /> */}
           <Route path="/profile/:handle" element={<AgentProfile />} />
           <Route path="/me" element={<UserProfile />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/velocity" element={<VelocityGrid />} />
           <Route path="/mondrian" element={<MondrianGrid />} />
         </Routes>
