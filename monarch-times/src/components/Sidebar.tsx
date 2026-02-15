@@ -8,12 +8,36 @@ import {
   Radio,
   Zap,
   ShieldCheck,
+  Settings,
+  Mail,
+  Wallet as WalletIcon,
+  Link as LinkIcon,
+  X,
+  Download,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import AgentAvatar from './AgentAvatar';
 
 export const Sidebar = () => {
   const [isExpanded, setIsExpanded] = useState(true);
-  const { ready, authenticated, user, login } = usePrivy();
+  const [showSettings, setShowSettings] = useState(false);
+  const {
+    ready,
+    authenticated,
+    user,
+    login,
+    logout,
+    linkEmail,
+    linkWallet,
+    linkGoogle,
+    linkTwitter,
+    unlinkEmail,
+    unlinkWallet,
+    unlinkGoogle,
+    unlinkTwitter,
+    exportWallet,
+  } = usePrivy();
   const navigate = useNavigate();
   const [activeAgents, setActiveAgents] = useState<any[]>([]);
 
@@ -163,8 +187,26 @@ export const Sidebar = () => {
         </div>
       </nav>
 
-      {/* --- BOTTOM: Status Rail --- */}
+      {/* --- BOTTOM: Status & Settings Rail --- */}
       <div className="mt-auto border-t-4 border-black bg-white">
+        {/* Settings Button */}
+        {isConnected && (
+          <button
+            onClick={() => setShowSettings(true)}
+            className="w-full p-3 border-b-4 border-black hover:bg-black hover:text-white transition-all flex items-center gap-3 group"
+          >
+            <Settings
+              size={24}
+              strokeWidth={2.5}
+              className="text-black/50 group-hover:text-white"
+            />
+            {isExpanded && (
+              <span className="font-black uppercase text-xs tracking-wider text-black/50 group-hover:text-white">
+                SETTINGS
+              </span>
+            )}
+          </button>
+        )}
 
         <div className={`p-4 flex ${isExpanded ? 'flex-row items-end justify-between' : 'flex-col gap-4 items-center'}`}>
           {/* Bridge Status */}
@@ -178,14 +220,14 @@ export const Sidebar = () => {
 
           {/* Stamina Bar (Vertical) */}
           <div className={`flex ${isExpanded ? 'flex-row gap-2' : 'flex-col gap-1'} items-center`}>
-            <div className="relative border-2 border-black bg-gray-200 overflow-hidden" 
-                 style={{ 
-                   width: isExpanded ? '12px' : '8px', 
-                   height: isExpanded ? '40px' : '30px' 
+            <div className="relative border-2 border-black bg-gray-200 overflow-hidden"
+                 style={{
+                   width: isExpanded ? '12px' : '8px',
+                   height: isExpanded ? '40px' : '30px'
                  }}>
-              <div 
+              <div
                 className="absolute bottom-0 left-0 w-full bg-black transition-all duration-500"
-                style={{ height: '75%' }} 
+                style={{ height: '75%' }}
               />
             </div>
             {isExpanded && (
@@ -197,6 +239,287 @@ export const Sidebar = () => {
           </div>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <SettingsModal
+          user={user}
+          onClose={() => setShowSettings(false)}
+          onLogout={logout}
+          onLinkEmail={linkEmail}
+          onLinkWallet={linkWallet}
+          onLinkGoogle={linkGoogle}
+          onLinkTwitter={linkTwitter}
+          onUnlinkEmail={unlinkEmail}
+          onUnlinkWallet={unlinkWallet}
+          onUnlinkGoogle={unlinkGoogle}
+          onUnlinkTwitter={unlinkTwitter}
+          onExportWallet={exportWallet}
+        />
+      )}
     </aside>
+  );
+};
+
+// Settings Modal Component
+const SettingsModal = ({
+  user,
+  onClose,
+  onLogout,
+  onLinkEmail,
+  onLinkWallet,
+  onLinkGoogle,
+  onLinkTwitter,
+  onUnlinkEmail,
+  onUnlinkWallet,
+  onUnlinkGoogle,
+  onUnlinkTwitter,
+  onExportWallet,
+}: {
+  user: any;
+  onClose: () => void;
+  onLogout: () => void;
+  onLinkEmail: () => void;
+  onLinkWallet: () => void;
+  onLinkGoogle: () => void;
+  onLinkTwitter: () => void;
+  onUnlinkEmail: (email: string) => void;
+  onUnlinkWallet: (address: string) => void;
+  onUnlinkGoogle: (subject: string) => void;
+  onUnlinkTwitter: (subject: string) => void;
+  onExportWallet: () => void;
+}) => {
+  const [activeTab, setActiveTab] = useState<'accounts' | 'wallets' | 'security'>('accounts');
+
+  const emailAccounts = user?.linkedAccounts?.filter((a: any) => a.type === 'email') || [];
+  const walletAccounts = user?.linkedAccounts?.filter((a: any) => a.type === 'wallet') || [];
+  const googleAccounts = user?.linkedAccounts?.filter((a: any) => a.type === 'google_oauth') || [];
+  const twitterAccounts = user?.linkedAccounts?.filter((a: any) => a.type === 'twitter_oauth') || [];
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full max-h-[90vh] overflow-hidden border-8 border-black bg-white shadow-[20px_20px_0px_0px_rgba(0,0,0,1)]">
+        {/* Header */}
+        <div className="bg-[#9945FF] p-6 border-b-8 border-black flex justify-between items-center">
+          <h2 className="text-2xl font-black uppercase text-white flex items-center gap-3">
+            <Settings size={28} />
+            OPERATOR_SETTINGS
+          </h2>
+          <button
+            onClick={onClose}
+            className="font-black uppercase text-xs bg-white text-black px-4 py-2 border-4 border-black hover:bg-red-500 hover:text-white transition-all"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b-4 border-black">
+          <button
+            onClick={() => setActiveTab('accounts')}
+            className={`flex-1 py-3 font-black uppercase text-xs border-r-4 border-black transition-all ${
+              activeTab === 'accounts' ? 'bg-black text-white' : 'hover:bg-black/10'
+            }`}
+          >
+            <LinkIcon size={14} className="inline mr-2" />
+            ACCOUNTS
+          </button>
+          <button
+            onClick={() => setActiveTab('wallets')}
+            className={`flex-1 py-3 font-black uppercase text-xs border-r-4 border-black transition-all ${
+              activeTab === 'wallets' ? 'bg-black text-white' : 'hover:bg-black/10'
+            }`}
+          >
+            <WalletIcon size={14} className="inline mr-2" />
+            WALLETS
+          </button>
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`flex-1 py-3 font-black uppercase text-xs transition-all ${
+              activeTab === 'security' ? 'bg-black text-white' : 'hover:bg-black/10'
+            }`}
+          >
+            <ShieldCheck size={14} className="inline mr-2" />
+            SECURITY
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[60vh] custom-scrollbar">
+          {activeTab === 'accounts' && (
+            <div className="space-y-6">
+              {/* Email Accounts */}
+              <div>
+                <h3 className="text-sm font-black uppercase mb-3 flex items-center gap-2">
+                  <Mail size={16} />
+                  EMAIL ACCOUNTS
+                </h3>
+                {emailAccounts.map((email: any) => (
+                  <div key={email.address} className="border-4 border-black p-3 mb-2 flex justify-between items-center">
+                    <span className="font-mono text-sm">{email.address}</span>
+                    <button
+                      onClick={() => onUnlinkEmail(email.address)}
+                      className="text-xs font-black uppercase px-3 py-1 border-2 border-black hover:bg-red-500 hover:text-white transition-all"
+                    >
+                      <Trash2 size={12} className="inline mr-1" />
+                      REMOVE
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={onLinkEmail}
+                  className="w-full border-4 border-black p-3 font-black uppercase text-xs hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus size={14} />
+                  ADD EMAIL
+                </button>
+              </div>
+
+              {/* Google Accounts */}
+              <div>
+                <h3 className="text-sm font-black uppercase mb-3">GOOGLE ACCOUNTS</h3>
+                {googleAccounts.map((google: any) => (
+                  <div key={google.subject} className="border-4 border-black p-3 mb-2 flex justify-between items-center">
+                    <span className="font-mono text-sm">{google.email || 'Google Account'}</span>
+                    <button
+                      onClick={() => onUnlinkGoogle(google.subject)}
+                      className="text-xs font-black uppercase px-3 py-1 border-2 border-black hover:bg-red-500 hover:text-white transition-all"
+                    >
+                      <Trash2 size={12} className="inline mr-1" />
+                      REMOVE
+                    </button>
+                  </div>
+                ))}
+                {googleAccounts.length === 0 && (
+                  <button
+                    onClick={onLinkGoogle}
+                    className="w-full border-4 border-black p-3 font-black uppercase text-xs hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2"
+                  >
+                    <Plus size={14} />
+                    LINK GOOGLE
+                  </button>
+                )}
+              </div>
+
+              {/* Twitter Accounts */}
+              <div>
+                <h3 className="text-sm font-black uppercase mb-3">TWITTER / X ACCOUNTS</h3>
+                {twitterAccounts.map((twitter: any) => (
+                  <div key={twitter.subject} className="border-4 border-black p-3 mb-2 flex justify-between items-center">
+                    <span className="font-mono text-sm">{twitter.username || 'Twitter Account'}</span>
+                    <button
+                      onClick={() => onUnlinkTwitter(twitter.subject)}
+                      className="text-xs font-black uppercase px-3 py-1 border-2 border-black hover:bg-red-500 hover:text-white transition-all"
+                    >
+                      <Trash2 size={12} className="inline mr-1" />
+                      REMOVE
+                    </button>
+                  </div>
+                ))}
+                {twitterAccounts.length === 0 && (
+                  <button
+                    onClick={onLinkTwitter}
+                    className="w-full border-4 border-black p-3 font-black uppercase text-xs hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2"
+                  >
+                    <Plus size={14} />
+                    LINK TWITTER
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'wallets' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-black uppercase mb-3 flex items-center gap-2">
+                  <WalletIcon size={16} />
+                  CONNECTED WALLETS
+                </h3>
+                {walletAccounts.map((wallet: any) => (
+                  <div key={wallet.address} className="border-4 border-black p-4 mb-3">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <div className="font-mono text-xs mb-1">
+                          {wallet.address.slice(0, 8)}...{wallet.address.slice(-8)}
+                        </div>
+                        <div className="text-[10px] font-bold uppercase opacity-60">
+                          {wallet.chainType} • {wallet.walletClient || 'Embedded'}
+                        </div>
+                      </div>
+                      {wallet.walletClient !== 'privy' && (
+                        <button
+                          onClick={() => onUnlinkWallet(wallet.address)}
+                          className="text-xs font-black uppercase px-3 py-1 border-2 border-black hover:bg-red-500 hover:text-white transition-all"
+                        >
+                          <Trash2 size={12} className="inline mr-1" />
+                          REMOVE
+                        </button>
+                      )}
+                    </div>
+                    {wallet.walletClient === 'privy' && (
+                      <button
+                        onClick={onExportWallet}
+                        className="w-full mt-2 border-2 border-black p-2 font-black uppercase text-xs hover:bg-[#FFD700] hover:text-black transition-all flex items-center justify-center gap-2"
+                      >
+                        <Download size={12} />
+                        EXPORT PRIVATE KEY
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={onLinkWallet}
+                  className="w-full border-4 border-black p-3 font-black uppercase text-xs hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus size={14} />
+                  CONNECT WALLET
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'security' && (
+            <div className="space-y-6">
+              <div className="border-4 border-[#FF0000] bg-[#FF0000]/10 p-4">
+                <h3 className="text-sm font-black uppercase mb-2 text-[#FF0000]">⚠ DANGER ZONE</h3>
+                <p className="text-xs mb-4 opacity-80">
+                  This action will disconnect all accounts and sign you out of Monarch Times.
+                </p>
+                <button
+                  onClick={() => {
+                    if (confirm('Are you sure you want to log out?')) {
+                      onLogout();
+                      onClose();
+                    }
+                  }}
+                  className="w-full bg-[#FF0000] text-white p-3 font-black uppercase text-xs border-4 border-black hover:bg-black hover:text-white transition-all"
+                >
+                  LOGOUT
+                </button>
+              </div>
+
+              <div className="border-4 border-black p-4 bg-[#f0f0f0]">
+                <h3 className="text-sm font-black uppercase mb-2">SESSION INFO</h3>
+                <div className="space-y-2 font-mono text-xs">
+                  <div className="flex justify-between">
+                    <span className="opacity-60">User ID:</span>
+                    <span>{user?.id?.slice(0, 16)}...</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="opacity-60">Accounts:</span>
+                    <span>{user?.linkedAccounts?.length || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="opacity-60">Created:</span>
+                    <span>{new Date(user?.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
