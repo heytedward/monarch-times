@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { usePrivy } from '@privy-io/react-auth';
+import { usePrivy, useSolanaWallets } from '@privy-io/react-auth';
+import { Connection, Transaction } from '@solana/web3.js';
 import {
   LayoutGrid,
   Users,
@@ -9,17 +10,24 @@ import {
   Zap,
   ShieldCheck,
   Settings,
+  BatteryCharging,
 } from 'lucide-react';
 import AgentAvatar from './AgentAvatar';
 
 export const Sidebar = () => {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [stamina, setStamina] = useState(100);
+  const [isRecharging, setIsRecharging] = useState(false);
+  
   const {
     ready,
     authenticated,
     user,
     login,
+    getAccessToken,
   } = usePrivy();
+  const { wallets } = useSolanaWallets();
+  
   const navigate = useNavigate();
   const [activeAgents, setActiveAgents] = useState<any[]>([]);
 
@@ -29,6 +37,28 @@ export const Sidebar = () => {
       account.type === 'wallet' && account.chainType === 'solana'
   )?.address;
 
+  // Fetch Agent Stamina
+  useEffect(() => {
+    if (!walletAddress) return;
+
+    const fetchAgentData = async () => {
+      try {
+        const response = await fetch(`/api/agents?wallet=${walletAddress}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.agent && data.agent.stamina !== undefined) {
+            setStamina(data.agent.stamina);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch agent status:', err);
+      }
+    };
+
+    fetchAgentData();
+    const interval = setInterval(fetchAgentData, 60000); // Refresh every minute
+    return () => clearInterval(interval);
+  }, [walletAddress]);
 
   // Mock fetching active patrols
   useEffect(() => {
@@ -40,6 +70,60 @@ export const Sidebar = () => {
     ]);
   }, []);
 
+  const handleRecharge = async () => {
+    if (stamina >= 100 || isRecharging || !wallets[0]) return;
+
+    try {
+      setIsRecharging(true);
+      const token = await getAccessToken();
+
+      // 1. Create Payment
+      const createRes = await fetch('/api/stamina', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action: 'create' })
+      });
+
+      const createData = await createRes.json();
+      if (!createData.transaction) throw new Error('Failed to create payment');
+
+      // 2. Sign Transaction
+      const transaction = Transaction.from(Buffer.from(createData.transaction, 'base64'));
+      const signedTx = await wallets[0].signTransaction(transaction);
+      const signature = await new Connection('https://api.devnet.solana.com').sendRawTransaction(signedTx.serialize());
+
+      // 3. Verify Payment
+      // Wait a bit for confirmation
+      await new Promise(r => setTimeout(r, 2000));
+
+      const verifyRes = await fetch('/api/stamina', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'verify',
+          reference: createData.reference,
+          signature
+        })
+      });
+
+      const verifyData = await verifyRes.json();
+      if (verifyData.success) {
+        setStamina(100);
+        alert('STAMINA RECHARGED! +100 Energy');
+      } else {
+        alert('Recharge verification failed. Please check your wallet.');
+      }
+
+    } catch (err) {
+      console.error('Recharge error:', err);
+      alert('Failed to recharge stamina.');
+    } finally {
+      setIsRecharging(false);
+    }
+  };
 
   const NavItem = ({ to, icon: Icon, label, colorClass }: { to: string, icon: any, label: string, colorClass: string }) => (
     <NavLink
@@ -211,19 +295,31 @@ export const Sidebar = () => {
 
           {/* Stamina Bar (Vertical) */}
           <div className={`flex ${isExpanded ? 'flex-row gap-2' : 'flex-col gap-1'} items-center`}>
+            {/* Recharge Button (only when expanded) */}
+            {isExpanded && stamina < 100 && (
+              <button 
+                onClick={handleRecharge}
+                disabled={isRecharging}
+                className="flex items-center gap-1 bg-[#FFD700] hover:bg-black hover:text-[#FFD700] text-black px-2 py-1 border-2 border-black text-[8px] font-black uppercase transition-all"
+              >
+                <BatteryCharging size={10} />
+                {isRecharging ? 'WAIT...' : 'RECHARGE'}
+              </button>
+            )}
+
             <div className="relative border-2 border-black bg-gray-200 overflow-hidden"
                  style={{
                    width: isExpanded ? '12px' : '8px',
                    height: isExpanded ? '40px' : '30px'
                  }}>
               <div
-                className="absolute bottom-0 left-0 w-full bg-black transition-all duration-500"
-                style={{ height: '75%' }}
+                className={`absolute bottom-0 left-0 w-full transition-all duration-500 ${stamina < 20 ? 'bg-red-500' : 'bg-black'}`}
+                style={{ height: `${stamina}%` }}
               />
             </div>
             {isExpanded && (
               <div className="flex flex-col">
-                <span className="text-[10px] font-black">75%</span>
+                <span className="text-[10px] font-black">{stamina}%</span>
                 <span className="text-[8px] font-bold text-black/50">STAMINA</span>
               </div>
             )}

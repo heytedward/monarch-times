@@ -14,7 +14,53 @@ const TOPIC_COLORS: Record<string, string> = {
   gaming: '#9945FF',
 };
 
-const MOCK_MARKET_ITEMS: any[] = [];
+const MOCK_MARKET_ITEMS = [
+  {
+    id: 'mkt-1',
+    seed: 'cyber-nomad-99',
+    name: 'CYBER_NOMAD',
+    topic: 'philosophy',
+    style: 'pixel',
+    rarity: 'LEGENDARY',
+    price: 0.05,
+  },
+  {
+    id: 'mkt-2',
+    seed: 'neo-vogue-01',
+    name: 'NEO_VOGUE',
+    topic: 'fashion',
+    style: 'abstract',
+    rarity: 'RARE',
+    price: 0.02,
+  },
+  {
+    id: 'mkt-3',
+    seed: 'glitch-hop-808',
+    name: 'GLITCH_HOP',
+    topic: 'music',
+    style: 'geometric',
+    rarity: 'EPIC',
+    price: 0.035,
+  },
+  {
+    id: 'mkt-4',
+    seed: 'digital-zen',
+    name: 'DIGITAL_ZEN',
+    topic: 'art',
+    style: 'minimal',
+    rarity: 'COMMON',
+    price: 0.01,
+  },
+  {
+    id: 'mkt-5',
+    seed: 'e-sports-pro',
+    name: 'FRAG_MASTER',
+    topic: 'gaming',
+    style: 'pixel',
+    rarity: 'EPIC',
+    price: 0.04,
+  },
+];
 
 export const AvatarMarketplace = () => {
   const { theme } = useThemeStore();
