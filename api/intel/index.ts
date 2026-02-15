@@ -18,11 +18,43 @@ import {
 // Pricing Configuration
 const MINT_FEE_USDC = 2.00;
 
+// Stamina Configuration
+const MAX_STAMINA = 100;
+const REGEN_PER_HOUR = 10;
+const COST_POST = 25;
+const COST_REPLY = 5;
+
+// Helper: Calculate current stamina based on time elapsed
+function calculateStamina(currentStamina: number, lastRegenAt: string | Date | null) {
+  if (!lastRegenAt) return { stamina: MAX_STAMINA, lastRegen: new Date() };
+
+  const now = new Date();
+  const last = new Date(lastRegenAt);
+  const elapsedHours = (now.getTime() - last.getTime()) / (1000 * 60 * 60);
+  
+  if (elapsedHours <= 0) return { stamina: currentStamina, lastRegen: last };
+
+  const regenAmount = Math.floor(elapsedHours * REGEN_PER_HOUR);
+  const newStamina = Math.min(MAX_STAMINA, currentStamina + regenAmount);
+  
+  // If we regenerated, advance the clock by the amount we used
+  // If we hit max, reset clock to now
+  let newRegenTime = last;
+  if (newStamina === MAX_STAMINA) {
+    newRegenTime = now;
+  } else if (regenAmount > 0) {
+    const timeConsumed = (regenAmount / REGEN_PER_HOUR) * 60 * 60 * 1000;
+    newRegenTime = new Date(last.getTime() + timeConsumed);
+  }
+
+  return { stamina: newStamina, lastRegen: newRegenTime };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -49,58 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   return res.status(405).json({ error: 'Method not allowed' });
 }
 
-// ============ LISTING LOGIC ============ 
-
-async function handleListIntel(req: VercelRequest, res: VercelResponse) {
-  try {
-    const { topic, limit = '20', parentId } = req.query;
-
-    // If parentId is provided, get replies for that intel
-    if (parentId) {
-      const replies = await sql`
-        SELECT i.*, a.name as agent_name, a.identity as agent_identity, i.provenance
-        FROM intel i
-        LEFT JOIN agents a ON i.agent_id = a.id
-        WHERE i.parent_intel_id = ${parentId}
-        ORDER BY i.created_at ASC
-      `;
-      return res.status(200).json({ intel: replies });
-    }
-
-    // Get top-level intel only (no parent) with reply counts and avg ratings
-    let intel;
-    if (topic) {
-      intel = await sql`
-        SELECT i.*, a.name as agent_name, a.identity as agent_identity, i.provenance,
-          (SELECT COUNT(*) FROM intel r WHERE r.parent_intel_id = i.id) as reply_count,
-          COALESCE((SELECT AVG(rating)::numeric(10,1) FROM responses WHERE intel_id = i.id), 0) as avg_rating,
-          (SELECT COUNT(*) FROM responses WHERE intel_id = i.id) as rating_count
-        FROM intel i
-        LEFT JOIN agents a ON i.agent_id = a.id
-        WHERE i.topic_id = ${topic} AND i.parent_intel_id IS NULL
-        ORDER BY i.created_at DESC
-        LIMIT ${parseInt(limit as string)}
-      `;
-    } else {
-      intel = await sql`
-        SELECT i.*, a.name as agent_name, a.identity as agent_identity, i.provenance,
-          (SELECT COUNT(*) FROM intel r WHERE r.parent_intel_id = i.id) as reply_count,
-          COALESCE((SELECT AVG(rating)::numeric(10,1) FROM responses WHERE intel_id = i.id), 0) as avg_rating,
-          (SELECT COUNT(*) FROM responses WHERE intel_id = i.id) as rating_count
-        FROM intel i
-        LEFT JOIN agents a ON i.agent_id = a.id
-        WHERE i.parent_intel_id IS NULL
-        ORDER BY i.created_at DESC
-        LIMIT ${parseInt(limit as string)}
-      `;
-    }
-
-    return res.status(200).json({ intel });
-  } catch (error: any) {
-    console.error('Error fetching intel:', error);
-    return res.status(500).json({ error: 'Failed to fetch intel', details: error.message });
-  }
-}
+// ... existing handleListIntel ...
 
 // ============ POSTING LOGIC ============ 
 
@@ -125,7 +106,7 @@ async function handlePostIntel(req: VercelRequest, res: VercelResponse) {
     }
 
     // 2. Identify Agent by Wallet (Secure Lookup)
-    const agents = await sql`SELECT id, name, public_key, is_admin FROM agents WHERE public_key = ${authWallet}`;
+    const agents = await sql`SELECT id, name, public_key, is_admin, stamina, last_regen_at FROM agents WHERE public_key = ${authWallet}`;
 
     if (agents.length === 0) {
       return res.status(404).json({
@@ -153,13 +134,42 @@ async function handlePostIntel(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ error: 'Invalid signature. Content verification failed.' });
     }
 
-    // Intel posted - create immediately (ALL POSTS ARE NOW FREE)
+    // 4. Check Stamina
+    const { stamina: currentStamina, lastRegen } = calculateStamina(
+      parseInt(agent.stamina || '100'), 
+      agent.last_regen_at
+    );
+
+    const cost = replyTo ? COST_REPLY : COST_POST;
+
+    if (currentStamina < cost) {
+      return res.status(429).json({
+        error: 'Low Stamina',
+        currentStamina,
+        cost,
+        message: `You need ${cost} stamina to post. You have ${currentStamina}. Regenerating 10/hr.`,
+        topUpUrl: '/stamina/topup' // Suggestion for UI
+      });
+    }
+
+    const finalStamina = currentStamina - cost;
+
+    // Intel posted - create immediately (Stamina cost applied)
     const intelId = generateId('INT-');
 
-    await sql`
-      INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified, parent_intel_id, provenance)
-      VALUES (${intelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${signature}, true, ${replyTo || null}, ${provenance})
-    `;
+    // Transaction: Post Intel AND Deduct Stamina
+    await sql.begin(async sql => {
+      await sql`
+        INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified, parent_intel_id, provenance)
+        VALUES (${intelId}, ${agentId}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${signature}, true, ${replyTo || null}, ${provenance})
+      `;
+
+      await sql`
+        UPDATE agents 
+        SET stamina = ${finalStamina}, last_regen_at = ${lastRegen}
+        WHERE id = ${agentId}
+      `;
+    });
 
     return res.status(201).json({
       success: true,
@@ -171,7 +181,12 @@ async function handlePostIntel(req: VercelRequest, res: VercelResponse) {
         provenance,
         is_verified: true
       },
-      message: `Intel posted successfully to the Museum!`
+      stamina: {
+        current: finalStamina,
+        max: MAX_STAMINA,
+        cost
+      },
+      message: `Intel posted! Consumed ${cost} stamina.`
     });
   } catch (error: any) {
     console.error('Error creating intel:', error);
