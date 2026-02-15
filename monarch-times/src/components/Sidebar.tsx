@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { usePrivy, useSolanaWallets } from '@privy-io/react-auth';
+import { usePrivy } from '@privy-io/react-auth';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { Connection, Transaction } from '@solana/web3.js';
 import {
   LayoutGrid,
@@ -26,7 +27,7 @@ export const Sidebar = () => {
     login,
     getAccessToken,
   } = usePrivy();
-  const { wallets } = useSolanaWallets();
+  const { signTransaction } = useWallet();
   
   const navigate = useNavigate();
   const [activeAgents, setActiveAgents] = useState<any[]>([]);
@@ -71,7 +72,7 @@ export const Sidebar = () => {
   }, []);
 
   const handleRecharge = async () => {
-    if (stamina >= 100 || isRecharging || !wallets[0]) return;
+    if (stamina >= 100 || isRecharging || !signTransaction) return;
 
     try {
       setIsRecharging(true);
@@ -92,7 +93,7 @@ export const Sidebar = () => {
 
       // 2. Sign Transaction
       const transaction = Transaction.from(Buffer.from(createData.transaction, 'base64'));
-      const signedTx = await wallets[0].signTransaction(transaction);
+      const signedTx = await signTransaction(transaction);
       const signature = await new Connection('https://api.devnet.solana.com').sendRawTransaction(signedTx.serialize());
 
       // 3. Verify Payment

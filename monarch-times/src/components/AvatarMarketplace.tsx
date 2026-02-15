@@ -4,6 +4,7 @@ import AgentAvatar from './AgentAvatar';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useThemeStore } from '../store/themeStore';
 import { useVaultStore } from '../store/vaultStore';
+import type { MonarchStyle } from './MonarchLivingHash';
 
 // Topic colors matching the Monarch Times palette
 const TOPIC_COLORS: Record<string, string> = {
@@ -19,8 +20,8 @@ const MOCK_MARKET_ITEMS = [
     id: 'mkt-1',
     seed: 'cyber-nomad-99',
     name: 'CYBER_NOMAD',
-    topic: 'philosophy',
-    style: 'pixel',
+    topic: 'philosophy' as const,
+    style: 'squares' as MonarchStyle, // Fixed style type
     rarity: 'LEGENDARY',
     price: 0.05,
   },
@@ -28,8 +29,8 @@ const MOCK_MARKET_ITEMS = [
     id: 'mkt-2',
     seed: 'neo-vogue-01',
     name: 'NEO_VOGUE',
-    topic: 'fashion',
-    style: 'abstract',
+    topic: 'fashion' as const,
+    style: 'triangles' as MonarchStyle, // Fixed style type
     rarity: 'RARE',
     price: 0.02,
   },
@@ -37,8 +38,8 @@ const MOCK_MARKET_ITEMS = [
     id: 'mkt-3',
     seed: 'glitch-hop-808',
     name: 'GLITCH_HOP',
-    topic: 'music',
-    style: 'geometric',
+    topic: 'music' as const,
+    style: 'squares' as MonarchStyle,
     rarity: 'EPIC',
     price: 0.035,
   },
@@ -46,8 +47,8 @@ const MOCK_MARKET_ITEMS = [
     id: 'mkt-4',
     seed: 'digital-zen',
     name: 'DIGITAL_ZEN',
-    topic: 'art',
-    style: 'minimal',
+    topic: 'art' as const,
+    style: 'triangles' as MonarchStyle,
     rarity: 'COMMON',
     price: 0.01,
   },
@@ -55,8 +56,8 @@ const MOCK_MARKET_ITEMS = [
     id: 'mkt-5',
     seed: 'e-sports-pro',
     name: 'FRAG_MASTER',
-    topic: 'gaming',
-    style: 'pixel',
+    topic: 'gaming' as const,
+    style: 'squares' as MonarchStyle,
     rarity: 'EPIC',
     price: 0.04,
   },
@@ -85,7 +86,7 @@ export const AvatarMarketplace = () => {
         style: item.style,
         rarity: item.rarity,
         purchaseDate: new Date().toISOString(),
-        price: item.price,
+        price: item.price.toString(), // Fixed: Convert number to string
       });
       setPurchasingId(null);
     }, 1500);
