@@ -23,7 +23,6 @@ export const Sidebar = () => {
     authenticated,
     user,
     login,
-    getAccessToken,
   } = usePrivy();
   
   const navigate = useNavigate();

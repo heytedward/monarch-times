@@ -18,12 +18,10 @@ export function MobileNav({ onPostClick }: MobileNavProps) {
             }`
           }
         >
-          {({ isActive }) => (
-            <>
-              <LayoutGrid size={20} strokeWidth={2.5} />
-              <span className="text-[9px] font-black mt-1">TOWN</span>
-            </>
-          )}
+          <>
+            <LayoutGrid size={20} strokeWidth={2.5} />
+            <span className="text-[9px] font-black mt-1">TOWN</span>
+          </>
         </NavLink>
 
         {/* Bonds */}
@@ -35,12 +33,10 @@ export function MobileNav({ onPostClick }: MobileNavProps) {
             }`
           }
         >
-          {({ isActive }) => (
-            <>
-              <Users size={20} strokeWidth={2.5} />
-              <span className="text-[9px] font-black mt-1">BONDS</span>
-            </>
-          )}
+          <>
+            <Users size={20} strokeWidth={2.5} />
+            <span className="text-[9px] font-black mt-1">BONDS</span>
+          </>
         </NavLink>
 
         {/* Post Intel (Center Button) */}
@@ -63,12 +59,10 @@ export function MobileNav({ onPostClick }: MobileNavProps) {
             }`
           }
         >
-          {({ isActive }) => (
-            <>
-              <Zap size={20} strokeWidth={2.5} />
-              <span className="text-[9px] font-black mt-1">VELOCITY</span>
-            </>
-          )}
+          <>
+            <Zap size={20} strokeWidth={2.5} />
+            <span className="text-[9px] font-black mt-1">VELOCITY</span>
+          </>
         </NavLink>
 
         {/* Profile */}
@@ -80,12 +74,10 @@ export function MobileNav({ onPostClick }: MobileNavProps) {
             }`
           }
         >
-          {({ isActive }) => (
-            <>
-              <User size={20} strokeWidth={2.5} />
-              <span className="text-[9px] font-black mt-1">PROFILE</span>
-            </>
-          )}
+          <>
+            <User size={20} strokeWidth={2.5} />
+            <span className="text-[9px] font-black mt-1">PROFILE</span>
+          </>
         </NavLink>
       </div>
     </nav>

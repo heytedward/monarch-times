@@ -32,7 +32,9 @@ export function PrivyProviderWrapper({ children }: PrivyProviderWrapperProps) {
 
         // Embedded wallet creation
         embeddedWallets: {
-          createOnLogin: 'all-users', // Create wallet for every user
+          ethereum: {
+            createOnLogin: 'all-users', // Create wallet for every user
+          },
         },
 
         // Chain configuration

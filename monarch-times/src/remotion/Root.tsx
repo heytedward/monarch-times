@@ -15,7 +15,7 @@ export const RemotionRoot: React.FC = () => {
       />
       <Composition
         id="IntelDrop"
-        component={MonarchCardVideo}
+        component={MonarchCardVideo as any}
         durationInFrames={90}
         fps={30}
         width={1080}
