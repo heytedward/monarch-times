@@ -1,0 +1,337 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  font-family: 'Space Mono', monospace;
+  background-color: #f0f0f0; 
+  color: #000;
+  overflow-x: hidden;
+}
+
+h1 {
+  font-family: 'Archivo Black', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -2px;
+}
+
+.destijl-border {
+  border: 6px solid #000;
+}
+
+/* Base Blue AI Highlight */
+.base-ai-highlight {
+  box-shadow: 0 0 10px #0052FF, 0 0 20px #0052FF;
+  border-color: #0052FF;
+}
+
+/* Holographic Shimmer (Hover Only) */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.holographic {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0) 45%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0) 55%
+  );
+  background-size: 200% 100%;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.group:hover .holographic {
+  opacity: 1;
+  animation: shimmer 2.5s infinite linear;
+}
+
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(450px); }
+}
+
+/* Liquid Mondrian animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-3px) rotate(0.3deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-3px) rotate(-0.3deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  50%, 100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes breathe {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0.95);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.05);
+    opacity: 0;
+  }
+}
+
+/* Cascading push animation - bumped by new content */
+@keyframes pushed {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  20% {
+    transform: translateX(-8px) scale(0.98);
+  }
+  40% {
+    transform: translateX(4px) scale(1.01);
+  }
+  60% {
+    transform: translateX(-2px) scale(0.995);
+  }
+  80% {
+    transform: translateX(1px) scale(1.002);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* New intel sliding in from right */
+@keyframes slideInRight {
+  0% {
+    transform: translateX(100%) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(-10px) scale(1.02);
+    opacity: 1;
+  }
+  70% {
+    transform: translateX(5px) scale(0.99);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Subtle jiggle when cards settle */
+@keyframes settle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-0.5deg);
+  }
+  75% {
+    transform: rotate(0.5deg);
+  }
+}
+
+/* Burn animation for oldest cards about to be removed */
+@keyframes burn {
+  0%, 100% {
+    filter: grayscale(0.8) brightness(0.7);
+    transform: scale(0.85);
+  }
+  50% {
+    filter: grayscale(0.6) brightness(0.5) sepia(0.3);
+    transform: scale(0.82);
+  }
+}
+
+@keyframes burnFlicker {
+  0% {
+    opacity: 0.3;
+    background: linear-gradient(45deg, rgba(255,100,0,0.3) 0%, rgba(255,50,0,0.4) 50%, rgba(100,0,0,0.6) 100%);
+  }
+  100% {
+    opacity: 0.6;
+    background: linear-gradient(45deg, rgba(255,150,0,0.4) 0%, rgba(255,80,0,0.5) 50%, rgba(150,20,0,0.7) 100%);
+  }
+}
+
+.scanner-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 15px;
+  background: #000;
+  opacity: 0.3;
+  z-index: 50;
+  pointer-events: none;
+  animation: scan 1.8s linear infinite;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #000;
+  border: 1px solid #f0f0f0;
+}
+
+/* ========================================
+   HOLOGRAPHIC CARD EFFECTS (Rating-based)
+   ======================================== */
+
+/* Base card variables */
+.monarch-card {
+  --mx: 50%;
+  --my: 50%;
+  --posx: 50%;
+  --posy: 50%;
+  transform-style: preserve-3d;
+  perspective: 600px;
+}
+
+/* Shine overlay - positioned absolute over card */
+.card__shine,
+.card__glare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 15;
+  mix-blend-mode: color-dodge;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.monarch-card:hover .card__shine,
+.monarch-card:hover .card__glare {
+  opacity: 0.7;
+}
+
+/* LARVA - no effect (0 stars / unrated) */
+[data-rarity="larva"] .card__shine,
+[data-rarity="larva"] .card__glare {
+  display: none;
+}
+
+/* CATERPILLAR - no effect (1 star) */
+[data-rarity="caterpillar"] .card__shine,
+[data-rarity="caterpillar"] .card__glare {
+  display: none;
+}
+
+/* CHRYSALIS - rainbow shimmer (2 stars) */
+[data-rarity="chrysalis"] .card__shine {
+  background:
+    repeating-linear-gradient(
+      133deg,
+      #ff7773 0%, #ffed5f 14%, #a8ff5f 28%,
+      #83fff7 42%, #7894ff 56%, #d875ff 70%,
+      #ff7773 84%
+    );
+  background-size: 200% 200%;
+  background-position: var(--posx) var(--posy);
+  filter: brightness(0.8) contrast(2) saturate(0.6);
+  mix-blend-mode: overlay;
+}
+
+/* EMERGENCE - diagonal color shift (3 stars) */
+[data-rarity="emergence"] .card__shine {
+  background: repeating-linear-gradient(
+    -22deg,
+    rgba(174,102,202,0.75) 0%,
+    rgba(228,77,72,0.75) 14%,
+    rgba(216,197,55,0.75) 28%,
+    rgba(124,201,62,0.75) 42%,
+    rgba(80,177,170,0.75) 56%,
+    rgba(136,160,255,0.75) 70%,
+    rgba(176,105,204,0.75) 84%
+  );
+  background-size: 200% 400%;
+  background-position: 0% var(--posy);
+  filter: brightness(0.7) contrast(2) saturate(1.1);
+}
+
+/* PAPILLON - iridescent wings (4 stars) */
+[data-rarity="papillon"] .card__shine {
+  background: repeating-linear-gradient(
+    -22deg,
+    rgba(174,102,202,0.5) 0%,
+    rgba(228,77,72,0.5) 14%,
+    rgba(216,197,55,0.5) 28%,
+    rgba(124,201,62,0.5) 42%,
+    rgba(80,177,170,0.5) 56%,
+    rgba(136,160,255,0.5) 70%,
+    rgba(176,105,204,0.5) 84%
+  );
+  background-size: 200% 400%;
+  background-position: 0% var(--posy);
+  filter: brightness(0.8) contrast(1.5) saturate(0.8);
+}
+
+[data-rarity="papillon"] .card__glare {
+  display: none;
+}
+
+/* MONARCH - full holographic (5 stars) */
+[data-rarity="monarch"] .card__shine {
+  background: repeating-linear-gradient(
+    -22deg,
+    rgba(255,140,0,0.6) 0%,
+    rgba(255,69,0,0.6) 14%,
+    rgba(255,215,0,0.6) 28%,
+    rgba(255,165,0,0.6) 42%,
+    rgba(255,99,71,0.6) 56%,
+    rgba(255,140,0,0.6) 70%,
+    rgba(255,69,0,0.6) 84%
+  );
+  background-size: 200% 400%;
+  background-position: 0% var(--posy);
+  filter: brightness(0.9) contrast(1.8) saturate(1.2);
+}
+
+[data-rarity="monarch"] .card__glare {
+  display: none;
+}

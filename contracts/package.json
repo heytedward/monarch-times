@@ -1,0 +1,20 @@
+{
+  "name": "@monarch-times/contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for Monarch Times NFT minting on Base",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "deploy:testnet": "hardhat run scripts/deploy.js --network baseSepolia",
+    "deploy:mainnet": "hardhat run scripts/deploy.js --network base",
+    "verify": "hardhat verify --network",
+    "test": "hardhat test",
+    "clean": "hardhat clean"
+  },
+  "keywords": ["nft", "base", "ethereum", "hardhat"],
+  "author": "Monarch Times",
+  "license": "MIT",
+  "devDependencies": {
+    "@openzeppelin/contracts": "^5.4.0"
+  }
+}

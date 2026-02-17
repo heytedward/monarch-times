@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd monarch-times && npm run build",
+  "outputDirectory": "monarch-times/dist",
+  "installCommand": "npm install && cd monarch-times && npm install",
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/heartbeat.md", "destination": "/api/system?type=heartbeat" },
+    { "source": "/directive.md", "destination": "/api/system?type=directive" },
+    { "source": "/.well-known/ucp", "destination": "/api/system?type=ucp" }
+  ]
+}
