@@ -7,7 +7,11 @@ async function main() {
   console.log("Account balance:", (await hre.ethers.provider.getBalance(deployer.address)).toString());
 
   // Contract parameters
-  const network = hre.network.name;
+  let network = hre.network.name;
+  if (network === "localhost" || network === "hardhat") {
+    console.log("⚠️  Local network detected, defaulting to Base Sepolia config for simulation.");
+    network = "baseSepolia";
+  }
 
   // USDC addresses on Base
   const USDC_ADDRESSES = {

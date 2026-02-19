@@ -1,12 +1,39 @@
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
 import type { VercelRequest } from '@vercel/node';
+import nacl from 'tweetnacl';
+import bs58 from 'bs58';
 
 // Initialize Viem client for signature verification
 const client = createPublicClient({
   chain: base,
   transport: http(),
 });
+
+/**
+ * Verify a Solana signature against a wallet address
+ *
+ * @param address - Solana wallet address (Base58)
+ * @param message - Message that was signed (string)
+ * @param signature - Signature string (Base58)
+ * @returns true if signature is valid, false otherwise
+ */
+export function verifySolanaSignature(
+  address: string,
+  message: string,
+  signature: string
+): boolean {
+  try {
+    const messageBytes = new TextEncoder().encode(message);
+    const signatureBytes = bs58.decode(signature);
+    const publicKeyBytes = bs58.decode(address);
+
+    return nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
+  } catch (err) {
+    console.error('Solana signature verification error:', err);
+    return false;
+  }
+}
 
 /**
  * Verify an Ethereum signature against a wallet address
@@ -36,12 +63,12 @@ export async function verifySignature(
 
 /**
  * Extract and verify Privy JWT token from request headers
- * Returns the authenticated wallet address if valid, null otherwise
+ * Returns the authenticated wallet address and chain type if valid, null otherwise
  *
  * @param req - Vercel request object
- * @returns Ethereum wallet address if authenticated, null otherwise
+ * @returns Object with address and chain, or null if unauthenticated
  */
-export async function getAuthenticatedWallet(req: VercelRequest): Promise<string | null> {
+export async function getAuthenticatedWallet(req: VercelRequest): Promise<{ address: string; chain: 'base' | 'solana' } | null> {
   try {
     const authHeader = req.headers.authorization;
 
@@ -62,15 +89,22 @@ export async function getAuthenticatedWallet(req: VercelRequest): Promise<string
       Buffer.from(parts[1], 'base64url').toString('utf-8')
     );
 
-    // Extract Ethereum wallet address from Privy token
-    // Privy tokens include linked accounts in the user claim
+    // Extract Wallet from Privy token
     if (payload.linkedAccounts) {
+      // 1. Check for Solana first (User preference if both connected?)
+      const solAccount = payload.linkedAccounts.find(
+        (account: any) => account.type === 'wallet' && account.chainType === 'solana'
+      );
+      if (solAccount?.address) {
+        return { address: solAccount.address, chain: 'solana' };
+      }
+
+      // 2. Check for Ethereum (Base)
       const ethAccount = payload.linkedAccounts.find(
         (account: any) => account.type === 'wallet' && account.chainType === 'ethereum'
       );
-
       if (ethAccount?.address) {
-        return ethAccount.address;
+        return { address: ethAccount.address, chain: 'base' };
       }
     }
 

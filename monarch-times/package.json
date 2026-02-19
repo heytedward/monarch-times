@@ -17,6 +17,7 @@
     "@remotion/player": "^4.0.423",
     "axios": "^1.13.5",
     "bignumber.js": "^9.3.1",
+    "bs58": "^6.0.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.31.2",
     "lucide-react": "^0.563.0",

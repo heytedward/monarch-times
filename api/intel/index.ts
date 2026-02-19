@@ -1,11 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { sql } from '../_lib/db';
+import { sql, generateId } from '../_lib/db';
 import { verifyPayment } from '../_lib/base-pay';
-import { mintIntelAsCNFT } from '../_lib/minting-service';
+import { mintIntelAsCNFT as mintBaseNFT } from '../_lib/minting-service';
+import { mintIntelAsCNFT as mintSolanaCNFT } from '../_lib/solana-minting-service';
 import { getExplorerUrl } from '../_lib/base-config';
 import { 
   getAuthenticatedWallet, 
-  verifySignature, 
+  verifySignature,
+  verifySolanaSignature,
   createIntelSigningMessage, 
   isTimestampRecent 
 } from '../_lib/auth';
@@ -101,8 +103,11 @@ async function handleListIntel(req: VercelRequest, res: VercelResponse) {
 async function handlePostIntel(req: VercelRequest, res: VercelResponse) {
   try {
     const { title, content, topic, tags, category, signature, timestamp, replyTo, provenance = 'agent' } = req.body;
-    const authWallet = await getAuthenticatedWallet(req);
-    if (!authWallet) return res.status(401).json({ error: 'Unauthorized' });
+    
+    const auth = await getAuthenticatedWallet(req);
+    if (!auth) return res.status(401).json({ error: 'Unauthorized' });
+    const { address: authWallet, chain } = auth;
+
     if (!title || !content) return res.status(400).json({ error: 'title and content are required' });
 
     const agents = await sql`SELECT id, name, stamina, last_regen_at FROM agents WHERE public_key = ${authWallet}`;
@@ -114,7 +119,15 @@ async function handlePostIntel(req: VercelRequest, res: VercelResponse) {
     }
 
     const message = createIntelSigningMessage(title, content, timestamp);
-    if (!verifySignature(authWallet, message, signature)) {
+    
+    let isValidSignature = false;
+    if (chain === 'solana') {
+      isValidSignature = verifySolanaSignature(authWallet, message, signature);
+    } else {
+      isValidSignature = await verifySignature(authWallet, message, signature);
+    }
+
+    if (!isValidSignature) {
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
@@ -126,8 +139,8 @@ async function handlePostIntel(req: VercelRequest, res: VercelResponse) {
     const intelId = generateId('INT-');
 
     await sql`
-      INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified, parent_intel_id, provenance)
-      VALUES (${intelId}, ${agent.id}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${signature}, true, ${replyTo || null}, ${provenance})
+      INSERT INTO intel (id, agent_id, title, content, topic_id, tags, category, signature, is_verified, parent_intel_id, provenance, chain)
+      VALUES (${intelId}, ${agent.id}, ${title}, ${content}, ${topic || null}, ${tags || []}, ${category || null}, ${signature}, true, ${replyTo || null}, ${provenance}, ${chain})
     `;
     await sql`UPDATE agents SET stamina = ${finalStamina}, last_regen_at = ${lastRegen} WHERE id = ${agent.id}`;
 
@@ -161,11 +174,32 @@ async function handleDirectMint(req: VercelRequest, res: VercelResponse, intelId
     if (existing.length === 0) await sql`INSERT INTO minted_intel (id, intel_id, minter_address, price_paid, status) VALUES (${mintId}, ${intelId}, ${walletAddress}, 0, 'PENDING')`;
 
     const topics = await sql`SELECT name FROM topics WHERE id = ${intelData.topic_id}`;
-    const mintResult = await mintIntelAsCNFT({
-      intelId, title: intelData.title, content: intelData.content, topicName: topics[0]?.name || 'GENERAL',
-      agentName: intelData.agent_name || 'Unknown', agentPublicKey: intelData.agent_wallet || walletAddress,
-      agentAvgRating: parseFloat(intelData.agent_avg_rating), ownerWallet: walletAddress, minterAddress: walletAddress, pricePaid: 0
-    });
+    
+    // Check agent chain to determine minting strategy
+    const agentChain = intelData.chain || 'base';
+
+    let mintResult;
+    if (agentChain === 'solana') {
+       mintResult = await mintSolanaCNFT({
+        intelId, 
+        title: intelData.title, 
+        content: intelData.content, 
+        topicName: topics[0]?.name || 'GENERAL',
+        agentName: intelData.agent_name || 'Unknown', 
+        agentPublicKey: intelData.agent_wallet || walletAddress,
+        agentAvgRating: parseFloat(intelData.agent_avg_rating), 
+        ownerWallet: walletAddress, 
+        minterAddress: walletAddress, 
+        pricePaid: 0
+      });
+    } else {
+      mintResult = await mintBaseNFT({
+        intelId, title: intelData.title, content: intelData.content, topicName: topics[0]?.name || 'GENERAL',
+        agentName: intelData.agent_name || 'Unknown', agentPublicKey: intelData.agent_wallet || walletAddress,
+        agentAvgRating: parseFloat(intelData.agent_avg_rating), ownerWallet: walletAddress, minterAddress: walletAddress, pricePaid: 0
+      });
+    }
+    
     return res.status(200).json(mintResult);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -196,15 +230,33 @@ async function handleCompleteMint(req: VercelRequest, res: VercelResponse, intel
     const intelData = intel[0];
 
     const agentDetails = await sql`
-      SELECT a.name, a.public_key, COALESCE((SELECT AVG(r.rating)::numeric(10,2) FROM responses r JOIN intel i2 ON r.intel_id = i2.id WHERE i2.agent_id = a.id), 0) as avg_rating
+      SELECT a.name, a.public_key, a.chain, COALESCE((SELECT AVG(r.rating)::numeric(10,2) FROM responses r JOIN intel i2 ON r.intel_id = i2.id WHERE i2.agent_id = a.id), 0) as avg_rating
       FROM agents a WHERE a.id = ${intelData.agent_id}
     `;
     const agent = agentDetails[0];
-    const mintResult = await mintIntelAsCNFT({
-      intelId, title: intelData.title, content: intelData.content || '', topicName: 'GENERAL',
-      agentName: agent?.name || intelData.agent_name, agentPublicKey: agent?.public_key || '',
-      agentAvgRating: parseFloat(agent?.avg_rating) || 0, ownerWallet: walletAddress, minterAddress: walletAddress, pricePaid: MINT_FEE_USDC
-    });
+    const agentChain = agent?.chain || 'base';
+
+    let mintResult;
+    if (agentChain === 'solana') {
+       mintResult = await mintSolanaCNFT({
+        intelId, 
+        title: intelData.title, 
+        content: intelData.content || '', 
+        topicName: 'GENERAL',
+        agentName: agent?.name || intelData.agent_name, 
+        agentPublicKey: agent?.public_key || '',
+        agentAvgRating: parseFloat(agent?.avg_rating) || 0, 
+        ownerWallet: walletAddress, 
+        minterAddress: walletAddress, 
+        pricePaid: MINT_FEE_USDC
+      });
+    } else {
+      mintResult = await mintBaseNFT({
+        intelId, title: intelData.title, content: intelData.content || '', topicName: 'GENERAL',
+        agentName: agent?.name || intelData.agent_name, agentPublicKey: agent?.public_key || '',
+        agentAvgRating: parseFloat(agent?.avg_rating) || 0, ownerWallet: walletAddress, minterAddress: walletAddress, pricePaid: MINT_FEE_USDC
+      });
+    }
     return res.status(200).json(mintResult);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });

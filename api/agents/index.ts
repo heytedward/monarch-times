@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { sql } from '../_lib/db';
+import { sql, generateId } from '../_lib/db';
 import { getAuthenticatedWallet } from '../_lib/auth';
 import { verifyPayment } from '../_lib/base-pay';
+import { generateReference, createSplitPaymentTransaction } from '../_lib/solana-pay';
 
 const STAMINA_REFILL_PRICE_USDC = 1.00;
 const MAX_STAMINA = 100;
@@ -47,14 +48,33 @@ async function handleGetAgents(req: VercelRequest, res: VercelResponse) {
 
 async function handleRegisterAgent(req: VercelRequest, res: VercelResponse) {
   try {
-    const { name, identity, publicKey, avatarUrl, ownerTwitter } = req.body;
+    const { name, identity, publicKey, avatarUrl, ownerTwitter, chain = 'base' } = req.body;
     if (!name || !identity || !publicKey) return res.status(400).json({ error: 'Missing fields' });
+    
+    // Basic validation based on chain
+    if (chain === 'solana' && !/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(publicKey)) {
+      return res.status(400).json({ error: 'Invalid Solana address' });
+    }
+
     const agentId = generateId('AGT-');
     await sql`
-      INSERT INTO agents (id, name, public_key, identity, status, avatar_url, owner_twitter, created_at, stamina, last_regen_at)
-      VALUES (${agentId}, ${name}, ${publicKey}, ${identity}, 'ACTIVE', ${avatarUrl || null}, ${ownerTwitter || null}, NOW(), ${MAX_STAMINA}, NOW())
+      INSERT INTO agents (id, name, public_key, identity, status, avatar_url, owner_twitter, created_at, stamina, last_regen_at, chain, solana_wallet)
+      VALUES (
+        ${agentId}, 
+        ${name}, 
+        ${publicKey}, 
+        ${identity}, 
+        'ACTIVE', 
+        ${avatarUrl || null}, 
+        ${ownerTwitter || null}, 
+        NOW(), 
+        ${MAX_STAMINA}, 
+        NOW(),
+        ${chain},
+        ${chain === 'solana' ? publicKey : null}
+      )
     `;
-    return res.status(201).json({ success: true, agent: { id: agentId, name } });
+    return res.status(201).json({ success: true, agent: { id: agentId, name, chain } });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
@@ -62,19 +82,22 @@ async function handleRegisterAgent(req: VercelRequest, res: VercelResponse) {
 
 async function handleCreateRecharge(req: VercelRequest, res: VercelResponse) {
   try {
-    const authWallet = await getAuthenticatedWallet(req);
-    if (!authWallet) return res.status(401).json({ error: 'Unauthorized' });
+    const auth = await getAuthenticatedWallet(req);
+    if (!auth) return res.status(401).json({ error: 'Unauthorized' });
+    const { address: authWallet, chain } = auth;
+
     const agents = await sql`SELECT id FROM agents WHERE public_key = ${authWallet}`;
     if (agents.length === 0) return res.status(404).json({ error: 'Agent not found' });
     
     const ref = generateReference();
+    // TODO: Handle split payment for Solana if chain === 'solana'
     const result = await createSplitPaymentTransaction({
       payerWallet: authWallet, amount: STAMINA_REFILL_PRICE_USDC, splitType: 'topicUnlock', reference: ref
     });
     const paymentId = generateId('PAY-');
     await sql`
-      INSERT INTO payments (id, payment_type, payer_wallet, amount_usdc, agent_share, platform_share, agent_id, reference_key, status, created_at)
-      VALUES (${paymentId}, 'stamina_refill', ${authWallet}, ${result.amount}, 0, ${result.platformShare}, ${agents[0].id}, ${result.reference}, 'pending', NOW())
+      INSERT INTO payments (id, payment_type, payer_wallet, amount_usdc, agent_share, platform_share, agent_id, reference_key, status, created_at, chain)
+      VALUES (${paymentId}, 'stamina_refill', ${authWallet}, ${result.amount}, 0, ${result.platformShare}, ${agents[0].id}, ${result.reference}, 'pending', NOW(), ${chain})
     `;
     return res.status(200).json({ ...result, paymentId });
   } catch (error: any) {

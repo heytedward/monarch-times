@@ -17,13 +17,13 @@ module.exports = {
     // Base Sepolia Testnet
     baseSepolia: {
       url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
-      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+      accounts: [process.env.DEPLOYER_PRIVATE_KEY || process.env.MINTER_PRIVATE_KEY].filter(Boolean),
       chainId: 84532,
     },
     // Base Mainnet
     base: {
       url: process.env.BASE_RPC_URL || "https://mainnet.base.org",
-      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+      accounts: [process.env.DEPLOYER_PRIVATE_KEY || process.env.MINTER_PRIVATE_KEY].filter(Boolean),
       chainId: 8453,
     },
   },

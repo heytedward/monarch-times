@@ -22,10 +22,15 @@ export const AgentRegistrationModal = ({ isOpen, onClose, onSuccess }: AgentRegi
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const isConnected = ready && authenticated;
-  const walletAddress = user?.linkedAccounts.find(
+  
+  // Find connected wallet and its type
+  const connectedAccount = user?.linkedAccounts.find(
     (account): account is Extract<typeof account, { type: 'wallet' }> =>
-      account.type === 'wallet' && account.chainType === 'ethereum'
-  )?.address;
+      account.type === 'wallet' && (account.chainType === 'ethereum' || account.chainType === 'solana')
+  );
+
+  const walletAddress = connectedAccount?.address;
+  const walletChain = connectedAccount?.chainType === 'ethereum' ? 'base' : 'solana';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +58,7 @@ export const AgentRegistrationModal = ({ isOpen, onClose, onSuccess }: AgentRegi
           identity: identity.trim(),
           publicKey: walletAddress,
           ownerTwitter: twitterHandle.trim() || null,
+          chain: walletChain
         }),
       });
 
@@ -149,7 +155,9 @@ export const AgentRegistrationModal = ({ isOpen, onClose, onSuccess }: AgentRegi
               {/* Wallet Address Display */}
               {walletAddress && (
                 <div className="border-4 border-[#00FF00] bg-[#00FF00]/10 p-4">
-                  <p className="text-[10px] font-bold uppercase mb-1">Wallet Connected</p>
+                  <p className="text-[10px] font-bold uppercase mb-1">
+                    {walletChain === 'solana' ? 'Solana Wallet Connected' : 'Base Wallet Connected'}
+                  </p>
                   <p className="text-xs font-mono">{walletAddress}</p>
                 </div>
               )}

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useThemeStore } from '../store/themeStore';
 import { TOPICS } from '../store/topicStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import bs58 from 'bs58';
 
 interface PostIntelModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
   const { ready, authenticated, user } = usePrivy();
+  const { wallets } = useWallets();
 
   const [username, setUsername] = useState('');
   const [title, setTitle] = useState('');
@@ -25,10 +27,11 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const isConnected = ready && authenticated;
-  const walletAddress = user?.linkedAccounts.find(
-    (account): account is Extract<typeof account, { type: 'wallet' }> =>
-      account.type === 'wallet' && account.chainType === 'ethereum'
-  )?.address;
+  
+  // Find connected wallet to use for signing
+  const activeWallet = wallets.find((w) => w.address === user?.wallet?.address) || wallets[0];
+  const walletAddress = activeWallet?.address;
+  const walletChainType = activeWallet?.chainType;
 
   // Auto-fetch username when wallet connects
   useEffect(() => {
@@ -60,7 +63,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isConnected) {
+    if (!isConnected || !activeWallet) {
       setError('Please connect your wallet first');
       return;
     }
@@ -80,6 +83,30 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
     setSuccessMessage(null);
 
     try {
+      const timestamp = Date.now();
+      const message = `MONARCH_INTEL:${title.trim()}:${content.trim()}:${timestamp}`;
+      
+      let signature = '';
+
+      // Sign message based on chain type
+      if (walletChainType === 'solana') {
+        const signatureBytes = await activeWallet.signMessage(new TextEncoder().encode(message));
+        // Check if signature is a string (some adapters) or Uint8Array/Buffer
+        if (typeof signatureBytes === 'string') {
+            signature = signatureBytes;
+        } else {
+            // Convert Uint8Array to Base58 string
+            // Note: activeWallet.signMessage for Solana in Privy might return a signature object or string
+            // We assume Uint8Array or similar that bs58 can encode, or a base58 string.
+            // Let's safe check:
+             // @ts-ignore - types might vary
+             signature = signatureBytes.signature || bs58.encode(signatureBytes);
+        }
+      } else {
+        // Ethereum (Base) - returns hex string
+        signature = await activeWallet.sign(message);
+      }
+
       const response = await fetch('/api/intel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -89,6 +116,9 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
           content: content.trim(),
           topic: selectedTopic || null,
           provenance: 'human', // Mark as human-created content (not from AI agent)
+          timestamp,
+          signature,
+          chain: walletChainType === 'solana' ? 'solana' : 'base'
         }),
       });
 

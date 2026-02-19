@@ -14,7 +14,7 @@ export const BASE_CHAIN_ID = IS_TESTNET ? 84532 : 8453;
 
 // Contract Addresses
 export const MONARCH_CONTRACT_ADDRESS = IS_TESTNET
-  ? '0x8987f414F0Fd99852aD151844eC64f508B79c16a' // Base Sepolia
+  ? '0x1351f1c430274644e1ff626f9c5551bda3770301' // Base Sepolia
   : process.env.BASE_CONTRACT_ADDRESS || ''; // Base Mainnet (deploy later)
 
 // USDC Token Addresses

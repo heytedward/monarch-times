@@ -11,7 +11,12 @@
     "test": "hardhat test",
     "clean": "hardhat clean"
   },
-  "keywords": ["nft", "base", "ethereum", "hardhat"],
+  "keywords": [
+    "nft",
+    "base",
+    "ethereum",
+    "hardhat"
+  ],
   "author": "Monarch Times",
   "license": "MIT",
   "devDependencies": {
