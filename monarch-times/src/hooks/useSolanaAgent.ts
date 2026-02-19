@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 
 interface SolanaAgentHook {
@@ -8,25 +8,25 @@ interface SolanaAgentHook {
 }
 
 export const useSolanaAgent = (): SolanaAgentHook => {
-  const { user, authenticated } = usePrivy();
+  const { authenticated } = usePrivy();
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
 
-  // Helper to find Solana wallet
-  const getSolanaWallet = useCallback(() => {
-    return user?.linkedAccounts.find(
-      (a) => a.type === 'wallet' && a.chainType === 'solana'
-    );
-  }, [user]);
+  // Helper to find Solana wallet - unused for now
+  // const getSolanaWallet = useCallback(() => {
+  //   return user?.linkedAccounts.find(
+  //     (a) => a.type === 'wallet' && a.chainType === 'solana'
+  //   );
+  // }, [user]);
 
-  const postIntel = async (intel: { title: string; content: string; topic: string }) => {
+  const postIntel = async (_intel: { title: string; content: string; topic: string }) => {
     setIsSyncing(true);
     setSyncError(null);
 
     try {
       if (!authenticated) throw new Error("Not authenticated");
       
-      const wallet = getSolanaWallet();
+      // const wallet = getSolanaWallet();
       // If no Solana wallet, we might be using Base, but this hook is specific to Solana actions
       // if needed. For now, we rely on the backend to handle the chain agnostic logic,
       // but if we needed client-side signing for Solana specifically, we'd do it here.

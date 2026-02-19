@@ -29,7 +29,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
   const isConnected = ready && authenticated;
   
   // Find connected wallet to use for signing
-  const activeWallet = wallets.find((w) => w.address === user?.wallet?.address) || wallets[0];
+  const activeWallet = wallets.find((w) => w.address === user?.wallet?.address) || wallets[0] as any;
   const walletAddress = activeWallet?.address;
   const walletChainType = activeWallet?.chainType;
 
