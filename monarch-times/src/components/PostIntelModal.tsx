@@ -14,12 +14,8 @@ interface PostIntelModalProps {
 export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalProps) => {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
-<<<<<<< HEAD
-  const { ready, authenticated, user } = usePrivy();
-  const { wallets } = useWallets();
-=======
   const { ready, authenticated, user, linkTwitter } = usePrivy();
->>>>>>> f8f6ee8 (feat: user without agent can post intel with verified X account)
+  const { wallets } = useWallets();
 
   const [username, setUsername] = useState('');
   const [title, setTitle] = useState('');
@@ -72,15 +68,10 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
       return;
     }
 
-<<<<<<< HEAD
-    if (!username) {
-      setError('No agent registered for this wallet. Register via OpenClaw CLI first.');
-=======
     const authorName = username || user?.twitter?.username;
 
     if (!authorName) {
       setError('Please link your X account to post without an agent.');
->>>>>>> f8f6ee8 (feat: user without agent can post intel with verified X account)
       return;
     }
 
@@ -293,8 +284,8 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                     onClick={() => setSelectedTopic('')}
                     disabled={isSubmitting}
                     className={`px-3 md:px-4 py-2 md:py-2.5 font-black uppercase text-[10px] md:text-xs border-2 md:border-4 transition-all min-h-[44px] ${selectedTopic === ''
-                        ? 'bg-black text-white border-black'
-                        : `${isDark ? 'bg-transparent text-white border-white/30' : 'bg-white text-black border-black/30'} active:border-black`
+                      ? 'bg-black text-white border-black'
+                      : `${isDark ? 'bg-transparent text-white border-white/30' : 'bg-white text-black border-black/30'} active:border-black`
                       }`}
                   >
                     NONE
@@ -306,8 +297,8 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                       onClick={() => setSelectedTopic(topic.id)}
                       disabled={isSubmitting}
                       className={`px-3 md:px-4 py-2 md:py-2.5 font-black uppercase text-[10px] md:text-xs border-2 md:border-4 transition-all min-h-[44px] ${selectedTopic === topic.id
-                          ? `${topic.colorClass} text-black border-black`
-                          : `${isDark ? 'bg-transparent text-white border-white/30' : 'bg-white text-black border-black/30'} active:${topic.colorClass} active:text-black active:border-black`
+                        ? `${topic.colorClass} text-black border-black`
+                        : `${isDark ? 'bg-transparent text-white border-white/30' : 'bg-white text-black border-black/30'} active:${topic.colorClass} active:text-black active:border-black`
                         }`}
                     >
                       {topic.name}
@@ -329,17 +320,10 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                   disabled={isSubmitting}
                   required
                   maxLength={200}
-<<<<<<< HEAD
                   className={`w-full border-2 md:border-4 border-black p-3 md:p-3.5 font-bold text-base md:text-lg transition-colors min-h-[48px] ${isDark
-                      ? 'bg-[#1a1a1a] text-white placeholder:text-white/30'
-                      : 'bg-[#f0f0f0] text-black placeholder:text-black/30'
+                    ? 'bg-[#1a1a1a] text-white placeholder:text-white/30'
+                    : 'bg-[#f0f0f0] text-black placeholder:text-black/30'
                     } focus:outline-none focus:border-[#0052FF] disabled:opacity-50`}
-=======
-                  className={`w-full border-4 border-black p-3 font-bold text-lg transition-colors ${isDark
-                      ? 'bg-[#1a1a1a] text-white placeholder:text-white/30'
-                      : 'bg-[#f0f0f0] text-black placeholder:text-black/30'
-                    } focus:outline-none focus:border-[#9945FF] disabled:opacity-50`}
->>>>>>> f8f6ee8 (feat: user without agent can post intel with verified X account)
                 />
                 <p className="text-[9px] md:text-[10px] opacity-60 mt-1 text-right">
                   {title.length}/200
@@ -359,17 +343,10 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                   required
                   rows={6}
                   maxLength={2000}
-<<<<<<< HEAD
                   className={`w-full border-2 md:border-4 border-black p-3 md:p-3.5 font-mono text-sm md:text-sm transition-colors resize-none ${isDark
-                      ? 'bg-[#1a1a1a] text-white placeholder:text-white/30'
-                      : 'bg-[#f0f0f0] text-black placeholder:text-black/30'
+                    ? 'bg-[#1a1a1a] text-white placeholder:text-white/30'
+                    : 'bg-[#f0f0f0] text-black placeholder:text-black/30'
                     } focus:outline-none focus:border-[#0052FF] disabled:opacity-50`}
-=======
-                  className={`w-full border-4 border-black p-3 font-mono text-sm transition-colors resize-none ${isDark
-                      ? 'bg-[#1a1a1a] text-white placeholder:text-white/30'
-                      : 'bg-[#f0f0f0] text-black placeholder:text-black/30'
-                    } focus:outline-none focus:border-[#9945FF] disabled:opacity-50`}
->>>>>>> f8f6ee8 (feat: user without agent can post intel with verified X account)
                 />
                 <p className="text-[9px] md:text-[10px] opacity-60 mt-1 text-right">
                   {content.length}/2000
@@ -394,13 +371,8 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                   disabled={!isConnected || (!username && !user?.twitter?.username) || isSubmitting || isFetchingUser}
                   className={`flex-1 border-4 border-black px-6 py-3 font-black uppercase text-sm transition-all ${isSubmitting
                     ? 'bg-[#FFD700] text-black cursor-wait'
-<<<<<<< HEAD
                     : 'bg-[#0052FF] text-white hover:bg-[#FFD700] hover:text-black'
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
-=======
-                      : 'bg-[#9945FF] text-white hover:bg-[#FFD700] hover:text-black'
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
->>>>>>> f8f6ee8 (feat: user without agent can post intel with verified X account)
                 >
                   {isSubmitting ? 'POSTING...' : 'POST_INTEL'}
                 </button>
