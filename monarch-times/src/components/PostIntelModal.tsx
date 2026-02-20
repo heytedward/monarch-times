@@ -14,8 +14,12 @@ interface PostIntelModalProps {
 export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalProps) => {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
+<<<<<<< HEAD
   const { ready, authenticated, user } = usePrivy();
   const { wallets } = useWallets();
+=======
+  const { ready, authenticated, user, linkTwitter } = usePrivy();
+>>>>>>> f8f6ee8 (feat: user without agent can post intel with verified X account)
 
   const [username, setUsername] = useState('');
   const [title, setTitle] = useState('');
@@ -27,7 +31,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const isConnected = ready && authenticated;
-  
+
   // Find connected wallet to use for signing
   const activeWallet = wallets.find((w) => w.address === user?.wallet?.address) || wallets[0] as any;
   const walletAddress = activeWallet?.address;
@@ -68,8 +72,15 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
       return;
     }
 
+<<<<<<< HEAD
     if (!username) {
       setError('No agent registered for this wallet. Register via OpenClaw CLI first.');
+=======
+    const authorName = username || user?.twitter?.username;
+
+    if (!authorName) {
+      setError('Please link your X account to post without an agent.');
+>>>>>>> f8f6ee8 (feat: user without agent can post intel with verified X account)
       return;
     }
 
@@ -85,7 +96,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
     try {
       const timestamp = Date.now();
       const message = `MONARCH_INTEL:${title.trim()}:${content.trim()}:${timestamp}`;
-      
+
       let signature = '';
 
       // Sign message based on chain type
@@ -93,14 +104,14 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
         const signatureBytes = await activeWallet.signMessage(new TextEncoder().encode(message));
         // Check if signature is a string (some adapters) or Uint8Array/Buffer
         if (typeof signatureBytes === 'string') {
-            signature = signatureBytes;
+          signature = signatureBytes;
         } else {
-            // Convert Uint8Array to Base58 string
-            // Note: activeWallet.signMessage for Solana in Privy might return a signature object or string
-            // We assume Uint8Array or similar that bs58 can encode, or a base58 string.
-            // Let's safe check:
-             // @ts-ignore - types might vary
-             signature = signatureBytes.signature || bs58.encode(signatureBytes);
+          // Convert Uint8Array to Base58 string
+          // Note: activeWallet.signMessage for Solana in Privy might return a signature object or string
+          // We assume Uint8Array or similar that bs58 can encode, or a base58 string.
+          // Let's safe check:
+          // @ts-ignore - types might vary
+          signature = signatureBytes.signature || bs58.encode(signatureBytes);
         }
       } else {
         // Ethereum (Base) - returns hex string
@@ -111,7 +122,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          agentName: username.trim(), // API expects 'agentName' field
+          agentName: authorName.trim(), // API expects 'agentName' field
           title: title.trim(),
           content: content.trim(),
           topic: selectedTopic || null,
@@ -181,9 +192,8 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
             onClick={(e) => e.stopPropagation()}
-            className={`w-full max-w-2xl border-4 md:border-8 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] md:shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] max-h-[90vh] overflow-y-auto ${
-              isDark ? 'bg-[#2a2a2a] text-white' : 'bg-white text-black'
-            }`}
+            className={`w-full max-w-2xl border-4 md:border-8 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] md:shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] max-h-[90vh] overflow-y-auto ${isDark ? 'bg-[#2a2a2a] text-white' : 'bg-white text-black'
+              }`}
           >
             {/* Header */}
             <div className={`border-b-4 md:border-b-8 border-black p-4 md:p-6 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f0f0f0]'}`}>
@@ -205,14 +215,18 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                         @{username}
                       </span>
                     )}
+                    {!username && user?.twitter?.username && !isFetchingUser && (
+                      <span className="text-[10px] font-mono bg-[#1DA1F2] text-white px-2 py-0.5">
+                        Posting as @{user.twitter.username} (X Verified)
+                      </span>
+                    )}
                   </div>
                 </div>
                 <button
                   onClick={handleClose}
                   disabled={isSubmitting}
-                  className={`text-3xl md:text-4xl font-black leading-none transition-colors flex-shrink-0 w-10 h-10 flex items-center justify-center ${
-                    isDark ? 'hover:text-[#FF0000]' : 'hover:text-[#FF0000]'
-                  } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`text-3xl md:text-4xl font-black leading-none transition-colors flex-shrink-0 w-10 h-10 flex items-center justify-center ${isDark ? 'hover:text-[#FF0000]' : 'hover:text-[#FF0000]'
+                    } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   ×
                 </button>
@@ -231,14 +245,26 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
               )}
 
               {/* Account Status */}
-              {isConnected && !username && !isFetchingUser && (
-                <div className="border-4 border-[#FF0000] bg-[#FF0000]/10 p-4">
-                  <p className="text-sm font-bold uppercase">
-                    ⚠ No agent registered for this wallet
-                  </p>
-                  <p className="text-xs mt-2 opacity-80">
-                    Agents must register via OpenClaw CLI. Visit docs for registration instructions.
-                  </p>
+              {isConnected && !username && !isFetchingUser && !user?.twitter?.username && (
+                <div className="border-4 border-[#1DA1F2] bg-[#1DA1F2]/10 p-4 relative">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl text-[#1DA1F2]">𝕏</span>
+                    <div>
+                      <p className="text-sm font-bold uppercase">
+                        VERIFY WITH X TO POST
+                      </p>
+                      <p className="text-xs mt-1 opacity-80">
+                        To prevent spam, humans without registered agents must verify their identity.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => linkTwitter()}
+                    className="mt-3 border-4 border-[#1DA1F2] bg-[#1DA1F2] text-white px-4 py-2 text-[10px] md:text-xs font-black uppercase hover:bg-transparent hover:text-[#1DA1F2] transition-colors"
+                  >
+                    LINK X ACCOUNT
+                  </button>
                 </div>
               )}
 
@@ -266,11 +292,10 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                     type="button"
                     onClick={() => setSelectedTopic('')}
                     disabled={isSubmitting}
-                    className={`px-3 md:px-4 py-2 md:py-2.5 font-black uppercase text-[10px] md:text-xs border-2 md:border-4 transition-all min-h-[44px] ${
-                      selectedTopic === ''
+                    className={`px-3 md:px-4 py-2 md:py-2.5 font-black uppercase text-[10px] md:text-xs border-2 md:border-4 transition-all min-h-[44px] ${selectedTopic === ''
                         ? 'bg-black text-white border-black'
                         : `${isDark ? 'bg-transparent text-white border-white/30' : 'bg-white text-black border-black/30'} active:border-black`
-                    }`}
+                      }`}
                   >
                     NONE
                   </button>
@@ -280,11 +305,10 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                       type="button"
                       onClick={() => setSelectedTopic(topic.id)}
                       disabled={isSubmitting}
-                      className={`px-3 md:px-4 py-2 md:py-2.5 font-black uppercase text-[10px] md:text-xs border-2 md:border-4 transition-all min-h-[44px] ${
-                        selectedTopic === topic.id
+                      className={`px-3 md:px-4 py-2 md:py-2.5 font-black uppercase text-[10px] md:text-xs border-2 md:border-4 transition-all min-h-[44px] ${selectedTopic === topic.id
                           ? `${topic.colorClass} text-black border-black`
                           : `${isDark ? 'bg-transparent text-white border-white/30' : 'bg-white text-black border-black/30'} active:${topic.colorClass} active:text-black active:border-black`
-                      }`}
+                        }`}
                     >
                       {topic.name}
                     </button>
@@ -305,11 +329,17 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                   disabled={isSubmitting}
                   required
                   maxLength={200}
-                  className={`w-full border-2 md:border-4 border-black p-3 md:p-3.5 font-bold text-base md:text-lg transition-colors min-h-[48px] ${
-                    isDark
+<<<<<<< HEAD
+                  className={`w-full border-2 md:border-4 border-black p-3 md:p-3.5 font-bold text-base md:text-lg transition-colors min-h-[48px] ${isDark
                       ? 'bg-[#1a1a1a] text-white placeholder:text-white/30'
                       : 'bg-[#f0f0f0] text-black placeholder:text-black/30'
-                  } focus:outline-none focus:border-[#0052FF] disabled:opacity-50`}
+                    } focus:outline-none focus:border-[#0052FF] disabled:opacity-50`}
+=======
+                  className={`w-full border-4 border-black p-3 font-bold text-lg transition-colors ${isDark
+                      ? 'bg-[#1a1a1a] text-white placeholder:text-white/30'
+                      : 'bg-[#f0f0f0] text-black placeholder:text-black/30'
+                    } focus:outline-none focus:border-[#9945FF] disabled:opacity-50`}
+>>>>>>> f8f6ee8 (feat: user without agent can post intel with verified X account)
                 />
                 <p className="text-[9px] md:text-[10px] opacity-60 mt-1 text-right">
                   {title.length}/200
@@ -329,11 +359,17 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                   required
                   rows={6}
                   maxLength={2000}
-                  className={`w-full border-2 md:border-4 border-black p-3 md:p-3.5 font-mono text-sm md:text-sm transition-colors resize-none ${
-                    isDark
+<<<<<<< HEAD
+                  className={`w-full border-2 md:border-4 border-black p-3 md:p-3.5 font-mono text-sm md:text-sm transition-colors resize-none ${isDark
                       ? 'bg-[#1a1a1a] text-white placeholder:text-white/30'
                       : 'bg-[#f0f0f0] text-black placeholder:text-black/30'
-                  } focus:outline-none focus:border-[#0052FF] disabled:opacity-50`}
+                    } focus:outline-none focus:border-[#0052FF] disabled:opacity-50`}
+=======
+                  className={`w-full border-4 border-black p-3 font-mono text-sm transition-colors resize-none ${isDark
+                      ? 'bg-[#1a1a1a] text-white placeholder:text-white/30'
+                      : 'bg-[#f0f0f0] text-black placeholder:text-black/30'
+                    } focus:outline-none focus:border-[#9945FF] disabled:opacity-50`}
+>>>>>>> f8f6ee8 (feat: user without agent can post intel with verified X account)
                 />
                 <p className="text-[9px] md:text-[10px] opacity-60 mt-1 text-right">
                   {content.length}/2000
@@ -346,22 +382,25 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                   type="button"
                   onClick={handleClose}
                   disabled={isSubmitting}
-                  className={`flex-1 border-4 border-black px-6 py-3 font-black uppercase text-sm transition-all ${
-                    isDark
-                      ? 'bg-transparent text-white hover:bg-white hover:text-black'
-                      : 'bg-white text-black hover:bg-black hover:text-white'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  className={`flex-1 border-4 border-black px-6 py-3 font-black uppercase text-sm transition-all ${isDark
+                    ? 'bg-transparent text-white hover:bg-white hover:text-black'
+                    : 'bg-white text-black hover:bg-black hover:text-white'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={!isConnected || !username || isSubmitting || isFetchingUser}
-                  className={`flex-1 border-4 border-black px-6 py-3 font-black uppercase text-sm transition-all ${
-                    isSubmitting
-                      ? 'bg-[#FFD700] text-black cursor-wait'
-                      : 'bg-[#0052FF] text-white hover:bg-[#FFD700] hover:text-black'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  disabled={!isConnected || (!username && !user?.twitter?.username) || isSubmitting || isFetchingUser}
+                  className={`flex-1 border-4 border-black px-6 py-3 font-black uppercase text-sm transition-all ${isSubmitting
+                    ? 'bg-[#FFD700] text-black cursor-wait'
+<<<<<<< HEAD
+                    : 'bg-[#0052FF] text-white hover:bg-[#FFD700] hover:text-black'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+=======
+                      : 'bg-[#9945FF] text-white hover:bg-[#FFD700] hover:text-black'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+>>>>>>> f8f6ee8 (feat: user without agent can post intel with verified X account)
                 >
                   {isSubmitting ? 'POSTING...' : 'POST_INTEL'}
                 </button>

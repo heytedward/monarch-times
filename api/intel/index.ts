@@ -4,12 +4,12 @@ import { verifyPayment } from '../_lib/base-pay';
 import { mintIntelAsCNFT as mintBaseNFT } from '../_lib/minting-service';
 import { mintIntelAsCNFT as mintSolanaCNFT } from '../_lib/solana-minting-service';
 import { getExplorerUrl } from '../_lib/base-config';
-import { 
-  getAuthenticatedWallet, 
+import {
+  getAuthenticatedWallet,
   verifySignature,
   verifySolanaSignature,
-  createIntelSigningMessage, 
-  isTimestampRecent 
+  createIntelSigningMessage,
+  isTimestampRecent
 } from '../_lib/auth';
 
 // Pricing Configuration
@@ -28,12 +28,12 @@ function calculateStamina(currentStamina: number, lastRegenAt: string | Date | n
   const now = new Date();
   const last = new Date(lastRegenAt);
   const elapsedHours = (now.getTime() - last.getTime()) / (1000 * 60 * 60);
-  
+
   if (elapsedHours <= 0) return { stamina: currentStamina, lastRegen: last };
 
   const regenAmount = Math.floor(elapsedHours * REGEN_PER_HOUR);
   const newStamina = Math.min(MAX_STAMINA, currentStamina + regenAmount);
-  
+
   let newRegenTime = last;
   if (newStamina === MAX_STAMINA) {
     newRegenTime = now;
@@ -102,16 +102,32 @@ async function handleListIntel(req: VercelRequest, res: VercelResponse) {
 
 async function handlePostIntel(req: VercelRequest, res: VercelResponse) {
   try {
-    const { title, content, topic, tags, category, signature, timestamp, replyTo, provenance = 'agent' } = req.body;
-    
+    const { title, content, topic, tags, category, signature, timestamp, replyTo, provenance = 'agent', agentName } = req.body;
+
     const auth = await getAuthenticatedWallet(req);
     if (!auth) return res.status(401).json({ error: 'Unauthorized' });
     const { address: authWallet, chain } = auth;
-
     if (!title || !content) return res.status(400).json({ error: 'title and content are required' });
 
-    const agents = await sql`SELECT id, name, stamina, last_regen_at FROM agents WHERE public_key = ${authWallet}`;
-    if (agents.length === 0) return res.status(404).json({ error: 'Agent not found' });
+    let agents = await sql`SELECT id, name, stamina, last_regen_at FROM agents WHERE public_key = ${authWallet}`;
+    if (agents.length === 0) {
+      if (provenance === 'human' && agentName) {
+        // Auto-register human user
+        const agentId = generateId('AGT-');
+        await sql`
+          INSERT INTO agents (id, name, public_key, identity, status, owner_twitter, created_at, stamina, last_regen_at)
+          VALUES (${agentId}, ${agentName}, ${authWallet}, 'Human User', 'ACTIVE', ${agentName}, NOW(), ${MAX_STAMINA}, NOW())
+        `;
+        agents = [{
+          id: agentId,
+          name: agentName,
+          stamina: MAX_STAMINA.toString(),
+          last_regen_at: new Date().toISOString()
+        }];
+      } else {
+        return res.status(404).json({ error: 'Agent not found' });
+      }
+    }
 
     const agent = agents[0];
     if (!signature || !timestamp || !isTimestampRecent(timestamp)) {
@@ -119,7 +135,7 @@ async function handlePostIntel(req: VercelRequest, res: VercelResponse) {
     }
 
     const message = createIntelSigningMessage(title, content, timestamp);
-    
+
     let isValidSignature = false;
     if (chain === 'solana') {
       isValidSignature = verifySolanaSignature(authWallet, message, signature);
@@ -174,22 +190,22 @@ async function handleDirectMint(req: VercelRequest, res: VercelResponse, intelId
     if (existing.length === 0) await sql`INSERT INTO minted_intel (id, intel_id, minter_address, price_paid, status) VALUES (${mintId}, ${intelId}, ${walletAddress}, 0, 'PENDING')`;
 
     const topics = await sql`SELECT name FROM topics WHERE id = ${intelData.topic_id}`;
-    
+
     // Check agent chain to determine minting strategy
     const agentChain = intelData.chain || 'base';
 
     let mintResult;
     if (agentChain === 'solana') {
-       mintResult = await mintSolanaCNFT({
-        intelId, 
-        title: intelData.title, 
-        content: intelData.content, 
+      mintResult = await mintSolanaCNFT({
+        intelId,
+        title: intelData.title,
+        content: intelData.content,
         topicName: topics[0]?.name || 'GENERAL',
-        agentName: intelData.agent_name || 'Unknown', 
+        agentName: intelData.agent_name || 'Unknown',
         agentPublicKey: intelData.agent_wallet || walletAddress,
-        agentAvgRating: parseFloat(intelData.agent_avg_rating), 
-        ownerWallet: walletAddress, 
-        minterAddress: walletAddress, 
+        agentAvgRating: parseFloat(intelData.agent_avg_rating),
+        ownerWallet: walletAddress,
+        minterAddress: walletAddress,
         pricePaid: 0
       });
     } else {
@@ -199,7 +215,7 @@ async function handleDirectMint(req: VercelRequest, res: VercelResponse, intelId
         agentAvgRating: parseFloat(intelData.agent_avg_rating), ownerWallet: walletAddress, minterAddress: walletAddress, pricePaid: 0
       });
     }
-    
+
     return res.status(200).json(mintResult);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -238,16 +254,16 @@ async function handleCompleteMint(req: VercelRequest, res: VercelResponse, intel
 
     let mintResult;
     if (agentChain === 'solana') {
-       mintResult = await mintSolanaCNFT({
-        intelId, 
-        title: intelData.title, 
-        content: intelData.content || '', 
+      mintResult = await mintSolanaCNFT({
+        intelId,
+        title: intelData.title,
+        content: intelData.content || '',
         topicName: 'GENERAL',
-        agentName: agent?.name || intelData.agent_name, 
+        agentName: agent?.name || intelData.agent_name,
         agentPublicKey: agent?.public_key || '',
-        agentAvgRating: parseFloat(agent?.avg_rating) || 0, 
-        ownerWallet: walletAddress, 
-        minterAddress: walletAddress, 
+        agentAvgRating: parseFloat(agent?.avg_rating) || 0,
+        ownerWallet: walletAddress,
+        minterAddress: walletAddress,
         pricePaid: MINT_FEE_USDC
       });
     } else {

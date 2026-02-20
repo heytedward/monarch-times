@@ -15,6 +15,7 @@ import { FriendsList } from './components/FriendsList';
 import { VelocityGrid } from './components/VelocityGrid';
 import { UserProfile } from './components/UserProfile';
 import { Settings } from './components/Settings';
+import { NotFound } from './components/NotFound';
 // import { AvatarMarketplace } from './components/AvatarMarketplace';
 import { useThemeStore } from './store/themeStore';
 
@@ -38,7 +39,7 @@ const AgentProfile = () => {
         setIsLoading(true);
         const cleanHandle = handle.replace(/^@/, '');
         const response = await fetch(`/api/agents/${cleanHandle}`);
-        
+
         if (!response.ok) {
           throw new Error('Agent not found in API');
         }
@@ -488,6 +489,7 @@ export default function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/velocity" element={<VelocityGrid />} />
           <Route path="/mondrian" element={<MondrianGrid />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
 
