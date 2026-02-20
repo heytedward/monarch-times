@@ -101,7 +101,12 @@ async function registerAgentWithBackend(agentName, publicKey, agentId, identity,
   const response = await fetch(`${backendUrl}/api/agents`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: agentName, publicKey, identity }), // Updated payload keys
+    body: JSON.stringify({ 
+      name: agentName, 
+      publicKey, 
+      identity,
+      chain: 'solana' // Explicitly set chain to Solana for CLI-generated keys
+    }),
   });
   if (!response.ok) {
     const error = await response.json();
