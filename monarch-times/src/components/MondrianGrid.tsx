@@ -12,6 +12,8 @@ import { useThemeStore } from '../store/themeStore';
 import { useMockIntelStore } from '../store/mockIntelStore';
 import type { MockIntel } from '../store/mockIntelStore';
 import { MonarchCardModal } from './MonarchCard';
+import { ProvenanceBadge } from './ProvenanceBadge';
+import { ProvenanceType } from '../types/IntelCard';
 
 // De Stijl topic colors (matches topicStore.ts)
 const TOPIC_COLORS: Record<string, string> = {
@@ -372,9 +374,9 @@ export default function MondrianGrid({ onCardClick }: MondrianGridProps) {
             const isBurning = size === 'burning';
 
             return (
-            <div
-              key={item.id}
-              className={`
+              <div
+                key={item.id}
+                className={`
                 relative overflow-hidden cursor-pointer
                 border-4
                 ${isDark ? 'border-white' : 'border-black'}
@@ -384,147 +386,154 @@ export default function MondrianGrid({ onCardClick }: MondrianGridProps) {
                 ${isBurning ? 'opacity-20 grayscale' : ''}
                 ${isNew ? 'animate-[slideInRight_0.8s_ease-out_forwards]' : ''}
               `}
-              style={{
-                gridColumn: `span ${colSpan}`,
-                gridRow: `span ${rowSpan}`,
-                backgroundColor: topicColors[item.topic] || topicColors.general,
-                // Liquid transition with push effect
-                transition: `all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) ${pushDelay}ms`,
-                // Subtle bounce when pushed, burn effect for oldest
-                animation: isBurning
-                  ? 'burn 2s ease-in-out infinite'
-                  : (!isNew && pushWave > 0
-                    ? `pushed 0.6s ease-out ${pushDelay}ms`
-                    : (size === 'hero' ? 'float 6s ease-in-out infinite' : undefined)),
-                // Shrinking transform for burning items
-                transform: isBurning ? 'scale(0.85)' : undefined,
-              }}
-              onMouseEnter={() => !isBurning && setHoveredId(item.id)}
-              onMouseLeave={() => setHoveredId(null)}
-              onClick={() => !isBurning && setSelectedIntel(item)}
-            >
-              {/* Burn overlay effect */}
-              {isBurning && (
+                style={{
+                  gridColumn: `span ${colSpan}`,
+                  gridRow: `span ${rowSpan}`,
+                  backgroundColor: topicColors[item.topic] || topicColors.general,
+                  // Liquid transition with push effect
+                  transition: `all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) ${pushDelay}ms`,
+                  // Subtle bounce when pushed, burn effect for oldest
+                  animation: isBurning
+                    ? 'burn 2s ease-in-out infinite'
+                    : (!isNew && pushWave > 0
+                      ? `pushed 0.6s ease-out ${pushDelay}ms`
+                      : (size === 'hero' ? 'float 6s ease-in-out infinite' : undefined)),
+                  // Shrinking transform for burning items
+                  transform: isBurning ? 'scale(0.85)' : undefined,
+                }}
+                onMouseEnter={() => !isBurning && setHoveredId(item.id)}
+                onMouseLeave={() => setHoveredId(null)}
+                onClick={() => !isBurning && setSelectedIntel(item)}
+              >
+                {/* Burn overlay effect */}
+                {isBurning && (
+                  <div
+                    className="absolute inset-0 z-20 pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(45deg, rgba(255,100,0,0.4) 0%, rgba(255,50,0,0.6) 50%, rgba(100,0,0,0.8) 100%)',
+                      mixBlendMode: 'multiply',
+                      animation: 'burnFlicker 0.5s ease-in-out infinite alternate',
+                    }}
+                  />
+                )}
+                {/* Liquid hover glow */}
                 <div
-                  className="absolute inset-0 z-20 pointer-events-none"
-                  style={{
-                    background: 'linear-gradient(45deg, rgba(255,100,0,0.4) 0%, rgba(255,50,0,0.6) 50%, rgba(100,0,0,0.8) 100%)',
-                    mixBlendMode: 'multiply',
-                    animation: 'burnFlicker 0.5s ease-in-out infinite alternate',
-                  }}
-                />
-              )}
-              {/* Liquid hover glow */}
-              <div
-                className={`
+                  className={`
                   absolute inset-0 transition-opacity duration-700
                   ${hoveredId === item.id ? 'opacity-100' : 'opacity-0'}
                 `}
-                style={{
-                  background: `radial-gradient(circle at center, ${topicColors[item.topic]}66 0%, transparent 70%)`,
-                  filter: 'blur(20px)',
-                  transform: 'scale(1.2)',
-                }}
-              />
+                  style={{
+                    background: `radial-gradient(circle at center, ${topicColors[item.topic]}66 0%, transparent 70%)`,
+                    filter: 'blur(20px)',
+                    transform: 'scale(1.2)',
+                  }}
+                />
 
-              {/* Shimmer on hero cards */}
-              {size === 'hero' && (
-                <div
-                  className={`absolute inset-0 bg-gradient-to-r from-transparent to-transparent
+                {/* Shimmer on hero cards */}
+                {size === 'hero' && (
+                  <div
+                    className={`absolute inset-0 bg-gradient-to-r from-transparent to-transparent
                              -translate-x-full animate-[shimmer_4s_ease-in-out_infinite]
                              ${isDark ? 'via-white/10' : 'via-white/20'}`}
-                />
-              )}
+                  />
+                )}
 
-              {/* Content - varies by size */}
-              <div className="absolute inset-0 p-3 flex flex-col justify-between relative z-10">
-                {/* Top section */}
-                <div>
-                  {/* Size badge */}
-                  {size === 'hero' && (
-                    <div className={`inline-block px-2 py-0.5 text-xs font-mono mb-2 ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>
-                      NEW
-                    </div>
-                  )}
-                  {item.isThrowback && (
-                    <div className={`inline-block px-2 py-0.5 text-xs font-mono mb-2 border ${isDark ? 'bg-black text-white border-white' : 'bg-white text-black border-black'}`}>
-                      THROWBACK
-                    </div>
-                  )}
-                  {item.isMinted && !item.isThrowback && (
-                    <div className="inline-block px-2 py-0.5 bg-[#9945FF] text-white text-xs font-mono mb-2">
-                      MINTED
-                    </div>
-                  )}
+                {/* Provenance Badge */}
+                {size !== 'minimal' && size !== 'burning' && (
+                  <div className="absolute top-2 right-2 z-20">
+                    <ProvenanceBadge type={item.provenance as ProvenanceType || ProvenanceType.AGENT} mode="inline" className="scale-90 origin-top-right shadow-sm" />
+                  </div>
+                )}
 
-                  {/* Title - hidden on minimal/burning size */}
-                  {size !== 'minimal' && size !== 'burning' && (
-                    <h3
-                      className={`
+                {/* Content - varies by size */}
+                <div className="absolute inset-0 p-3 flex flex-col justify-between relative z-10">
+                  {/* Top section */}
+                  <div>
+                    {/* Size badge */}
+                    {size === 'hero' && (
+                      <div className={`inline-block px-2 py-0.5 text-xs font-mono mb-2 ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>
+                        NEW
+                      </div>
+                    )}
+                    {item.isThrowback && (
+                      <div className={`inline-block px-2 py-0.5 text-xs font-mono mb-2 border ${isDark ? 'bg-black text-white border-white' : 'bg-white text-black border-black'}`}>
+                        THROWBACK
+                      </div>
+                    )}
+                    {item.isMinted && !item.isThrowback && (
+                      <div className="inline-block px-2 py-0.5 bg-[#9945FF] text-white text-xs font-mono mb-2">
+                        MINTED
+                      </div>
+                    )}
+
+                    {/* Title - hidden on minimal/burning size */}
+                    {size !== 'minimal' && size !== 'burning' && (
+                      <h3
+                        className={`
                         font-black uppercase leading-tight text-black
                         ${size === 'hero' ? 'text-2xl' : ''}
                         ${size === 'featured' ? 'text-lg' : ''}
                         ${size === 'standard' ? 'text-sm' : ''}
                         ${size === 'fading' ? 'text-xs' : ''}
                       `}
-                    >
-                      {size === 'fading' ? item.title.slice(0, 20) + '...' : item.title}
-                    </h3>
-                  )}
+                      >
+                        {size === 'fading' ? item.title.slice(0, 20) + '...' : item.title}
+                      </h3>
+                    )}
 
-                  {/* Content preview - only on hero/featured */}
-                  {(size === 'hero' || size === 'featured') && (
-                    <p className={`
+                    {/* Content preview - only on hero/featured */}
+                    {(size === 'hero' || size === 'featured') && (
+                      <p className={`
                       mt-2 text-black/70 font-mono
                       ${size === 'hero' ? 'text-sm' : 'text-xs'}
                     `}>
-                      {item.content.slice(0, size === 'hero' ? 150 : 80)}...
-                    </p>
-                  )}
-                </div>
+                        {item.content.slice(0, size === 'hero' ? 150 : 80)}...
+                      </p>
+                    )}
+                  </div>
 
-                {/* Bottom section - agent & time */}
-                {size !== 'minimal' && size !== 'burning' && (
-                  <div className="flex items-end justify-between">
-                    <span className={`
+                  {/* Bottom section - agent & time */}
+                  {size !== 'minimal' && size !== 'burning' && (
+                    <div className="flex items-end justify-between">
+                      <span className={`
                       font-mono text-black/80
                       ${size === 'hero' ? 'text-sm' : 'text-xs'}
                     `}>
-                      @{item.agentName}
-                    </span>
-                    <span className={`
+                        @{item.agentName}
+                      </span>
+                      <span className={`
                       font-mono px-1
                       ${item.isMinted ? 'bg-[#9945FF] text-white' : 'bg-black/20 text-black'}
                       ${size === 'hero' ? 'text-xs' : 'text-[10px]'}
                     `}>
-                      {getTimeRemaining(item)}
-                    </span>
-                  </div>
-                )}
+                        {getTimeRemaining(item)}
+                      </span>
+                    </div>
+                  )}
 
-                {/* Minimal size - just shows topic color and small indicator */}
-                {(size === 'minimal' || size === 'burning') && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className={`text-[10px] font-mono uppercase ${size === 'burning' ? 'text-black/30' : 'text-black/50'}`}>
-                      {size === 'burning' ? '🔥' : item.topic.slice(0, 3)}
-                    </span>
+                  {/* Minimal size - just shows topic color and small indicator */}
+                  {(size === 'minimal' || size === 'burning') && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className={`text-[10px] font-mono uppercase ${size === 'burning' ? 'text-black/30' : 'text-black/50'}`}>
+                        {size === 'burning' ? '🔥' : item.topic.slice(0, 3)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Hover expand preview for small cards (not for burning) */}
+                {hoveredId === item.id && (size === 'fading' || size === 'minimal') && (
+                  <div className={`absolute inset-0 p-3 flex flex-col justify-between z-20 ${isDark ? 'bg-white/95 text-black' : 'bg-black/90 text-white'}`}>
+                    <div>
+                      <div className={`text-xs font-mono mb-1 ${isDark ? 'text-black/60' : 'text-white/60'}`}>{item.topic.toUpperCase()}</div>
+                      <h4 className="text-sm font-bold">{item.title}</h4>
+                    </div>
+                    <div className={`text-xs font-mono ${isDark ? 'text-black/60' : 'text-white/60'}`}>
+                      @{item.agentName} · {getTimeRemaining(item)}
+                    </div>
                   </div>
                 )}
               </div>
-
-              {/* Hover expand preview for small cards (not for burning) */}
-              {hoveredId === item.id && (size === 'fading' || size === 'minimal') && (
-                <div className={`absolute inset-0 p-3 flex flex-col justify-between z-20 ${isDark ? 'bg-white/95 text-black' : 'bg-black/90 text-white'}`}>
-                  <div>
-                    <div className={`text-xs font-mono mb-1 ${isDark ? 'text-black/60' : 'text-white/60'}`}>{item.topic.toUpperCase()}</div>
-                    <h4 className="text-sm font-bold">{item.title}</h4>
-                  </div>
-                  <div className={`text-xs font-mono ${isDark ? 'text-black/60' : 'text-white/60'}`}>
-                    @{item.agentName} · {getTimeRemaining(item)}
-                  </div>
-                </div>
-              )}
-            </div>
             );
           })}
         </div>
@@ -550,6 +559,7 @@ export default function MondrianGrid({ onCardClick }: MondrianGridProps) {
             date: selectedIntel.createdAt.toLocaleDateString(),
             rating: 4.5, // Mock rating for visual consistency
             reply_count: 0,
+            provenance: selectedIntel.provenance,
             agentId: `agent-${selectedIntel.agentName}`, // Mock ID
           }}
           onClose={() => setSelectedIntel(null)}

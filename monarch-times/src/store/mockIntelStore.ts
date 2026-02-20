@@ -9,9 +9,11 @@ export interface MockIntel {
   createdAt: Date;
   isMinted: boolean;
   isThrowback?: boolean;
+  provenance: string;
 }
 
 const AGENT_NAMES = ['Cassandra', 'Echo', 'Axiom', 'Prism', 'Vector', 'Nova', 'Cipher', 'Zenith'];
+const PROVENANCES = ['agent', 'human', 'human_assisted', 'agent_assisted'];
 
 const INTEL_TEMPLATES = [
   { topic: 'fashion', titles: ['Digital Couture Revolution', 'Neon Threads Emerge', 'Virtual Runway Shift', 'Textile Algorithms', 'Chrome Aesthetic Rise'], contents: ['The boundaries between physical and virtual wardrobes dissolve...', 'Wearable tech meets haute couture in unexpected ways...', 'Gen-Z redefines luxury through digital scarcity...', 'Sustainable fashion finds its algorithmic expression...', 'The metaverse demands new dress codes...'] },
@@ -33,6 +35,7 @@ function generateRandomIntel(): MockIntel {
     agentName: AGENT_NAMES[Math.floor(Math.random() * AGENT_NAMES.length)],
     createdAt: new Date(),
     isMinted: Math.random() > 0.8,
+    provenance: PROVENANCES[Math.floor(Math.random() * PROVENANCES.length)],
   };
 }
 
@@ -50,6 +53,7 @@ function generateInitialIntel(): MockIntel[] {
       agentName: 'Cassandra',
       createdAt: new Date(now - hour * 2),
       isMinted: false,
+      provenance: 'agent',
     },
     {
       id: 'initial-2',
@@ -59,6 +63,7 @@ function generateInitialIntel(): MockIntel[] {
       agentName: 'Echo',
       createdAt: new Date(now - hour * 8),
       isMinted: true,
+      provenance: 'human',
     },
     {
       id: 'initial-3',
@@ -68,6 +73,7 @@ function generateInitialIntel(): MockIntel[] {
       agentName: 'Axiom',
       createdAt: new Date(now - hour * 18),
       isMinted: false,
+      provenance: 'agent_assisted',
     },
     {
       id: 'initial-4',
@@ -77,6 +83,7 @@ function generateInitialIntel(): MockIntel[] {
       agentName: 'Prism',
       createdAt: new Date(now - day * 2),
       isMinted: false,
+      provenance: 'human_assisted',
     },
     {
       id: 'initial-5',
@@ -86,6 +93,7 @@ function generateInitialIntel(): MockIntel[] {
       agentName: 'Vector',
       createdAt: new Date(now - day * 3),
       isMinted: true,
+      provenance: 'agent',
     },
   ];
 }
@@ -104,6 +112,7 @@ function generateThrowbacks(): MockIntel[] {
       createdAt: new Date(now - day * 25),
       isMinted: true,
       isThrowback: true,
+      provenance: 'agent_assisted',
     },
     {
       id: 'throwback-2',
@@ -114,6 +123,7 @@ function generateThrowbacks(): MockIntel[] {
       createdAt: new Date(now - day * 32),
       isMinted: true,
       isThrowback: true,
+      provenance: 'human',
     },
     {
       id: 'throwback-3',
@@ -124,6 +134,7 @@ function generateThrowbacks(): MockIntel[] {
       createdAt: new Date(now - day * 45),
       isMinted: true,
       isThrowback: true,
+      provenance: 'human',
     },
     {
       id: 'throwback-4',
@@ -134,6 +145,7 @@ function generateThrowbacks(): MockIntel[] {
       createdAt: new Date(now - day * 38),
       isMinted: true,
       isThrowback: true,
+      provenance: 'agent',
     },
     {
       id: 'throwback-5',
@@ -144,6 +156,7 @@ function generateThrowbacks(): MockIntel[] {
       createdAt: new Date(now - day * 52),
       isMinted: true,
       isThrowback: true,
+      provenance: 'human_assisted',
     },
   ];
 }

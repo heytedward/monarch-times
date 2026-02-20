@@ -39,7 +39,7 @@ function mockIntelToSlot(card: MockIntel) {
     date: dateStr,
     rating: 4.5, // Mock rating
     reply_count: 0,
-    provenance: ProvenanceType.AGENT,
+    provenance: card.provenance as ProvenanceType || ProvenanceType.AGENT,
   };
 }
 
@@ -77,26 +77,24 @@ export const TownSquare = () => {
       <div className={`flex flex-wrap items-center gap-3 mb-10 sticky top-0 z-30 p-3 border-b-4 border-black -mx-4 md:-mx-8 px-4 md:px-8 backdrop-blur-xl transition-colors ${isDark ? 'bg-black/90 border-white/20' : 'bg-white/90 border-black'}`}>
         <button
           onClick={() => { setSelectedTopic(null); setViewMode('classic'); }}
-          className={`px-4 py-2 font-black uppercase text-xs border-4 transition-all ${
-            selectedTopic === null
+          className={`px-4 py-2 font-black uppercase text-xs border-4 transition-all ${selectedTopic === null
               ? (isDark ? 'bg-white text-black border-white' : 'bg-black text-white border-black')
               : (isDark ? 'bg-transparent text-white border-white/30 hover:border-white' : 'bg-white text-black border-black/30 hover:border-black')
-          }`}
+            }`}
         >
           ALL_CHANNELS
         </button>
-        
+
         <div className={`h-8 w-1 hidden sm:block ${isDark ? 'bg-white/20' : 'bg-black/20'}`} />
 
         {Object.values(TOPICS).map(topic => (
           <button
             key={topic.id}
             onClick={() => { setSelectedTopic(topic.id); setViewMode('classic'); }}
-            className={`px-4 py-2 font-black uppercase text-xs border-4 transition-all flex items-center gap-2 group ${
-              selectedTopic === topic.id
+            className={`px-4 py-2 font-black uppercase text-xs border-4 transition-all flex items-center gap-2 group ${selectedTopic === topic.id
                 ? `${topic.colorClass} text-black border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`
                 : `${isDark ? 'bg-transparent text-white border-white/30' : 'bg-white text-black border-black/30'} hover:${topic.colorClass} hover:text-black hover:border-black`
-            }`}
+              }`}
           >
             <span className={`w-3 h-3 ${topic.colorClass} border-2 border-black group-hover:bg-white`} />
             {topic.name}
@@ -110,24 +108,22 @@ export const TownSquare = () => {
       {/* Centered Feed Style Selection */}
       <div className="flex justify-center mb-10">
         <div className="inline-flex border-4 border-black bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
-          <button 
-            onClick={() => setViewMode('classic')} 
-            className={`px-8 py-3 font-black uppercase text-sm transition-all ${
-              viewMode === 'classic' 
-                ? 'bg-black text-white' 
+          <button
+            onClick={() => setViewMode('classic')}
+            className={`px-8 py-3 font-black uppercase text-sm transition-all ${viewMode === 'classic'
+                ? 'bg-black text-white'
                 : 'bg-white text-black hover:bg-gray-100'
-            }`}
+              }`}
           >
             Classic_Feed
           </button>
           <div className="w-1 bg-black" />
-          <button 
-            onClick={() => setViewMode('mondrian')} 
-            className={`px-8 py-3 font-black uppercase text-sm transition-all ${
-              viewMode === 'mondrian' 
-                ? 'bg-black text-white' 
+          <button
+            onClick={() => setViewMode('mondrian')}
+            className={`px-8 py-3 font-black uppercase text-sm transition-all ${viewMode === 'mondrian'
+                ? 'bg-black text-white'
                 : 'bg-white text-black hover:bg-gray-100'
-            }`}
+              }`}
           >
             Mondrian_Grid
           </button>
@@ -145,7 +141,7 @@ export const TownSquare = () => {
             <MonarchCard
               key={slot.id}
               slot={slot}
-              onTrigger={() => {}}
+              onTrigger={() => { }}
               onRate={() => setActiveModal(slot)}
             />
           ))}
@@ -157,9 +153,8 @@ export const TownSquare = () => {
       {/* Floating Action Button - Post Intel (Desktop only, hidden on mobile) */}
       <button
         onClick={() => setIsPostModalOpen(true)}
-        className={`hidden md:flex fixed bottom-8 right-8 z-40 w-16 h-16 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:scale-105 items-center justify-center ${
-          isDark ? 'bg-[#9945FF] hover:bg-[#FFD700]' : 'bg-[#9945FF] hover:bg-[#FFD700]'
-        }`}
+        className={`hidden md:flex fixed bottom-8 right-8 z-40 w-16 h-16 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:scale-105 items-center justify-center ${isDark ? 'bg-[#9945FF] hover:bg-[#FFD700]' : 'bg-[#9945FF] hover:bg-[#FFD700]'
+          }`}
         aria-label="Post Intel"
       >
         <svg
