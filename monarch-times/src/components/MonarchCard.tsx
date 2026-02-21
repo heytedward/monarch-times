@@ -10,7 +10,7 @@ import { ProvenanceBadge } from './ProvenanceBadge';
 import { ProvenanceType } from '../types/IntelCard';
 
 // --- ReplyCard Component ---
-export const ReplyCard = ({ reply, index, isExpanded, onSwap }: { reply: any, index: number, isExpanded: boolean, onSwap?: (reply: any) => void }) => { 
+export const ReplyCard = ({ reply, index, isExpanded, onSwap }: { reply: any, index: number, isExpanded: boolean, onSwap?: (reply: any) => void }) => {
   const navigate = useNavigate();
 
   // Topic colors for cross-topic replies
@@ -87,7 +87,7 @@ export const ReplyCard = ({ reply, index, isExpanded, onSwap }: { reply: any, in
 };
 
 // --- Hook for Card Logic ---
-export const useCardState = (slot: any) => { 
+export const useCardState = (slot: any) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [mintStatus, setMintStatus] = useState<'idle' | 'minting' | 'minted' | 'error'>('idle');
   const [mintAllStatus, setMintAllStatus] = useState<'idle' | 'minting' | 'minted' | 'error'>('idle');
@@ -167,7 +167,7 @@ export const useCardState = (slot: any) => {
     }
   }, [slot.id, slot.title]);
 
-  const fetchReplies = async () => { 
+  const fetchReplies = async () => {
     if (slot.title?.includes('FIRST') || slot.id === 'sample-1') return;
     if (!slot.reply_count || slot.reply_count === 0) return;
 
@@ -332,19 +332,19 @@ export const useCardState = (slot: any) => {
 };
 
 // --- Modal Content Component ---
-const CardModalContent = ({ 
+const CardModalContent = ({
   slot,
   cardState,
   onRate
-}: { 
+}: {
   slot: any;
   cardState: any;
   onClose?: () => void;
   onRate?: (intel: any) => void;
-}) => { 
+}) => {
   const navigate = useNavigate();
   const { toggleBond, bonds } = useAgentStore();
-  const { 
+  const {
     isFlipped,
     setIsFlipped,
     mintStatus,
@@ -432,15 +432,14 @@ const CardModalContent = ({
                       <button
                         onClick={handleMint}
                         disabled={mintStatus === 'minting' || mintStatus === 'minted'}
-                        className={`px-4 py-2 font-black uppercase text-[10px] border-4 border-black transition-all ${ 
-                          mintStatus === 'minted'
+                        className={`px-4 py-2 font-black uppercase text-[10px] border-4 border-black transition-all ${mintStatus === 'minted'
                             ? 'bg-[#00FF00] text-black cursor-default'
                             : mintStatus === 'minting'
-                            ? 'bg-[#0052FF] text-white animate-pulse cursor-wait'
-                            : mintStatus === 'error'
-                            ? 'bg-[#FF0000] text-white hover:bg-black'
-                            : 'bg-black text-white hover:bg-[#0052FF]' 
-                        }`}
+                              ? 'bg-[#0052FF] text-white animate-pulse cursor-wait'
+                              : mintStatus === 'error'
+                                ? 'bg-[#FF0000] text-white hover:bg-black'
+                                : 'bg-black text-white hover:bg-[#0052FF]'
+                          }`}
                       >
                         {mintStatus === 'minted' ? '✓ MINTED' : mintStatus === 'minting' ? 'MINTING...' : mintStatus === 'error' ? 'RETRY' : 'MINT'}
                       </button>
@@ -448,13 +447,13 @@ const CardModalContent = ({
                   </div>
                   {mintResult?.mintAddress && (
                     <a
-                      href={`https://basescan.org/tx/${mintResult.mintAddress}`}
+                      href={`https://solscan.io/tx/${mintResult.mintAddress}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
                       className="text-[9px] font-mono underline mt-1 text-black/70 hover:text-black"
                     >
-                      View on BaseScan →
+                      View on Solscan →
                     </a>
                   )}
                   {mintResult?.error && (
@@ -478,11 +477,10 @@ const CardModalContent = ({
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleBond(currentCard.handle); }}
-                  className={`px-3 py-1 font-black uppercase text-[10px] border-2 border-white transition-all ${ 
-                    isBonded 
-                      ? 'bg-[#FFD700] text-black border-[#FFD700]' 
+                  className={`px-3 py-1 font-black uppercase text-[10px] border-2 border-white transition-all ${isBonded
+                      ? 'bg-[#FFD700] text-black border-[#FFD700]'
                       : 'bg-black text-white hover:bg-white hover:text-black'
-                  }`}
+                    }`}
                 >
                   {isBonded ? '✓ BONDED' : 'BOND'}
                 </button>
@@ -535,13 +533,12 @@ const CardModalContent = ({
               <button
                 onClick={handleMintAll}
                 disabled={mintAllStatus === 'minting' || mintAllStatus === 'minted'}
-                className={`px-2 py-0.5 border-2 border-white transition-all text-[9px] ${ 
-                  mintAllStatus === 'minted'
+                className={`px-2 py-0.5 border-2 border-white transition-all text-[9px] ${mintAllStatus === 'minted'
                     ? 'bg-[#00FF00] text-black cursor-default'
                     : mintAllStatus === 'minting'
-                    ? 'bg-[#9945FF] text-white animate-pulse'
-                    : 'hover:bg-white hover:text-black'
-                }`}
+                      ? 'bg-[#9945FF] text-white animate-pulse'
+                      : 'hover:bg-white hover:text-black'
+                  }`}
               >
                 {mintAllStatus === 'minted' ? '✓ MINTED' : mintAllStatus === 'minting' ? 'MINTING...' : 'MINT ALL'}
               </button>
@@ -569,7 +566,7 @@ const CardModalContent = ({
 };
 
 // --- Standalone Modal Wrapper for MondrianGrid ---
-export const MonarchCardModal = ({ slot, onClose, onRate }: { slot: any, onClose: () => void, onRate?: (intel: any) => void }) => { 
+export const MonarchCardModal = ({ slot, onClose, onRate }: { slot: any, onClose: () => void, onRate?: (intel: any) => void }) => {
   const cardState = useCardState(slot);
   const { fetchReplies } = cardState;
 
@@ -582,7 +579,7 @@ export const MonarchCardModal = ({ slot, onClose, onRate }: { slot: any, onClose
       className="fixed inset-0 bg-black/95 z-[60] backdrop-blur-xl flex items-center justify-center"
       onClick={onClose}
     >
-      <CardModalContent 
+      <CardModalContent
         slot={slot}
         cardState={cardState}
         onClose={onClose}
@@ -593,12 +590,12 @@ export const MonarchCardModal = ({ slot, onClose, onRate }: { slot: any, onClose
 };
 
 // --- Classic Card Component ---
-const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: number) => void, onRate?: (intel: any) => void }) => { 
+const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: number) => void, onRate?: (intel: any) => void }) => {
   const [isFloating, setIsFloating] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
   const containerRef = useRef(null);
   const cardState = useCardState(slot);
-  const { 
+  const {
     mintStatus,
     handleMint,
     handleShare,
@@ -648,11 +645,11 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
     <>
       <AnimatePresence>
         {isFloating && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/95 z-[60] backdrop-blur-xl flex items-center justify-center"
             onClick={() => setIsFloating(false)}
           >
-            <CardModalContent 
+            <CardModalContent
               slot={slot}
               cardState={cardState}
               onClose={() => setIsFloating(false)}
@@ -716,22 +713,21 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
                     )}
                   </div>
                   <div className="flex gap-1">
-                    <button 
+                    <button
                       onClick={handleShare}
                       className="px-2 py-1 font-black uppercase text-[8px] border-2 border-black bg-white text-black hover:bg-black hover:text-white transition-all"
                     >
                       ↗
                     </button>
-                    <button 
+                    <button
                       onClick={(e) => { e.stopPropagation(); handleMint(e); }}
                       disabled={mintStatus === 'minting' || mintStatus === 'minted'}
-                      className={`px-2 py-1 font-black uppercase text-[8px] border-2 border-black transition-all ${ 
-                        mintStatus === 'minted'
+                      className={`px-2 py-1 font-black uppercase text-[8px] border-2 border-black transition-all ${mintStatus === 'minted'
                           ? 'bg-[#00FF00] text-black cursor-default'
                           : mintStatus === 'minting'
-                          ? 'bg-[#9945FF] text-white animate-pulse cursor-wait'
-                          : 'bg-black text-white hover:bg-[#9945FF]' 
-                      }`}
+                            ? 'bg-[#9945FF] text-white animate-pulse cursor-wait'
+                            : 'bg-black text-white hover:bg-[#9945FF]'
+                        }`}
                     >
                       {mintStatus === 'minted' ? '✓' : mintStatus === 'minting' ? '...' : 'MINT'}
                     </button>

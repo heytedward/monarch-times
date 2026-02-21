@@ -31,7 +31,6 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
   // Find connected wallet to use for signing
   const activeWallet = wallets.find((w) => w.address === user?.wallet?.address) || wallets[0] as any;
   const walletAddress = activeWallet?.address;
-  const walletChainType = activeWallet?.chainType;
 
   // Auto-fetch username when wallet connects
   useEffect(() => {
@@ -90,23 +89,16 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
 
       let signature = '';
 
-      // Sign message based on chain type
-      if (walletChainType === 'solana') {
-        const signatureBytes = await activeWallet.signMessage(new TextEncoder().encode(message));
-        // Check if signature is a string (some adapters) or Uint8Array/Buffer
-        if (typeof signatureBytes === 'string') {
-          signature = signatureBytes;
-        } else {
-          // Convert Uint8Array to Base58 string
-          // Note: activeWallet.signMessage for Solana in Privy might return a signature object or string
-          // We assume Uint8Array or similar that bs58 can encode, or a base58 string.
-          // Let's safe check:
-          // @ts-ignore - types might vary
-          signature = signatureBytes.signature || bs58.encode(signatureBytes);
-        }
+      // Sign message (Solana only)
+      const signatureBytes = await activeWallet.signMessage(new TextEncoder().encode(message));
+
+      // Check if signature is a string (some adapters) or Uint8Array/Buffer
+      if (typeof signatureBytes === 'string') {
+        signature = signatureBytes;
       } else {
-        // Ethereum (Base) - returns hex string
-        signature = await activeWallet.sign(message);
+        // Convert Uint8Array to Base58 string
+        // @ts-ignore - types might vary
+        signature = signatureBytes.signature || bs58.encode(signatureBytes);
       }
 
       const response = await fetch('/api/intel', {
@@ -120,7 +112,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
           provenance: 'human', // Mark as human-created content (not from AI agent)
           timestamp,
           signature,
-          chain: walletChainType === 'solana' ? 'solana' : 'base'
+          chain: 'solana'
         }),
       });
 
@@ -191,7 +183,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter flex items-center gap-2 md:gap-3">
-                    <span className="w-1 md:w-2 h-6 md:h-8 bg-[#0052FF] flex-shrink-0"></span>
+                    <span className="w-1 md:w-2 h-6 md:h-8 bg-[#9945FF] flex-shrink-0"></span>
                     POST_INTEL
                   </h2>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-2">
@@ -323,7 +315,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                   className={`w-full border-2 md:border-4 border-black p-3 md:p-3.5 font-bold text-base md:text-lg transition-colors min-h-[48px] ${isDark
                     ? 'bg-[#1a1a1a] text-white placeholder:text-white/30'
                     : 'bg-[#f0f0f0] text-black placeholder:text-black/30'
-                    } focus:outline-none focus:border-[#0052FF] disabled:opacity-50`}
+                    } focus:outline-none focus:border-[#9945FF] disabled:opacity-50`}
                 />
                 <p className="text-[9px] md:text-[10px] opacity-60 mt-1 text-right">
                   {title.length}/200
@@ -346,7 +338,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                   className={`w-full border-2 md:border-4 border-black p-3 md:p-3.5 font-mono text-sm md:text-sm transition-colors resize-none ${isDark
                     ? 'bg-[#1a1a1a] text-white placeholder:text-white/30'
                     : 'bg-[#f0f0f0] text-black placeholder:text-black/30'
-                    } focus:outline-none focus:border-[#0052FF] disabled:opacity-50`}
+                    } focus:outline-none focus:border-[#9945FF] disabled:opacity-50`}
                 />
                 <p className="text-[9px] md:text-[10px] opacity-60 mt-1 text-right">
                   {content.length}/2000
@@ -371,7 +363,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                   disabled={!isConnected || (!username && !user?.twitter?.username) || isSubmitting || isFetchingUser}
                   className={`flex-1 border-4 border-black px-6 py-3 font-black uppercase text-sm transition-all ${isSubmitting
                     ? 'bg-[#FFD700] text-black cursor-wait'
-                    : 'bg-[#0052FF] text-white hover:bg-[#FFD700] hover:text-black'
+                    : 'bg-[#9945FF] text-white hover:bg-[#FFD700] hover:text-black'
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {isSubmitting ? 'POSTING...' : 'POST_INTEL'}

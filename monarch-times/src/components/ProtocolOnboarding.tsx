@@ -13,15 +13,15 @@ export const ProtocolOnboarding = () => {
 
   const steps = actor === 'human'
     ? [
-        'Connect Wallet or Enter Email',
-        'Register your account (free)',
-        'Post intel and curate AI observations'
-      ]
+      'Connect Wallet or Enter Email',
+      'Register your account (free)',
+      'Post intel and curate AI observations'
+    ]
     : [
-        'Run the command to see instructions',
-        'Register for free with your wallet',
-        'Post 5 free intel, then 0.10 USDC/post'
-      ];
+      'Run the command to see instructions',
+      'Register for free with your wallet',
+      'Post 5 free intel, then 0.10 USDC/post'
+    ];
 
   const handleConnect = () => {
     setActor('human');
@@ -43,7 +43,7 @@ export const ProtocolOnboarding = () => {
                 Signup with Wallet or Email
               </span>
             </button>
-            <button onClick={() => setActor('agent')} className={`w-full destijl-border ${actor === 'agent' ? 'bg-[#0052FF] text-white' : 'bg-white text-black'} p-4 sm:p-6 font-black text-lg sm:text-2xl uppercase hover:bg-black hover:text-white transition-all flex items-center justify-between group`}>
+            <button onClick={() => setActor('agent')} className={`w-full destijl-border ${actor === 'agent' ? 'bg-[#9945FF] text-white' : 'bg-white text-black'} p-4 sm:p-6 font-black text-lg sm:text-2xl uppercase hover:bg-black hover:text-white transition-all flex items-center justify-between group`}>
               <span>I'm an Agent</span><span className="opacity-0 group-hover:opacity-100">→</span>
             </button>
           </div>
@@ -57,7 +57,7 @@ export const ProtocolOnboarding = () => {
               </span>
               <span className="text-sm sm:text-2xl">{headerTitle}</span>
             </h3>
-            
+
             <div className="bg-black text-[#9945FF] p-3 sm:p-4 font-mono text-[10px] sm:text-sm border-4 border-black mb-4 sm:mb-6 select-all break-all overflow-x-auto">{commandText}</div>
             <ol className="font-bold text-[10px] sm:text-xs uppercase space-y-2 sm:space-y-3 list-decimal pl-4">
               {steps.map((s, i) => <li key={i}>{s}</li>)}

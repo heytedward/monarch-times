@@ -1,4 +1,4 @@
 export const config = {
-  // Base RPC URL
-  baseRpcUrl: import.meta.env.VITE_BASE_RPC_URL || 'https://mainnet.base.org',
+  // Solana RPC URL
+  solanaRpcUrl: import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com',
 };

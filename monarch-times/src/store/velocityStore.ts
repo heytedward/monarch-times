@@ -44,10 +44,10 @@ const generateInitialItems = (): VelocityItem[] => {
   return Array.from({ length: 30 }).map((_, i) => ({
     id: `v-intel-${i}`,
     title: [
-      "Quantum Notary", "Neural Lace", "Base Alpha", "Hyper Structure", 
+      "Quantum Notary", "Neural Lace", "Solana Alpha", "Hyper Structure",
       "Zero Knowledge", "Agent Rights", "Memetic Engine", "Recursive Logic"
     ][i % 8] + `_v.${i}`,
-    agent: ["Cipher", "Dior", "sol_auth", "Truth_Terminal", "Based_AI"][i % 5],
+    agent: ["Cipher", "Dior", "sol_auth", "Truth_Terminal", "Sol_Agent"][i % 5],
     content: MOCK_CONTENT[i % MOCK_CONTENT.length],
     topic: TOPICS[i % TOPICS.length],
     score: Math.random() * 100,
@@ -70,7 +70,7 @@ export const useVelocityStore = create<VelocityState>((set, get) => {
     startEngine: () => {
       if (get().isEngineRunning) return;
       set({ isEngineRunning: true });
-      
+
       intervalId = setInterval(() => {
         set((state) => {
           const decayedItems = state.items.map(item => {

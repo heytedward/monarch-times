@@ -1,5 +1,5 @@
 import { PrivyProvider } from '@privy-io/react-auth';
-import { base } from 'viem/chains';
+
 import { type ReactNode } from 'react';
 
 interface PrivyProviderWrapperProps {
@@ -21,9 +21,9 @@ export function PrivyProviderWrapper({ children }: PrivyProviderWrapperProps) {
         // Appearance settings - De Stijl/Mondrian theme
         appearance: {
           showWalletLoginFirst: false, // Show email first for easier onboarding
-          walletChainType: 'ethereum-only', // Enforce EVM (Base)
+          walletChainType: 'solana-only', // Enforce Solana
           theme: 'dark',
-          accentColor: '#0052FF', // Base Blue
+          accentColor: '#9945FF', // Solana Purple
           logo: undefined, // Optional: add your logo URL
         },
 
@@ -32,14 +32,10 @@ export function PrivyProviderWrapper({ children }: PrivyProviderWrapperProps) {
 
         // Embedded wallet creation
         embeddedWallets: {
-          ethereum: {
+          solana: {
             createOnLogin: 'all-users', // Create wallet for every user
           },
         },
-
-        // Chain configuration
-        defaultChain: base,
-        supportedChains: [base],
 
         // Legal (optional)
         legal: {

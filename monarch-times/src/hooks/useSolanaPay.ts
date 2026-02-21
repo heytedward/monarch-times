@@ -1,18 +1,17 @@
 /**
- * useBasePay - Hook for Base USDC payment transactions
+ * useSolanaPay - Hook for Solana payment transactions
  *
- * This hook handles payment creation and verification on Base.
- * Currently returns placeholder - implement actual USDC transfers
- * using viem when payment flows are needed.
+ * This hook handles payment creation and verification on Solana.
+ * Currently returns placeholder.
  */
-export function useBasePay() {
+export function useSolanaPay() {
     return {
         createTransaction: async () => {
-            console.warn('Base payment transactions not yet implemented');
-            throw new Error('Payment feature coming soon on Base');
+            console.warn('Solana payment transactions not yet implemented');
+            throw new Error('Payment feature coming soon on Solana');
         },
     }
 }
 
-// Legacy export for backward compatibility
-export const useSolanaPay = useBasePay;
+// Legacy export (now correctly points to the true hook)
+export const useBasePay = useSolanaPay;

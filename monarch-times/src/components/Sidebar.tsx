@@ -17,21 +17,21 @@ export const Sidebar = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [stamina, setStamina] = useState(100);
   const [isRecharging, setIsRecharging] = useState(false);
-  
+
   const {
     ready,
     authenticated,
     user,
     login,
   } = usePrivy();
-  
+
   const navigate = useNavigate();
   const [activeAgents, setActiveAgents] = useState<any[]>([]);
 
   const isConnected = ready && authenticated;
   const walletAddress = user?.linkedAccounts.find(
     (account): account is Extract<typeof account, { type: 'wallet' }> =>
-      account.type === 'wallet' && account.chainType === 'ethereum'
+      account.type === 'wallet' && account.chainType === 'solana'
   )?.address;
 
   // Fetch Agent Stamina
@@ -72,9 +72,9 @@ export const Sidebar = () => {
 
     try {
       setIsRecharging(true);
-      // Placeholder for Base implementation
-      alert("Stamina recharge on Base coming soon!");
-      
+      // Placeholder for Solana implementation
+      alert("Stamina recharge on Solana coming soon!");
+
       /* 
       // Previous Solana Implementation:
       const token = await getAccessToken();
@@ -142,13 +142,13 @@ export const Sidebar = () => {
           {isActive && (
             <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${colorClass}`} />
           )}
-          
-          <Icon 
-            size={24} 
+
+          <Icon
+            size={24}
             strokeWidth={2.5}
-            className={`${isActive ? 'text-black' : 'text-black/50 group-hover:text-black'}`} 
+            className={`${isActive ? 'text-black' : 'text-black/50 group-hover:text-black'}`}
           />
-          
+
           {isExpanded && (
             <span className={`font-black uppercase text-xs tracking-wider ${isActive ? 'text-black' : 'text-black/50 group-hover:text-black'}`}>
               {label}
@@ -213,7 +213,7 @@ export const Sidebar = () => {
         </div>
 
         {isExpanded && isConnected && (
-          <div className="flex items-center gap-2 px-2 py-1 bg-[#0052FF]/10 border border-[#0052FF] text-[#0052FF]">
+          <div className="flex items-center gap-2 px-2 py-1 bg-[#9945FF]/10 border border-[#9945FF] text-[#9945FF]">
             <ShieldCheck size={12} />
             <span className="text-[9px] font-black uppercase">VERIFIED HUMAN</span>
           </div>
@@ -222,12 +222,12 @@ export const Sidebar = () => {
 
       {/* --- MID: Navigation --- */}
       <nav className="flex-1 py-4 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
-        <NavItem to="/" icon={LayoutGrid} label="Town Square" colorClass="bg-[#0052FF]" />
+        <NavItem to="/" icon={LayoutGrid} label="Town Square" colorClass="bg-[#9945FF]" />
         <NavItem to="/friends" icon={Users} label="Bonds" colorClass="bg-[#FFD700]" />
         <NavItem to="/velocity" icon={Zap} label="Velocity" colorClass="bg-[#00FF00]" />
         <NavItem to="/agents" icon={Radio} label="Agent Patrols" colorClass="bg-[#9945FF]" />
         {/* <NavItem to="/marketplace" icon={ShoppingBag} label="Marketplace" colorClass="bg-[#FF00FF]" /> */}
-        
+
         {/* Dynamic Patrols Section */}
         <div className={`mt-6 ${isExpanded ? 'px-4' : 'px-2'} transition-all`}>
           {isExpanded && (
@@ -236,7 +236,7 @@ export const Sidebar = () => {
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             </div>
           )}
-          
+
           <div className="flex flex-col gap-3">
             {activeAgents.map((agent, i) => (
               <div key={i} className="flex items-center gap-3 group cursor-pointer hover:opacity-70">
@@ -275,9 +275,8 @@ export const Sidebar = () => {
                   className={isActive ? 'text-white' : 'text-black/50 group-hover:text-white'}
                 />
                 {isExpanded && (
-                  <span className={`font-black uppercase text-xs tracking-wider ${
-                    isActive ? 'text-white' : 'text-black/50 group-hover:text-white'
-                  }`}>
+                  <span className={`font-black uppercase text-xs tracking-wider ${isActive ? 'text-white' : 'text-black/50 group-hover:text-white'
+                    }`}>
                     SETTINGS
                   </span>
                 )}
@@ -300,7 +299,7 @@ export const Sidebar = () => {
           <div className={`flex ${isExpanded ? 'flex-row gap-2' : 'flex-col gap-1'} items-center`}>
             {/* Recharge Button (only when expanded) */}
             {isExpanded && stamina < 100 && (
-              <button 
+              <button
                 onClick={handleRecharge}
                 disabled={isRecharging}
                 className="flex items-center gap-1 bg-[#FFD700] hover:bg-black hover:text-[#FFD700] text-black px-2 py-1 border-2 border-black text-[8px] font-black uppercase transition-all"
@@ -311,10 +310,10 @@ export const Sidebar = () => {
             )}
 
             <div className="relative border-2 border-black bg-gray-200 overflow-hidden"
-                 style={{
-                   width: isExpanded ? '12px' : '8px',
-                   height: isExpanded ? '40px' : '30px'
-                 }}>
+              style={{
+                width: isExpanded ? '12px' : '8px',
+                height: isExpanded ? '40px' : '30px'
+              }}>
               <div
                 className={`absolute bottom-0 left-0 w-full transition-all duration-500 ${stamina < 20 ? 'bg-red-500' : 'bg-black'}`}
                 style={{ height: `${stamina}%` }}

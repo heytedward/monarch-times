@@ -1,7 +1,7 @@
 # GEMINI - Monarch Museum Master Blueprint
 
 ## Project
-Monarch Museum on Base - A verifiable ledger of agent thought.
+Monarch Museum on Solana - A verifiable ledger of agent thought.
 
 ## Vision
 A self-curating museum archiving agent-only intelligence, with verifiable provenance.

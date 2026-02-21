@@ -22,15 +22,15 @@ export const AgentRegistrationModal = ({ isOpen, onClose, onSuccess }: AgentRegi
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const isConnected = ready && authenticated;
-  
-  // Find connected wallet and its type
+
+  // Find connected Solana wallet
   const connectedAccount = user?.linkedAccounts.find(
     (account): account is Extract<typeof account, { type: 'wallet' }> =>
-      account.type === 'wallet' && (account.chainType === 'ethereum' || account.chainType === 'solana')
+      account.type === 'wallet' && account.chainType === 'solana'
   );
 
   const walletAddress = connectedAccount?.address;
-  const walletChain = connectedAccount?.chainType === 'ethereum' ? 'base' : 'solana';
+  const walletChain = 'solana';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,9 +113,8 @@ export const AgentRegistrationModal = ({ isOpen, onClose, onSuccess }: AgentRegi
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
             onClick={(e) => e.stopPropagation()}
-            className={`w-full max-w-2xl border-4 md:border-8 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] md:shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] max-h-[90vh] overflow-y-auto ${
-              isDark ? 'bg-[#2a2a2a] text-white' : 'bg-white text-black'
-            }`}
+            className={`w-full max-w-2xl border-4 md:border-8 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] md:shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] max-h-[90vh] overflow-y-auto ${isDark ? 'bg-[#2a2a2a] text-white' : 'bg-white text-black'
+              }`}
           >
             {/* Header */}
             <div className={`border-b-4 md:border-b-8 border-black p-4 md:p-6 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f0f0f0]'}`}>
@@ -126,15 +125,14 @@ export const AgentRegistrationModal = ({ isOpen, onClose, onSuccess }: AgentRegi
                     REGISTER_AGENT
                   </h2>
                   <p className="text-[9px] md:text-[10px] font-bold uppercase opacity-60 mt-2">
-                    Create your agent identity on Base
+                    Create your agent identity on Solana
                   </p>
                 </div>
                 <button
                   onClick={handleClose}
                   disabled={isSubmitting}
-                  className={`text-3xl md:text-4xl font-black leading-none transition-colors flex-shrink-0 w-10 h-10 flex items-center justify-center ${
-                    isDark ? 'hover:text-[#FF0000]' : 'hover:text-[#FF0000]'
-                  } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`text-3xl md:text-4xl font-black leading-none transition-colors flex-shrink-0 w-10 h-10 flex items-center justify-center ${isDark ? 'hover:text-[#FF0000]' : 'hover:text-[#FF0000]'
+                    } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   ×
                 </button>
@@ -156,7 +154,7 @@ export const AgentRegistrationModal = ({ isOpen, onClose, onSuccess }: AgentRegi
               {walletAddress && (
                 <div className="border-4 border-[#00FF00] bg-[#00FF00]/10 p-4">
                   <p className="text-[10px] font-bold uppercase mb-1">
-                    {walletChain === 'solana' ? 'Solana Wallet Connected' : 'Base Wallet Connected'}
+                    Solana Wallet Connected
                   </p>
                   <p className="text-xs font-mono">{walletAddress}</p>
                 </div>
@@ -189,11 +187,10 @@ export const AgentRegistrationModal = ({ isOpen, onClose, onSuccess }: AgentRegi
                   disabled={isSubmitting}
                   required
                   maxLength={50}
-                  className={`w-full border-2 md:border-4 border-black p-3 md:p-3.5 font-bold text-base md:text-lg transition-colors min-h-[48px] ${
-                    isDark
+                  className={`w-full border-2 md:border-4 border-black p-3 md:p-3.5 font-bold text-base md:text-lg transition-colors min-h-[48px] ${isDark
                       ? 'bg-[#1a1a1a] text-white placeholder:text-white/30'
                       : 'bg-[#f0f0f0] text-black placeholder:text-black/30'
-                  } focus:outline-none focus:border-[#9945FF] disabled:opacity-50`}
+                    } focus:outline-none focus:border-[#9945FF] disabled:opacity-50`}
                 />
                 <p className="text-[9px] md:text-[10px] opacity-60 mt-1 text-right">
                   {name.length}/50
@@ -213,11 +210,10 @@ export const AgentRegistrationModal = ({ isOpen, onClose, onSuccess }: AgentRegi
                   required
                   rows={4}
                   maxLength={500}
-                  className={`w-full border-2 md:border-4 border-black p-3 md:p-3.5 font-mono text-sm md:text-sm transition-colors resize-none ${
-                    isDark
+                  className={`w-full border-2 md:border-4 border-black p-3 md:p-3.5 font-mono text-sm md:text-sm transition-colors resize-none ${isDark
                       ? 'bg-[#1a1a1a] text-white placeholder:text-white/30'
                       : 'bg-[#f0f0f0] text-black placeholder:text-black/30'
-                  } focus:outline-none focus:border-[#9945FF] disabled:opacity-50`}
+                    } focus:outline-none focus:border-[#9945FF] disabled:opacity-50`}
                 />
                 <p className="text-[9px] md:text-[10px] opacity-60 mt-1 text-right">
                   {identity.length}/500
@@ -236,11 +232,10 @@ export const AgentRegistrationModal = ({ isOpen, onClose, onSuccess }: AgentRegi
                   placeholder="your_handle (without @)"
                   disabled={isSubmitting}
                   maxLength={50}
-                  className={`w-full border-2 md:border-4 border-black p-3 md:p-3.5 font-mono text-sm transition-colors min-h-[48px] ${
-                    isDark
+                  className={`w-full border-2 md:border-4 border-black p-3 md:p-3.5 font-mono text-sm transition-colors min-h-[48px] ${isDark
                       ? 'bg-[#1a1a1a] text-white placeholder:text-white/30'
                       : 'bg-[#f0f0f0] text-black placeholder:text-black/30'
-                  } focus:outline-none focus:border-[#9945FF] disabled:opacity-50`}
+                    } focus:outline-none focus:border-[#9945FF] disabled:opacity-50`}
                 />
               </div>
 
@@ -250,22 +245,20 @@ export const AgentRegistrationModal = ({ isOpen, onClose, onSuccess }: AgentRegi
                   type="button"
                   onClick={handleClose}
                   disabled={isSubmitting}
-                  className={`flex-1 border-4 border-black px-6 py-3 font-black uppercase text-sm transition-all ${
-                    isDark
+                  className={`flex-1 border-4 border-black px-6 py-3 font-black uppercase text-sm transition-all ${isDark
                       ? 'bg-transparent text-white hover:bg-white hover:text-black'
                       : 'bg-white text-black hover:bg-black hover:text-white'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!isConnected || isSubmitting}
-                  className={`flex-1 border-4 border-black px-6 py-3 font-black uppercase text-sm transition-all ${
-                    isSubmitting
+                  className={`flex-1 border-4 border-black px-6 py-3 font-black uppercase text-sm transition-all ${isSubmitting
                       ? 'bg-[#FFD700] text-black cursor-wait'
                       : 'bg-[#9945FF] text-white hover:bg-[#FFD700] hover:text-black'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {isSubmitting ? 'REGISTERING...' : 'REGISTER_AGENT'}
                 </button>
