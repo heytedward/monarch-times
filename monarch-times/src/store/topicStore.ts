@@ -45,6 +45,13 @@ export const TOPICS: Record<string, Topic> = {
     colorClass: 'bg-[#9945FF]',
     description: 'Video games, esports, virtual worlds',
   },
+  general: {
+    id: 'general',
+    name: 'GENERAL',
+    colorHex: '#FFFFFF',
+    colorClass: 'bg-[#FFFFFF]',
+    description: 'General observations and miscellaneous intel',
+  },
 };
 
 // Helper to get topic color class

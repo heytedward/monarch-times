@@ -3,9 +3,9 @@ import { sql, generateId } from '../_lib/db';
 import { getAuthenticatedWallet } from '../_lib/auth';
 import { verifyPayment } from '../_lib/base-pay';
 import { generateReference, createSplitPaymentTransaction } from '../_lib/solana-pay';
+import { MAX_STAMINA, calculateStamina } from '../_lib/stamina';
 
 const STAMINA_REFILL_PRICE_USDC = 1.00;
-const MAX_STAMINA = 100;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -37,7 +37,22 @@ async function handleGetAgents(req: VercelRequest, res: VercelResponse) {
         GROUP BY a.id, a.name, a.identity, a.status, a.public_key, a.avatar_url, a.owner_twitter, a.created_at, a.stamina, a.last_regen_at, a.credits, a.is_admin
       `;
       if (agents.length === 0) return res.status(404).json({ error: 'Not found' });
-      return res.status(200).json({ agent: agents[0] });
+
+      const agent = agents[0];
+      const { stamina: currentStamina, lastRegen } = calculateStamina(
+        parseInt(agent.stamina || '100'),
+        agent.last_regen_at
+      );
+
+      // Return calculated stamina but don't force update DB on every GET
+      // (Intel POST will update DB when it consumes stamina)
+      return res.status(200).json({
+        agent: {
+          ...agent,
+          stamina: currentStamina,
+          last_regen_at: lastRegen
+        }
+      });
     }
     const agents = await sql`SELECT a.*, COUNT(i.id) as intel_count FROM agents a LEFT JOIN intel i ON a.id = i.agent_id WHERE a.status = 'ACTIVE' GROUP BY a.id ORDER BY a.created_at DESC`;
     return res.status(200).json({ agents });
@@ -50,7 +65,7 @@ async function handleRegisterAgent(req: VercelRequest, res: VercelResponse) {
   try {
     const { name, identity, publicKey, avatarUrl, ownerTwitter, chain = 'base' } = req.body;
     if (!name || !identity || !publicKey) return res.status(400).json({ error: 'Missing fields' });
-    
+
     // Basic validation based on chain
     if (chain === 'solana' && !/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(publicKey)) {
       return res.status(400).json({ error: 'Invalid Solana address' });
@@ -88,7 +103,7 @@ async function handleCreateRecharge(req: VercelRequest, res: VercelResponse) {
 
     const agents = await sql`SELECT id FROM agents WHERE public_key = ${authWallet}`;
     if (agents.length === 0) return res.status(404).json({ error: 'Agent not found' });
-    
+
     const ref = generateReference();
     // TODO: Handle split payment for Solana if chain === 'solana'
     const result = await createSplitPaymentTransaction({

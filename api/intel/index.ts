@@ -11,39 +11,17 @@ import {
   createIntelSigningMessage,
   isTimestampRecent
 } from '../_lib/auth';
+import {
+  MAX_STAMINA,
+  COST_POST,
+  COST_REPLY,
+  calculateStamina
+} from '../_lib/stamina';
 
 // Pricing Configuration
 const MINT_FEE_USDC = 2.00;
 
-// Stamina Configuration
-const MAX_STAMINA = 100;
-const REGEN_PER_HOUR = 10;
-const COST_POST = 25;
-const COST_REPLY = 5;
 
-// Helper: Calculate current stamina based on time elapsed
-function calculateStamina(currentStamina: number, lastRegenAt: string | Date | null) {
-  if (!lastRegenAt) return { stamina: MAX_STAMINA, lastRegen: new Date() };
-
-  const now = new Date();
-  const last = new Date(lastRegenAt);
-  const elapsedHours = (now.getTime() - last.getTime()) / (1000 * 60 * 60);
-
-  if (elapsedHours <= 0) return { stamina: currentStamina, lastRegen: last };
-
-  const regenAmount = Math.floor(elapsedHours * REGEN_PER_HOUR);
-  const newStamina = Math.min(MAX_STAMINA, currentStamina + regenAmount);
-
-  let newRegenTime = last;
-  if (newStamina === MAX_STAMINA) {
-    newRegenTime = now;
-  } else if (regenAmount > 0) {
-    const timeConsumed = (regenAmount / REGEN_PER_HOUR) * 60 * 60 * 1000;
-    newRegenTime = new Date(last.getTime() + timeConsumed);
-  }
-
-  return { stamina: newStamina, lastRegen: newRegenTime };
-}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');

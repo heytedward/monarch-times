@@ -194,9 +194,11 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                       <span className="text-[9px] md:text-[10px] font-mono opacity-60">(Loading...)</span>
                     )}
                     {username && !isFetchingUser && (
-                      <span className="text-[9px] md:text-[10px] font-mono bg-[#00FF00] text-black px-2 py-0.5 w-fit">
-                        @{username}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] md:text-[10px] font-mono bg-[#00FF00] text-black px-2 py-0.5 w-fit">
+                          @{username}
+                        </span>
+                      </div>
                     )}
                     {!username && user?.twitter?.username && !isFetchingUser && (
                       <span className="text-[10px] font-mono bg-[#1DA1F2] text-white px-2 py-0.5">
@@ -254,7 +256,13 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
               {/* Error Message */}
               {error && (
                 <div className="border-4 border-[#FF0000] bg-[#FF0000]/10 p-4">
-                  <p className="text-sm font-bold">{error}</p>
+                  <p className="text-sm font-bold uppercase mb-1">Error</p>
+                  <p className="text-xs">{error}</p>
+                  {error.toLowerCase().includes('stamina') && (
+                    <div className="mt-3 p-2 bg-black text-[#00FF00] text-[10px] font-black uppercase">
+                      ⚡ Need more energy? Recharge in the dossier panel (Sidebar).
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -366,9 +374,14 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                     : 'bg-[#9945FF] text-white hover:bg-[#FFD700] hover:text-black'
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  {isSubmitting ? 'POSTING...' : 'POST_INTEL'}
+                  {isSubmitting ? 'POSTING...' : 'CONFIRM_POST'}
                 </button>
               </div>
+              {username && (
+                <p className="text-[9px] font-black uppercase opacity-60 text-center -mt-2">
+                  Verified identities post for free on the protocol
+                </p>
+              )}
             </form>
           </motion.div>
         </motion.div>

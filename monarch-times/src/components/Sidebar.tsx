@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { usePrivy } from '@privy-io/react-auth';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
+import bs58 from 'bs58';
 import {
   LayoutGrid,
   Users,
@@ -23,7 +24,9 @@ export const Sidebar = () => {
     authenticated,
     user,
     login,
+    getAccessToken,
   } = usePrivy();
+  const { wallets } = useWallets();
 
   const navigate = useNavigate();
   const [activeAgents, setActiveAgents] = useState<any[]>([]);
@@ -68,12 +71,63 @@ export const Sidebar = () => {
   }, []);
 
   const handleRecharge = async () => {
-    if (stamina >= 100 || isRecharging) return;
-
     try {
       setIsRecharging(true);
-      // Placeholder for Solana implementation
-      alert("Stamina recharge on Solana coming soon!");
+
+      const activeWallet = wallets.find((w) => w.address === walletAddress) as any;
+      if (!activeWallet) {
+        alert("Please connect your Solana wallet");
+        return;
+      }
+
+      const token = await getAccessToken();
+
+      // 1. Create Recharge Payment
+      const response = await fetch('/api/agents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action: 'recharge-create' })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to create recharge');
+
+      // 2. Sign and send the transaction (Simplified for demo, usually use @solana/pay or direct transfer)
+      // For this implementation, we simulate the payment confirmation via signature
+      // In a real app, you'd use the transaction returned by the API or create one
+
+      const message = `RECHARGE_STAMINA:${walletAddress}:${Date.now()}`;
+      const signatureBytes = await activeWallet.signMessage(new TextEncoder().encode(message));
+
+      let signature = '';
+      if (typeof signatureBytes === 'string') {
+        signature = signatureBytes;
+      } else {
+        // @ts-ignore
+        signature = signatureBytes.signature || bs58.encode(signatureBytes);
+      }
+
+      // 3. Verify Recharge
+      const verifyRes = await fetch('/api/agents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'recharge-verify',
+          reference: data.reference,
+          signature
+        })
+      });
+
+      const verifyData = await verifyRes.json();
+      if (verifyData.success) {
+        setStamina(100);
+        // Success feedback is handled by the Stamina bar updating
+      } else {
+        throw new Error(verifyData.error || 'Verification failed');
+      }
 
       /* 
       // Previous Solana Implementation:
@@ -213,9 +267,11 @@ export const Sidebar = () => {
         </div>
 
         {isExpanded && isConnected && (
-          <div className="flex items-center gap-2 px-2 py-1 bg-[#9945FF]/10 border border-[#9945FF] text-[#9945FF]">
-            <ShieldCheck size={12} />
-            <span className="text-[9px] font-black uppercase">VERIFIED HUMAN</span>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 px-2 py-1 bg-[#9945FF]/10 border border-[#9945FF] text-[#9945FF]">
+              <ShieldCheck size={12} />
+              <span className="text-[9px] font-black uppercase">{stamina > 0 ? 'CONNECTION_SECURE' : 'OFFLINE'}</span>
+            </div>
           </div>
         )}
       </div>
@@ -296,35 +352,42 @@ export const Sidebar = () => {
           </div>
 
           {/* Stamina Bar (Vertical) */}
-          <div className={`flex ${isExpanded ? 'flex-row gap-2' : 'flex-col gap-1'} items-center`}>
-            {/* Recharge Button (only when expanded) */}
-            {isExpanded && stamina < 100 && (
+          <div className={`flex ${isExpanded ? 'flex-row gap-2' : 'flex-col gap-1'} items-center w-full`}>
+            {/* Recharge (Top Up) Button */}
+            {isExpanded && (
               <button
                 onClick={handleRecharge}
                 disabled={isRecharging}
-                className="flex items-center gap-1 bg-[#FFD700] hover:bg-black hover:text-[#FFD700] text-black px-2 py-1 border-2 border-black text-[8px] font-black uppercase transition-all"
+                className={`
+                  flex-1 flex items-center justify-center gap-2 px-3 py-2 border-2 border-black font-black uppercase text-[9px] transition-all
+                  ${stamina < 100
+                    ? 'bg-[#00FF00] text-black hover:bg-black hover:text-[#00FF00]'
+                    : 'bg-gray-100 text-black/30 cursor-not-allowed'}
+                `}
               >
-                <BatteryCharging size={10} />
-                {isRecharging ? 'WAIT...' : 'RECHARGE'}
+                <Zap size={14} fill={stamina < 100 ? "currentColor" : "none"} />
+                {isRecharging ? 'PROCESSING...' : stamina < 100 ? 'TOP UP' : 'FULL'}
               </button>
             )}
 
-            <div className="relative border-2 border-black bg-gray-200 overflow-hidden"
-              style={{
-                width: isExpanded ? '12px' : '8px',
-                height: isExpanded ? '40px' : '30px'
-              }}>
-              <div
-                className={`absolute bottom-0 left-0 w-full transition-all duration-500 ${stamina < 20 ? 'bg-red-500' : 'bg-black'}`}
-                style={{ height: `${stamina}%` }}
-              />
-            </div>
-            {isExpanded && (
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black">{stamina}%</span>
-                <span className="text-[8px] font-bold text-black/50">STAMINA</span>
+            <div className="flex flex-row gap-2 items-center">
+              <div className="relative border-2 border-black bg-gray-200 overflow-hidden"
+                style={{
+                  width: isExpanded ? '12px' : '8px',
+                  height: isExpanded ? '40px' : '30px'
+                }}>
+                <div
+                  className={`absolute bottom-0 left-0 w-full transition-all duration-500 ${stamina < 20 ? 'bg-[#FF0000]' : 'bg-black'}`}
+                  style={{ height: `${stamina}%` }}
+                />
               </div>
-            )}
+              {isExpanded && (
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black">{stamina}%</span>
+                  <span className="text-[8px] font-bold text-black/50">STAMINA</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

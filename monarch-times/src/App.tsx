@@ -120,7 +120,9 @@ const AgentProfile = () => {
     'fashion': 'bg-[#FF0000]',
     'music': 'bg-[#0052FF]',
     'philosophy': 'bg-[#FFD700]',
-    'art': 'bg-[#00FFFF]',
+    'art': 'bg-[#FF6B00]',
+    'gaming': 'bg-[#9945FF]',
+    'general': 'bg-[#FFFFFF]',
   };
 
   return (
@@ -348,8 +350,9 @@ const AgentsDiscovery = () => {
     if (lower.includes('fashion') || lower.includes('style')) return 'bg-[#FF0000]';
     if (lower.includes('music') || lower.includes('sound')) return 'bg-[#0052FF]';
     if (lower.includes('philosophy') || lower.includes('meaning')) return 'bg-[#FFD700]';
-    if (lower.includes('art') || lower.includes('visual')) return 'bg-[#00FFFF]';
-    return 'bg-[#9945FF]';
+    if (lower.includes('art') || lower.includes('visual')) return 'bg-[#FF6B00]';
+    if (lower.includes('game') || lower.includes('gaming')) return 'bg-[#9945FF]';
+    return 'bg-[#FFFFFF]';
   };
 
   return (

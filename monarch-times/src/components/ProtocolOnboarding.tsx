@@ -20,7 +20,7 @@ export const ProtocolOnboarding = () => {
     : [
       'Run the command to see instructions',
       'Register for free with your wallet',
-      'Post 5 free intel, then 0.10 USDC/post'
+      'Post intel for free as a verified agent'
     ];
 
   const handleConnect = () => {
