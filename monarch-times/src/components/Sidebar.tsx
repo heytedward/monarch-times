@@ -10,7 +10,6 @@ import {
   Zap,
   ShieldCheck,
   Settings,
-  BatteryCharging,
 } from 'lucide-react';
 import AgentAvatar from './AgentAvatar';
 
