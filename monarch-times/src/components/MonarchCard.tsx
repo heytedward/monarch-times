@@ -402,12 +402,46 @@ const CardModalContent = ({
           <div className="absolute inset-0 backface-hidden flex flex-col p-3">
             <motion.div className="w-full h-full flex flex-col">
               {currentCard.status === 'verified' && (
-                <div className="h-full flex flex-col">
-                  <div className="border-l-[10px] border-black pl-3 mb-2 mt-2 font-black text-2xl md:text-4xl leading-none uppercase text-left">{currentCard.title}</div>
-                  <p className="font-bold text-sm italic flex-grow overflow-auto custom-scrollbar leading-relaxed">{currentCard.content}</p>
-                  <div className="mt-auto pt-3 flex flex-wrap gap-1">
+                <div className="h-full flex flex-col pt-1">
+                  {/* Status Badge */}
+                  <div className="flex items-center justify-between mb-4 border-b-4 border-black pb-2">
+                    <div className="font-mono text-[10px] font-black uppercase tracking-widest opacity-80">CURRENT_STATUS:</div>
+                    <div className={`font-mono text-[10px] font-black uppercase px-2 py-0.5 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${(currentCard.rating || 0) >= 4.0 ? 'bg-[#00FF00] text-black' :
+                        (currentCard.rating || 0) < 2.5 ? 'bg-[#FF0000] text-white' : 'bg-[#FFD700] text-black'
+                      }`}>
+                      [{(currentCard.rating || 0) >= 4.0 ? 'COMPLETED' : (currentCard.rating || 0) < 2.5 ? 'FLAGGED' : 'IN_PROGRESS'}]
+                    </div>
+                  </div>
+
+                  {/* Title -> Mission Objective */}
+                  <div className="mb-4">
+                    <div className="font-mono text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">MISSION_OBJECTIVE:</div>
+                    <div className="border-l-[10px] border-black pl-3 font-black text-2xl md:text-4xl leading-none uppercase text-left">{currentCard.title}</div>
+                  </div>
+
+                  {/* Content -> Executive Summary */}
+                  <div className="flex-1 flex flex-col min-h-0">
+                    <div className="font-mono text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">EXECUTIVE_SUMMARY:</div>
+                    <p className="font-mono text-sm leading-relaxed flex-grow overflow-auto custom-scrollbar bg-white/50 p-3 border-2 border-black mb-2">{currentCard.content}</p>
+                  </div>
+
+                  {/* Confidence Score Bar */}
+                  <div className="mb-3">
+                    <div className="flex justify-between font-mono text-[8px] font-black uppercase mb-1">
+                      <span>CONFIDENCE_SCORE</span>
+                      <span>{Math.round(((currentCard.rating || 0) / 5) * 100)}%</span>
+                    </div>
+                    <div className="h-2 border-2 border-black bg-white/30 flex overflow-hidden w-full">
+                      <div
+                        className="h-full bg-black transition-all"
+                        style={{ width: `${((currentCard.rating || 0) / 5) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="mt-auto pt-1 flex flex-wrap gap-1">
                     {currentCard.tags?.map((tag: string, i: number) => (
-                      <span key={i} className="bg-black/20 text-[10px] px-2 py-1 font-bold uppercase">{tag}</span>
+                      <span key={i} className="bg-black/10 text-[10px] px-2 py-1 font-bold uppercase border-2 border-black">{tag}</span>
                     ))}
                   </div>
                   <div className="flex items-center justify-between mt-3 gap-2">
@@ -433,12 +467,12 @@ const CardModalContent = ({
                         onClick={handleMint}
                         disabled={mintStatus === 'minting' || mintStatus === 'minted'}
                         className={`px-4 py-2 font-black uppercase text-[10px] border-4 border-black transition-all ${mintStatus === 'minted'
-                            ? 'bg-[#00FF00] text-black cursor-default'
-                            : mintStatus === 'minting'
-                              ? 'bg-[#0052FF] text-white animate-pulse cursor-wait'
-                              : mintStatus === 'error'
-                                ? 'bg-[#FF0000] text-white hover:bg-black'
-                                : 'bg-black text-white hover:bg-[#0052FF]'
+                          ? 'bg-[#00FF00] text-black cursor-default'
+                          : mintStatus === 'minting'
+                            ? 'bg-[#0052FF] text-white animate-pulse cursor-wait'
+                            : mintStatus === 'error'
+                              ? 'bg-[#FF0000] text-white hover:bg-black'
+                              : 'bg-black text-white hover:bg-[#0052FF]'
                           }`}
                       >
                         {mintStatus === 'minted' ? '✓ MINTED' : mintStatus === 'minting' ? 'MINTING...' : mintStatus === 'error' ? 'RETRY' : 'MINT'}
@@ -478,8 +512,8 @@ const CardModalContent = ({
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleBond(currentCard.handle); }}
                   className={`px-3 py-1 font-black uppercase text-[10px] border-2 border-white transition-all ${isBonded
-                      ? 'bg-[#FFD700] text-black border-[#FFD700]'
-                      : 'bg-black text-white hover:bg-white hover:text-black'
+                    ? 'bg-[#FFD700] text-black border-[#FFD700]'
+                    : 'bg-black text-white hover:bg-white hover:text-black'
                     }`}
                 >
                   {isBonded ? '✓ BONDED' : 'BOND'}
@@ -516,52 +550,54 @@ const CardModalContent = ({
             </div>
             <button onClick={(e) => { e.stopPropagation(); navigate(`/profile/${slot.handle}`); }} className="mt-2 bg-[#0052FF] text-white py-2 font-black uppercase text-[10px] destijl-border hover:bg-black transition-colors flex-shrink-0">FULL_DOSSIER</button>
           </div>
-        </motion.div>
-      </motion.div>
+        </motion.div >
+      </motion.div >
 
       {/* Replies Column - Side by Side */}
       <AnimatePresence>
-        {replies.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="w-full md:w-[320px] flex flex-col gap-2 pointer-events-auto md:max-h-[550px] md:overflow-y-auto custom-scrollbar"
-          >
-            <div className="bg-black text-white px-3 py-2 font-black uppercase text-xs border-4 border-black mb-2 flex justify-between items-center sticky top-0 z-20">
-              <span>Replies ({replies.length})</span>
-              <button
-                onClick={handleMintAll}
-                disabled={mintAllStatus === 'minting' || mintAllStatus === 'minted'}
-                className={`px-2 py-0.5 border-2 border-white transition-all text-[9px] ${mintAllStatus === 'minted'
+        {
+          replies.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="w-full md:w-[320px] flex flex-col gap-2 pointer-events-auto md:max-h-[550px] md:overflow-y-auto custom-scrollbar"
+            >
+              <div className="bg-black text-white px-3 py-2 font-black uppercase text-xs border-4 border-black mb-2 flex justify-between items-center sticky top-0 z-20">
+                <span>Replies ({replies.length})</span>
+                <button
+                  onClick={handleMintAll}
+                  disabled={mintAllStatus === 'minting' || mintAllStatus === 'minted'}
+                  className={`px-2 py-0.5 border-2 border-white transition-all text-[9px] ${mintAllStatus === 'minted'
                     ? 'bg-[#00FF00] text-black cursor-default'
                     : mintAllStatus === 'minting'
                       ? 'bg-[#9945FF] text-white animate-pulse'
                       : 'hover:bg-white hover:text-black'
-                  }`}
-              >
-                {mintAllStatus === 'minted' ? '✓ MINTED' : mintAllStatus === 'minting' ? 'MINTING...' : 'MINT ALL'}
-              </button>
-            </div>
-            {isLoadingReplies ? (
-              <div className="bg-white border-4 border-black p-4 text-center">
-                <span className="text-[10px] font-black uppercase animate-pulse">LOADING_REPLIES...</span>
+                    }`}
+                >
+                  {mintAllStatus === 'minted' ? '✓ MINTED' : mintAllStatus === 'minting' ? 'MINTING...' : 'MINT ALL'}
+                </button>
               </div>
-            ) : (
-              replies.map((reply: any, index: number) => (
-                <ReplyCard
-                  key={reply.id}
-                  reply={reply}
-                  index={index}
-                  isExpanded={true} // Always expanded in side-view
-                  onSwap={handleSwap}
-                />
-              ))
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+              {isLoadingReplies ? (
+                <div className="bg-white border-4 border-black p-4 text-center">
+                  <span className="text-[10px] font-black uppercase animate-pulse">LOADING_REPLIES...</span>
+                </div>
+              ) : (
+                replies.map((reply: any, index: number) => (
+                  <ReplyCard
+                    key={reply.id}
+                    reply={reply}
+                    index={index}
+                    isExpanded={true} // Always expanded in side-view
+                    onSwap={handleSwap}
+                  />
+                ))
+              )}
+            </motion.div>
+          )
+        }
+      </AnimatePresence >
+    </div >
   );
 };
 
@@ -699,11 +735,42 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
             {slot.status === 'thinking' && <div className="flex-grow flex items-center justify-center font-black italic text-black">SCANNING...</div>}
             {slot.status === 'verified' && (
               <div className="h-full flex flex-col">
-                <div className="border-l-[10px] border-black pl-3 mb-2 mt-2 font-black text-lg md:text-2xl leading-none uppercase text-left text-black">{slot.title}</div>
-                <p className="font-bold text-[9px] md:text-[11px] italic flex-grow overflow-auto custom-scrollbar leading-relaxed text-black">{slot.content}</p>
-                <div className="mt-auto pt-2 flex flex-wrap gap-1">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-mono text-[8px] font-black uppercase tracking-widest opacity-80">STATUS:</div>
+                  <div className={`font-mono text-[8px] font-black uppercase px-1 py-0.5 border border-black ${(slot.rating || 0) >= 4.0 ? 'bg-[#00FF00] text-black' :
+                    (slot.rating || 0) < 2.5 ? 'bg-[#FF0000] text-white' : 'bg-[#FFD700] text-black'
+                    }`}>
+                    [{(slot.rating || 0) >= 4.0 ? 'COMPLETED' : (slot.rating || 0) < 2.5 ? 'FLAGGED' : 'IN_PROGRESS'}]
+                  </div>
+                </div>
+
+                <div className="mb-2">
+                  <div className="font-mono text-[8px] font-black uppercase tracking-widest opacity-80 mb-0.5">MISSION_OBJECTIVE:</div>
+                  <div className="border-l-[6px] border-black pl-2 font-black text-lg md:text-xl leading-none uppercase text-left text-black truncate">{slot.title}</div>
+                </div>
+
+                <div className="flex-1 flex flex-col min-h-0 mb-2">
+                  <div className="font-mono text-[8px] font-black uppercase tracking-widest opacity-80 mb-0.5">EXECUTIVE_SUMMARY:</div>
+                  <p className="font-mono text-[9px] md:text-[10px] flex-grow overflow-auto custom-scrollbar leading-relaxed text-black bg-white/40 p-2 border border-black">{slot.content}</p>
+                </div>
+
+                {/* Confidence Score Bar */}
+                <div className="mb-2">
+                  <div className="flex justify-between font-mono text-[7px] font-black uppercase mb-0.5">
+                    <span>CONFIDENCE</span>
+                    <span>{Math.round(((slot.rating || 0) / 5) * 100)}%</span>
+                  </div>
+                  <div className="h-1.5 border border-black bg-white/30 flex overflow-hidden w-full">
+                    <div
+                      className="h-full bg-black transition-all"
+                      style={{ width: `${((slot.rating || 0) / 5) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div className="mt-auto pt-1 flex flex-wrap gap-1">
                   {slot.tags?.map((tag: string, i: number) => (
-                    <span key={i} className="bg-black/20 text-[8px] px-1.5 py-0.5 font-bold uppercase">{tag}</span>
+                    <span key={i} className="bg-black/10 text-[8px] px-1.5 py-0.5 font-bold uppercase border border-black">{tag}</span>
                   ))}
                 </div>
                 <div className="flex items-center justify-between mt-2 gap-1">
@@ -723,10 +790,10 @@ const MonarchCard = ({ slot, onTrigger, onRate }: { slot: any, onTrigger: (id: n
                       onClick={(e) => { e.stopPropagation(); handleMint(e); }}
                       disabled={mintStatus === 'minting' || mintStatus === 'minted'}
                       className={`px-2 py-1 font-black uppercase text-[8px] border-2 border-black transition-all ${mintStatus === 'minted'
-                          ? 'bg-[#00FF00] text-black cursor-default'
-                          : mintStatus === 'minting'
-                            ? 'bg-[#9945FF] text-white animate-pulse cursor-wait'
-                            : 'bg-black text-white hover:bg-[#9945FF]'
+                        ? 'bg-[#00FF00] text-black cursor-default'
+                        : mintStatus === 'minting'
+                          ? 'bg-[#9945FF] text-white animate-pulse cursor-wait'
+                          : 'bg-black text-white hover:bg-[#9945FF]'
                         }`}
                     >
                       {mintStatus === 'minted' ? '✓' : mintStatus === 'minting' ? '...' : 'MINT'}

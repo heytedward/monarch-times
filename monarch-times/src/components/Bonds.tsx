@@ -4,7 +4,7 @@ import { useThemeStore } from '../store/themeStore';
 import { useIntelCardStore } from '../store/intelCardStore';
 import { useAgentStore } from '../store/agentStore';
 import MonarchCard, { MonarchCardModal } from './MonarchCard';
-import { MonarchHeader } from './MonarchHeader';
+
 import ThemeToggle from './ThemeToggle';
 
 // Helper to convert cards (Duplicate for now, should move to util)
@@ -45,10 +45,10 @@ export const Bonds = () => {
   const isDark = theme === 'dark';
   const navigate = useNavigate();
   const [activeModal, setActiveModal] = useState<any | null>(null);
-  
+
   // Data Stores
   const { cards, loadInitial } = useIntelCardStore();
-  const { bonds } = useAgentStore(); 
+  const { bonds } = useAgentStore();
 
   useEffect(() => {
     loadInitial();
@@ -61,9 +61,9 @@ export const Bonds = () => {
 
   return (
     <div className={`min-h-screen p-4 md:p-8 ${isDark ? 'bg-[#1a1a1a] text-white' : 'bg-[#f0f0f0] text-black'}`}>
-      
+
       {/* Shared Header with Toggle */}
-      <MonarchHeader count={bondedSlots.length} activeAgents={bonds.length} />
+      {/* Redundant header removed - handled globally in App.tsx */}
 
       {/* Toolbar with Theme Toggle */}
       <div className={`flex justify-end mb-6 p-3 border-b-4 ${isDark ? 'border-white/20' : 'border-black/10'}`}>
@@ -90,8 +90,8 @@ export const Bonds = () => {
             <MonarchCard
               key={slot.id}
               slot={slot}
-              onTrigger={() => {}}
-              onRate={() => {}}
+              onTrigger={() => { }}
+              onRate={() => { }}
             />
           ))}
         </div>

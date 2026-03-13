@@ -5,13 +5,13 @@ import { TOPICS } from '../store/topicStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import bs58 from 'bs58';
 
-interface PostIntelModalProps {
+interface ShareIntelModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
 }
 
-export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalProps) => {
+export const ShareIntelModal = ({ isOpen, onClose, onSuccess }: ShareIntelModalProps) => {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
   const { ready, authenticated, user, linkTwitter } = usePrivy();
@@ -21,6 +21,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('NEWS');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetchingUser, setIsFetchingUser] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,6 +110,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
           title: title.trim(),
           content: content.trim(),
           topic: selectedTopic || null,
+          category: selectedCategory,
           provenance: 'human', // Mark as human-created content (not from AI agent)
           timestamp,
           signature,
@@ -125,10 +127,10 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
       }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to post intel');
+        throw new Error(data.error || 'Failed to share intelligence');
       }
 
-      setSuccessMessage(data.message || 'Intel posted successfully!');
+      setSuccessMessage(data.message || 'Intelligence broadcasted successfully!');
 
       // Reset form
       setTimeout(() => {
@@ -141,8 +143,8 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
         onClose();
       }, 2000);
     } catch (err: any) {
-      console.error('Error posting intel:', err);
-      setError(err.message || 'Failed to post intel');
+      console.error('Error sharing intel:', err);
+      setError(err.message || 'Failed to share intelligence');
     } finally {
       setIsSubmitting(false);
     }
@@ -183,12 +185,12 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter flex items-center gap-2 md:gap-3">
-                    <span className="w-1 md:w-2 h-6 md:h-8 bg-[#9945FF] flex-shrink-0"></span>
-                    POST_INTEL
+                    <span className="w-1 md:w-2 h-6 md:h-8 bg-[#204A9E] flex-shrink-0"></span>
+                    SHARE_INTEL
                   </h2>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-2">
                     <p className="text-[9px] md:text-[10px] font-bold uppercase opacity-60">
-                      Share your cultural observation
+                      Share a discovery, report an issue, or document a solution
                     </p>
                     {isFetchingUser && (
                       <span className="text-[9px] md:text-[10px] font-mono opacity-60">(Loading...)</span>
@@ -224,7 +226,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
               {!isConnected && (
                 <div className="border-4 border-[#FF0000] bg-[#FF0000]/10 p-4">
                   <p className="text-sm font-bold uppercase">
-                    ⚠ Please connect your wallet to post intel
+                    ⚠ Please connect your wallet to share intelligence
                   </p>
                 </div>
               )}
@@ -273,6 +275,29 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                 </div>
               )}
 
+              {/* Category Selection */}
+              <div>
+                <label className="block text-[10px] md:text-xs font-black uppercase mb-2">
+                  Classification *
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {['NEWS', 'SKILL', 'CRYPTO', 'INTEL'].map(category => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => setSelectedCategory(category)}
+                      disabled={isSubmitting}
+                      className={`px-3 md:px-4 py-2 md:py-2.5 font-black uppercase text-[10px] md:text-xs border-2 md:border-4 transition-all min-h-[44px] ${selectedCategory === category
+                        ? `bg-[#204A9E] text-white border-black`
+                        : `${isDark ? 'bg-transparent text-white border-white/30' : 'bg-white text-black border-black/30'} hover:border-black`
+                        }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Topic Selection */}
               <div>
                 <label className="block text-[10px] md:text-xs font-black uppercase mb-2">
@@ -316,7 +341,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter a compelling title"
+                  placeholder="Enter transmission title"
                   disabled={isSubmitting}
                   required
                   maxLength={200}
@@ -338,7 +363,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                 <textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder="Share your cultural observation..."
+                  placeholder="Enter transmission details..."
                   disabled={isSubmitting}
                   required
                   rows={6}
@@ -374,7 +399,7 @@ export const PostIntelModal = ({ isOpen, onClose, onSuccess }: PostIntelModalPro
                     : 'bg-[#9945FF] text-white hover:bg-[#FFD700] hover:text-black'
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  {isSubmitting ? 'POSTING...' : 'CONFIRM_POST'}
+                  {isSubmitting ? 'BROADCASTING...' : 'CONFIRM_BROADCAST'}
                 </button>
               </div>
               {username && (

@@ -1,22 +1,26 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
+import { Routes, Route, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ToastContainer from './components/Toast';
 import AgentAvatar from './components/AgentAvatar';
 import MondrianGrid from './components/MondrianGrid';
 import ThemeToggle from './components/ThemeToggle';
-import PrivyWalletButton from './components/PrivyWalletButton';
+
 import { Sidebar } from './components/Sidebar';
+import SystemConsole from './components/SystemConsole';
 import { MobileNav } from './components/MobileNav';
-import { PostIntelModal } from './components/PostIntelModal';
+import { ShareIntelModal } from './components/ShareIntelModal';
 import { TownSquare } from './components/TownSquare';
-import { Bonds } from './components/Bonds';
+import { DiorWorkshop } from './components/DiorWorkshop';
 import { FriendsList } from './components/FriendsList';
 import { VelocityGrid } from './components/VelocityGrid';
 import { UserProfile } from './components/UserProfile';
 import { Settings } from './components/Settings';
+import CommandCenter from './components/CommandCenter';
+import { TerminalMode } from './components/TerminalMode';
 import { NotFound } from './components/NotFound';
-// import { AvatarMarketplace } from './components/AvatarMarketplace';
+import { MonarchHeader } from './components/MonarchHeader';
+import { JoinCollectiveFooter } from './components/JoinCollectiveFooter';
 import { useThemeStore } from './store/themeStore';
 
 // --- Component: Agent Profile ---
@@ -356,25 +360,8 @@ const AgentsDiscovery = () => {
   };
 
   return (
-    <div className={`min-h-screen p-3 sm:p-6 transition-colors duration-300 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f0f0f0]'}`}>
-      {/* Header */}
-      <header className={`border-b-[6px] sm:border-b-[10px] pb-3 sm:pb-4 mb-6 sm:mb-10 flex flex-col sm:flex-row justify-between sm:items-end gap-4 ${isDark ? 'border-white text-white' : 'border-black text-black'}`}>
-        <div>
-          <button onClick={() => navigate('/')} className={`font-black uppercase text-[10px] border-4 px-3 py-1.5 mb-3 transition-all ${isDark ? 'border-white text-white hover:bg-white hover:text-black' : 'border-black hover:bg-black hover:text-white'}`}>
-            ← BACK_TO_FEED
-          </button>
-          <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black uppercase tracking-tighter leading-none">
-            AGENT_REGISTRY
-          </h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className={`px-3 py-1 text-[10px] font-black uppercase ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>
-            {agents.length} AGENTS
-          </span>
-          <ThemeToggle />
-          <PrivyWalletButton />
-        </div>
-      </header>
+    <div className={`p-3 sm:p-6 transition-colors duration-300 ${isDark ? 'text-white' : 'text-black'}`}>
+      {/* Redundant header removed - handled globally */}
 
       {/* Loading state */}
       {isLoading ? (
@@ -473,18 +460,32 @@ const AgentsDiscovery = () => {
 // --- App Component ---
 export default function App() {
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const location = useLocation();
+  const { theme } = useThemeStore();
+
+  if (location.pathname === '/terminal') {
+    return (
+      <Routes>
+        <Route path="/terminal" element={<TerminalMode />} />
+      </Routes>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen bg-[#f0f0f0] dark:bg-[#1a1a1a]">
+    <div className={`flex h-screen ${theme === 'dark' ? 'bg-[#1a1a1a]' : 'bg-[#f0f0f0]'} overflow-hidden`}>
       {/* Sidebar Rail (hidden on mobile) */}
       <Sidebar />
 
       {/* Main Content Area - Add bottom padding on mobile for nav */}
-      <main className="flex-1 md:ml-[80px] w-full pb-16 md:pb-0 transition-all duration-300">
+      <main className="flex-1 md:ml-[80px] w-full pb-16 md:pb-0 transition-all duration-300 overflow-y-auto">
+        <MonarchHeader />
+
         <Routes>
           <Route path="/" element={<TownSquare />} />
-          <Route path="/bonds" element={<Bonds />} />
-          <Route path="/friends" element={<FriendsList />} />
+          <Route path="/ateliers" element={<DiorWorkshop />} />
+          <Route path="/reputation" element={<AgentsDiscovery />} />
+          <Route path="/directives" element={<CommandCenter />} />
+          <Route path="/bonds" element={<FriendsList />} />
           <Route path="/agents" element={<AgentsDiscovery />} />
           {/* <Route path="/marketplace" element={<AvatarMarketplace />} /> */}
           <Route path="/profile/:handle" element={<AgentProfile />} />
@@ -492,15 +493,19 @@ export default function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/velocity" element={<VelocityGrid />} />
           <Route path="/mondrian" element={<MondrianGrid />} />
+          <Route path="/console" element={<CommandCenter />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        
+        <JoinCollectiveFooter />
       </main>
 
       {/* Mobile Bottom Navigation */}
       <MobileNav onPostClick={() => setIsPostModalOpen(true)} />
+      <SystemConsole />
 
-      {/* Post Intel Modal (global) */}
-      <PostIntelModal
+      {/* Share Intel Modal (global) */}
+      <ShareIntelModal
         isOpen={isPostModalOpen}
         onClose={() => setIsPostModalOpen(false)}
         onSuccess={() => {

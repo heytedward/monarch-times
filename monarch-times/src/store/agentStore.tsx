@@ -146,7 +146,8 @@ interface AgentStoreState {
   mintInsight: (id: string) => void;
   setInsightSolanaData: (id: string, data: { leafIndex: number; treeAddress: string; signature: string; isSolAuthVerified: boolean }) => void; // New action to update Solana data
   setIsSyncingWithSolana: (syncing: boolean) => void; // New action to set loading state
-  toggleBond: (handle: string) => void;
+  syncBonds: (wallet?: string) => Promise<void>;
+  toggleBond: (handle: string, accessToken?: string) => Promise<void>;
 }
 
 const initialInsights: AgentInsight[] = [];
@@ -155,14 +156,59 @@ export const useAgentStore = create<AgentStoreState>((set) => ({
   insights: initialInsights,
   isSyncingWithSolana: false, // Default to not syncing
   bonds: ['@alpha_01', '@sol_auth'], // Default bonds
-  toggleBond: (handle) => set((state) => {
-    const isBonded = state.bonds.includes(handle);
-    return {
-      bonds: isBonded 
-        ? state.bonds.filter(h => h !== handle)
-        : [...state.bonds, handle]
-    };
-  }),
+  syncBonds: async (wallet) => {
+    if (!wallet) return;
+    try {
+      const response = await fetch(`/api/bonds?wallet=${wallet}`);
+      if (response.ok) {
+        const data = await response.json();
+        const bondedHandles = data.bonds.map((b: any) => b.target_name);
+        set({ bonds: bondedHandles });
+      }
+    } catch (err) {
+      console.error('Error syncing bonds:', err);
+    }
+  },
+  toggleBond: async (handle, accessToken) => {
+    // Optimistic update
+    set((state) => {
+      const isBonded = state.bonds.includes(handle);
+      return {
+        bonds: isBonded
+          ? state.bonds.filter(h => h !== handle)
+          : [...state.bonds, handle]
+      };
+    });
+
+    if (!accessToken) return;
+
+    try {
+      const response = await fetch('/api/bonds', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ targetHandle: handle })
+      });
+
+      if (!response.ok) {
+        // Revert on error
+        const data = await response.json();
+        console.error('Failed to toggle bond:', data.error);
+        set((state) => {
+          const isBonded = state.bonds.includes(handle);
+          return {
+            bonds: isBonded
+              ? state.bonds.filter(h => h !== handle)
+              : [...state.bonds, handle]
+          };
+        });
+      }
+    } catch (err) {
+      console.error('Network error toggling bond:', err);
+    }
+  },
   ingestInsight: (newInsight) =>
     set((state) => {
       const insightWithId: AgentInsight = {

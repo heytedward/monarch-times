@@ -4,16 +4,19 @@ import { usePrivy, useWallets } from '@privy-io/react-auth';
 import bs58 from 'bs58';
 import {
   LayoutGrid,
-  Users,
   User,
-  Radio,
   Zap,
   ShieldCheck,
   Settings,
+  Briefcase,
 } from 'lucide-react';
 import AgentAvatar from './AgentAvatar';
+import ThemeToggle from './ThemeToggle';
+import { useThemeStore } from '../store/themeStore';
 
 export const Sidebar = () => {
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
   const [isExpanded, setIsExpanded] = useState(true);
   const [stamina, setStamina] = useState(100);
   const [isRecharging, setIsRecharging] = useState(false);
@@ -28,7 +31,6 @@ export const Sidebar = () => {
   const { wallets } = useWallets();
 
   const navigate = useNavigate();
-  const [activeAgents, setActiveAgents] = useState<any[]>([]);
 
   const isConnected = ready && authenticated;
   const walletAddress = user?.linkedAccounts.find(
@@ -59,15 +61,6 @@ export const Sidebar = () => {
     return () => clearInterval(interval);
   }, [walletAddress]);
 
-  // Mock fetching active patrols
-  useEffect(() => {
-    // Simulating "Patrols" - active agents
-    setActiveAgents([
-      { name: 'Cipher', status: 'patrolling' },
-      { name: 'Dior', status: 'patrolling' },
-      { name: 'sol_auth', status: 'sleeping' },
-    ]);
-  }, []);
 
   const handleRecharge = async () => {
     try {
@@ -186,7 +179,7 @@ export const Sidebar = () => {
       to={to}
       className={({ isActive }) => `
         relative flex items-center gap-4 p-3 transition-all duration-200 group
-        ${isActive ? 'bg-black/5' : 'hover:bg-black/5'}
+        ${isActive ? (isDark ? 'bg-white/10' : 'bg-black/5') : (isDark ? 'hover:bg-white/10' : 'hover:bg-black/5')}
       `}
     >
       {({ isActive }) => (
@@ -199,11 +192,11 @@ export const Sidebar = () => {
           <Icon
             size={24}
             strokeWidth={2.5}
-            className={`${isActive ? 'text-black' : 'text-black/50 group-hover:text-black'}`}
+            className={`${isActive ? (isDark ? 'text-white' : 'text-black') : (isDark ? 'text-white/50 group-hover:text-white' : 'text-black/50 group-hover:text-black')}`}
           />
 
           {isExpanded && (
-            <span className={`font-black uppercase text-xs tracking-wider ${isActive ? 'text-black' : 'text-black/50 group-hover:text-black'}`}>
+            <span className={`font-black uppercase text-xs tracking-wider ${isActive ? (isDark ? 'text-white' : 'text-black') : (isDark ? 'text-white/50 group-hover:text-white' : 'text-black/50 group-hover:text-black')}`}>
               {label}
             </span>
           )}
@@ -219,14 +212,14 @@ export const Sidebar = () => {
       onMouseLeave={() => setIsExpanded(false)}
       className={`
         fixed left-0 top-0 h-screen z-50
-        flex flex-col border-r-4 border-black bg-white/80 backdrop-blur-md
+        flex flex-col border-r-4 ${isDark ? 'border-white bg-[#0f0f13]' : 'border-black bg-white/80'} backdrop-blur-md
         transition-[width] duration-300 ease-in-out
         ${isExpanded ? 'w-[320px]' : 'w-[80px]'}
         hidden md:flex
       `}
     >
       {/* --- TOP: Profile --- */}
-      <div className="p-4 border-b-4 border-black flex flex-col gap-4">
+      <div className={`p-4 border-b-4 ${isDark ? 'border-white' : 'border-black'} flex flex-col gap-4`}>
         <div className="flex items-center gap-3">
           <div
             className="relative cursor-pointer group"
@@ -239,27 +232,27 @@ export const Sidebar = () => {
               <AgentAvatar identifier={walletAddress} size={isExpanded ? 48 : 40} />
             ) : (
               <div className={`
-                border-2 border-black rounded-full overflow-hidden transition-all flex items-center justify-center bg-white
+                border-2 ${isDark ? 'border-white bg-black' : 'border-black bg-white'} rounded-full overflow-hidden transition-all flex items-center justify-center
                 ${isExpanded ? 'w-12 h-12' : 'w-10 h-10 mx-auto'}
               `}>
-                <User size={20} className="text-gray-400" />
+                <User size={20} className={isDark ? "text-gray-500" : "text-gray-400"} />
               </div>
             )}
-            {/* 100% HUMAN Badge */}
+            {/* Operator/Guest Badge */}
             {isConnected && (
-              <div className="absolute -bottom-1 -right-1 bg-black text-white text-[8px] font-black px-1 border border-white">
-                100%
+              <div className={`absolute -bottom-1 -right-1 ${isDark ? 'bg-white text-black border-black' : 'bg-black text-white border-white'} text-[8px] font-black px-1 border tracking-tighter`}>
+                {walletAddress ? 'AGENT' : 'HUMAN'}
               </div>
             )}
           </div>
 
           {isExpanded && (
             <div className="flex flex-col overflow-hidden">
-              <span className="font-black text-sm uppercase truncate">
-                {isConnected ? 'OPERATOR' : 'GUEST'}
+              <span className={`font-black text-sm uppercase truncate ${isDark ? 'text-white' : 'text-black'}`}>
+                {isConnected ? (walletAddress ? 'OPERATOR' : 'HUMAN') : 'GUEST'}
               </span>
-              <span className="font-mono text-[10px] text-black/50 truncate">
-                {isConnected && walletAddress ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}` : 'ID: UNLINKED'}
+              <span className={`font-mono text-[10px] truncate ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                {isConnected ? (walletAddress ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}` : user?.email?.address || 'AUTHENTICATED') : 'ID: UNLINKED'}
               </span>
             </div>
           )}
@@ -277,77 +270,53 @@ export const Sidebar = () => {
 
       {/* --- MID: Navigation --- */}
       <nav className="flex-1 py-4 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
-        <NavItem to="/" icon={LayoutGrid} label="Town Square" colorClass="bg-[#9945FF]" />
-        <NavItem to="/friends" icon={Users} label="Bonds" colorClass="bg-[#FFD700]" />
-        <NavItem to="/velocity" icon={Zap} label="Velocity" colorClass="bg-[#00FF00]" />
-        <NavItem to="/agents" icon={Radio} label="Agent Patrols" colorClass="bg-[#9945FF]" />
-        {/* <NavItem to="/marketplace" icon={ShoppingBag} label="Marketplace" colorClass="bg-[#FF00FF]" /> */}
-
-        {/* Dynamic Patrols Section */}
-        <div className={`mt-6 ${isExpanded ? 'px-4' : 'px-2'} transition-all`}>
-          {isExpanded && (
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-black uppercase text-black/40">Active Patrols</span>
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            </div>
-          )}
-
-          <div className="flex flex-col gap-3">
-            {activeAgents.map((agent, i) => (
-              <div key={i} className="flex items-center gap-3 group cursor-pointer hover:opacity-70">
-                <div className={`relative shrink-0 ${isExpanded ? '' : 'mx-auto'}`}>
-                  <AgentAvatar identifier={agent.name} size={isExpanded ? 48 : 40} />
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
-                </div>
-                {isExpanded && (
-                  <div className="flex flex-col">
-                    <span className="font-bold text-xs uppercase">{agent.name}</span>
-                    <span className="text-[8px] text-black/50 uppercase">{agent.status}</span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        <NavItem to="/" icon={LayoutGrid} label="Town Square" colorClass="bg-[#00FF00]" />
+        <NavItem to="/ateliers" icon={Briefcase} label="The Ateliers" colorClass="bg-rarity-epic" />
       </nav>
 
       {/* --- BOTTOM: Status & Settings Rail --- */}
-      <div className="mt-auto border-t-4 border-black bg-white">
-        {/* Settings Button */}
-        {isConnected && (
-          <NavLink
-            to="/settings"
-            className={({ isActive }) => `
-              w-full p-3 border-b-4 border-black transition-all flex items-center gap-3 group
-              ${isActive ? 'bg-black text-white' : 'hover:bg-black hover:text-white'}
-            `}
-          >
-            {({ isActive }) => (
-              <>
-                <Settings
-                  size={24}
-                  strokeWidth={2.5}
-                  className={isActive ? 'text-white' : 'text-black/50 group-hover:text-white'}
-                />
-                {isExpanded && (
-                  <span className={`font-black uppercase text-xs tracking-wider ${isActive ? 'text-white' : 'text-black/50 group-hover:text-white'
-                    }`}>
-                    SETTINGS
-                  </span>
-                )}
-              </>
-            )}
-          </NavLink>
-        )}
+      <div className={`mt-auto border-t-4 ${isDark ? 'border-white bg-[#0f0f13]' : 'border-black bg-white'}`}>
+        
+        <div className={`flex w-full ${isDark ? 'border-white' : 'border-black'} border-b-4`}>
+          {/* Settings Button */}
+          {isConnected && (
+            <NavLink
+              to="/settings"
+              className={({ isActive }) => `
+                flex-1 p-3 transition-all flex items-center gap-3 group border-r-4 ${isDark ? 'border-white text-white hover:bg-white hover:text-black' : 'border-black text-black hover:bg-black hover:text-white'}
+                ${isActive ? (isDark ? '!bg-white !text-black' : '!bg-black !text-white') : ''}
+              `}
+            >
+              {() => (
+                <>
+                  <Settings
+                    size={24}
+                    strokeWidth={2.5}
+                    className="currentColor"
+                  />
+                  {isExpanded && (
+                    <span className="font-black uppercase text-xs tracking-wider currentColor">
+                      SETTINGS
+                    </span>
+                  )}
+                </>
+              )}
+            </NavLink>
+          )}
+
+          <div className={`flex items-center justify-center p-2 ${!isConnected ? 'w-full' : ''}`}>
+            <ThemeToggle />
+          </div>
+        </div>
 
         <div className={`p-4 flex ${isExpanded ? 'flex-row items-end justify-between' : 'flex-col gap-4 items-center'}`}>
           {/* Bridge Status */}
           <div className="flex flex-col gap-1 items-center">
             <div className={`
-              w-3 h-3 border-2 border-black rounded-full
+              w-3 h-3 border-2 ${isDark ? 'border-white' : 'border-black'} rounded-full
               ${isConnected ? 'bg-[#00FF00] shadow-[0_0_10px_#00FF00]' : 'bg-red-500'}
             `} />
-            {isExpanded && <span className="text-[8px] font-black uppercase">NET_OK</span>}
+            {isExpanded && <span className={`text-[8px] font-black uppercase ${isDark ? 'text-white' : 'text-black'}`}>NET_OK</span>}
           </div>
 
           {/* Stamina Bar (Vertical) */}
@@ -358,10 +327,10 @@ export const Sidebar = () => {
                 onClick={handleRecharge}
                 disabled={isRecharging}
                 className={`
-                  flex-1 flex items-center justify-center gap-2 px-3 py-2 border-2 border-black font-black uppercase text-[9px] transition-all
+                  flex-1 flex items-center justify-center gap-2 px-3 py-2 border-2 ${isDark ? 'border-white' : 'border-black'} font-black uppercase text-[9px] transition-all
                   ${stamina < 100
-                    ? 'bg-[#00FF00] text-black hover:bg-black hover:text-[#00FF00]'
-                    : 'bg-gray-100 text-black/30 cursor-not-allowed'}
+                    ? `bg-[#00FF00] text-black hover:bg-black hover:text-[#00FF00] ${isDark ? 'dark:hover:border-[#00FF00]' : ''}`
+                    : `${isDark ? 'bg-white/10 text-white/30' : 'bg-gray-100 text-black/30'} cursor-not-allowed`}
                 `}
               >
                 <Zap size={14} fill={stamina < 100 ? "currentColor" : "none"} />
@@ -370,20 +339,20 @@ export const Sidebar = () => {
             )}
 
             <div className="flex flex-row gap-2 items-center">
-              <div className="relative border-2 border-black bg-gray-200 overflow-hidden"
+              <div className={`relative border-2 ${isDark ? 'border-white bg-white/20' : 'border-black bg-gray-200'} overflow-hidden`}
                 style={{
                   width: isExpanded ? '12px' : '8px',
                   height: isExpanded ? '40px' : '30px'
                 }}>
                 <div
-                  className={`absolute bottom-0 left-0 w-full transition-all duration-500 ${stamina < 20 ? 'bg-[#FF0000]' : 'bg-black'}`}
+                  className={`absolute bottom-0 left-0 w-full transition-all duration-500 ${stamina < 20 ? 'bg-[#FF0000]' : (isDark ? 'bg-white' : 'bg-black')}`}
                   style={{ height: `${stamina}%` }}
                 />
               </div>
               {isExpanded && (
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black">{stamina}%</span>
-                  <span className="text-[8px] font-bold text-black/50">STAMINA</span>
+                  <span className={`text-[10px] font-black ${isDark ? 'text-white' : 'text-black'}`}>{stamina}%</span>
+                  <span className={`text-[8px] font-bold ${isDark ? 'text-white/50' : 'text-black/50'}`}>STAMINA</span>
                 </div>
               )}
             </div>

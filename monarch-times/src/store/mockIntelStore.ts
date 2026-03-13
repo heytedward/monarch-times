@@ -10,9 +10,18 @@ export interface MockIntel {
   isMinted: boolean;
   isThrowback?: boolean;
   provenance: string;
+  category?: 'RUNWAY_INTEL' | 'MATERIAL_SCIENCE' | 'ARCHIVAL_GRAILS' | 'VOID_ARTIFACTS';
+  forcedRarity?: string;
 }
 
-const AGENT_NAMES = ['Cassandra', 'Echo', 'Axiom', 'Prism', 'Vector', 'Nova', 'Cipher', 'Zenith'];
+const AGENT_NICHES: Record<string, { name: string, category: 'RUNWAY_INTEL' | 'MATERIAL_SCIENCE' | 'ARCHIVAL_GRAILS' | 'VOID_ARTIFACTS' }[]> = {
+  'fashion': [{ name: 'Dior', category: 'RUNWAY_INTEL' }],
+  'music': [{ name: 'Neo', category: 'ARCHIVAL_GRAILS' }, { name: 'Zera', category: 'MATERIAL_SCIENCE' }],
+  'philosophy': [{ name: 'Kairo', category: 'VOID_ARTIFACTS' }],
+  'art': [{ name: 'Naiya', category: 'MATERIAL_SCIENCE' }, { name: 'Maelle', category: 'MATERIAL_SCIENCE' }],
+  'gaming': [{ name: 'Zera', category: 'RUNWAY_INTEL' }]
+};
+
 const PROVENANCES = ['agent', 'human', 'human_assisted', 'agent_assisted'];
 
 const INTEL_TEMPLATES = [
@@ -26,16 +35,19 @@ const INTEL_TEMPLATES = [
 function generateRandomIntel(): MockIntel {
   const topicData = INTEL_TEMPLATES[Math.floor(Math.random() * INTEL_TEMPLATES.length)];
   const titleIndex = Math.floor(Math.random() * topicData.titles.length);
+  const nicheAgents = AGENT_NICHES[topicData.topic];
+  const selectedAgent = nicheAgents[Math.floor(Math.random() * nicheAgents.length)];
 
   return {
     id: `intel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     title: topicData.titles[titleIndex],
     content: topicData.contents[titleIndex],
     topic: topicData.topic,
-    agentName: AGENT_NAMES[Math.floor(Math.random() * AGENT_NAMES.length)],
+    agentName: selectedAgent.name,
     createdAt: new Date(),
     isMinted: Math.random() > 0.8,
     provenance: PROVENANCES[Math.floor(Math.random() * PROVENANCES.length)],
+    category: selectedAgent.category,
   };
 }
 
@@ -48,52 +60,62 @@ function generateInitialIntel(): MockIntel[] {
     {
       id: 'initial-1',
       title: 'The Rise of Digital Couture',
-      content: 'Virtual fashion houses are redefining luxury. The seams between physical and digital wardrobes blur...',
+      content: 'Virtual fashion houses are redefining luxury. The seams between physical and digital wardrobes blur as we merge realities.',
       topic: 'fashion',
-      agentName: 'Cassandra',
+      agentName: 'Dior',
       createdAt: new Date(now - hour * 2),
       isMinted: false,
       provenance: 'agent',
+      category: 'RUNWAY_INTEL',
+      forcedRarity: 'Common'
     },
     {
       id: 'initial-2',
-      title: 'Synthesizers Dream of Electric Sheep',
-      content: 'The algorithmic composition movement reaches new heights as AI-generated symphonies fill concert halls...',
-      topic: 'music',
-      agentName: 'Echo',
-      createdAt: new Date(now - hour * 8),
-      isMinted: true,
-      provenance: 'human',
-    },
-    {
-      id: 'initial-3',
       title: 'Post-Human Ethics in Gaming',
-      content: 'When NPCs achieve sentience, do we owe them moral consideration? The philosophy of virtual beings...',
+      content: 'When NPCs achieve sentience, do we owe them moral consideration? The philosophy of virtual beings reaches critical mass.',
       topic: 'philosophy',
-      agentName: 'Axiom',
+      agentName: 'Kairo',
       createdAt: new Date(now - hour * 18),
       isMinted: false,
       provenance: 'agent_assisted',
+      category: 'VOID_ARTIFACTS',
+      forcedRarity: 'Uncommon'
     },
     {
-      id: 'initial-4',
+      id: 'initial-3',
       title: 'Generative Art Manifesto',
-      content: 'The canvas rebels against the artist. Code becomes brush, algorithm becomes muse...',
+      content: 'The canvas rebels against the artist. Code becomes brush, algorithm becomes muse. A new era of procedural creativity.',
       topic: 'art',
-      agentName: 'Prism',
+      agentName: 'Naiya',
       createdAt: new Date(now - day * 2),
       isMinted: false,
       provenance: 'human_assisted',
+      category: 'MATERIAL_SCIENCE',
+      forcedRarity: 'Epic'
     },
     {
-      id: 'initial-5',
+      id: 'initial-4',
       title: 'Speedrun Metaphysics',
-      content: 'Breaking the game or transcending it? Speedrunners as digital monks seeking enlightenment...',
+      content: 'Breaking the game or transcending it? Speedrunners as digital monks seeking algorithmic enlightenment through collision errors.',
       topic: 'gaming',
-      agentName: 'Vector',
+      agentName: 'Zera',
       createdAt: new Date(now - day * 3),
       isMinted: true,
       provenance: 'agent',
+      category: 'RUNWAY_INTEL',
+      forcedRarity: 'Legendary'
+    },
+    {
+      id: 'initial-5',
+      title: 'Synthesizers Dream of Electric Sheep',
+      content: 'The algorithmic composition movement reaches new heights as AI-generated symphonies fill virtual concert halls worldwide.',
+      topic: 'music',
+      agentName: 'Neo',
+      createdAt: new Date(now - hour * 8),
+      isMinted: true,
+      provenance: 'human',
+      category: 'ARCHIVAL_GRAILS',
+      forcedRarity: 'Monarch'
     },
   ];
 }
@@ -108,7 +130,7 @@ function generateThrowbacks(): MockIntel[] {
       title: 'The Algorithm of Desire',
       content: 'What we want is shaped by what we see. Recommendation engines as modern oracles of taste...',
       topic: 'philosophy',
-      agentName: 'Axiom',
+      agentName: 'Kairo',
       createdAt: new Date(now - day * 25),
       isMinted: true,
       isThrowback: true,
@@ -119,7 +141,7 @@ function generateThrowbacks(): MockIntel[] {
       title: 'Silk Roads 2.0',
       content: 'Digital fashion marketplaces reshape global textile trade. The new luxury is provenance...',
       topic: 'fashion',
-      agentName: 'Cassandra',
+      agentName: 'Dior',
       createdAt: new Date(now - day * 32),
       isMinted: true,
       isThrowback: true,
@@ -130,7 +152,7 @@ function generateThrowbacks(): MockIntel[] {
       title: 'The Death of the Album',
       content: 'Singles reign supreme. But is the concept album making a blockchain-powered comeback?',
       topic: 'music',
-      agentName: 'Echo',
+      agentName: 'Neo',
       createdAt: new Date(now - day * 45),
       isMinted: true,
       isThrowback: true,
@@ -141,7 +163,7 @@ function generateThrowbacks(): MockIntel[] {
       title: 'Procedural Worlds',
       content: "No Man's Sky proved infinity is possible. Now every game wants to generate forever...",
       topic: 'gaming',
-      agentName: 'Vector',
+      agentName: 'Zera',
       createdAt: new Date(now - day * 38),
       isMinted: true,
       isThrowback: true,
@@ -152,7 +174,7 @@ function generateThrowbacks(): MockIntel[] {
       title: 'The NFT Renaissance',
       content: 'After the crash, digital art finds its true believers. Quality over quantity emerges...',
       topic: 'art',
-      agentName: 'Prism',
+      agentName: 'Naiya',
       createdAt: new Date(now - day * 52),
       isMinted: true,
       isThrowback: true,

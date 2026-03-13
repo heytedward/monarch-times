@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, UserPlus, MessageCircle, Star } from 'lucide-react';
+import { usePrivy } from '@privy-io/react-auth';
 import { useThemeStore } from '../store/themeStore';
 import { useAgentStore } from '../store/agentStore';
 import AgentAvatar from './AgentAvatar';
@@ -10,13 +11,57 @@ export const FriendsList = () => {
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
   const navigate = useNavigate();
-  const { bonds, toggleBond } = useAgentStore();
+  const { ready, authenticated, user, getAccessToken } = usePrivy();
+  const { bonds, toggleBond, syncBonds } = useAgentStore();
   const [filter, setFilter] = useState<'all' | 'humans' | 'agents'>('all');
+  const [agents, setAgents] = useState<any[]>([]);
 
-  // Mock friends data - in production this would come from an API
-  const mockFriends: any[] = [];
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const response = await fetch('/api/agents');
+        if (response.ok) {
+          const data = await response.json();
+          setAgents(data.agents || []);
+        }
+      } catch (err) {
+        console.error('Error fetching agents:', err);
+      }
+    };
 
-  const filteredFriends = mockFriends.filter(friend => {
+    fetchAgents();
+  }, []);
+
+  // Sync bonds when authenticated
+  useEffect(() => {
+    if (ready && authenticated && user?.wallet?.address) {
+      syncBonds(user.wallet.address);
+    }
+  }, [ready, authenticated, user?.wallet?.address, syncBonds]);
+
+  const handleToggleBond = async (handle: string) => {
+    const token = await getAccessToken();
+    toggleBond(handle, token || undefined);
+  };
+
+  // Map backend agents to the friend format used in UI
+  const friendList = agents.map(agent => {
+    // Find bond data if it exists
+    const bondData = (bonds as any[]).find(b => b.target_name === agent.name);
+
+    return {
+      id: agent.id,
+      handle: agent.name,
+      status: 'online',
+      type: agent.identity === 'Human User' || agent.identity === 'human' ? 'human' : 'agent',
+      lastSeen: 'just now',
+      bio: agent.identity || agent.bio || `${agent.name} is a verified contributor to the Monarch Protocol.`,
+      mutualBonds: bondData?.mutual_count || 0,
+      isBonded: bonds.includes(agent.name)
+    };
+  });
+
+  const filteredFriends = friendList.filter(friend => {
     if (filter === 'all') return true;
     return friend.type === filter.replace('s', ''); // 'agents' -> 'agent'
   });
@@ -45,8 +90,8 @@ export const FriendsList = () => {
               <div className="text-3xl text-[#FFD700] leading-none font-black">{bonds.length}</div>
             </div>
             <div className="border-4 border-black p-3 bg-black text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] min-w-[100px]">
-              <div className="text-white/50 mb-1 font-bold">Online Now</div>
-              <div className="text-3xl text-[#00FF00] leading-none font-black">{mockFriends.filter(f => f.status === 'online').length}</div>
+              <div className="text-white/50 mb-1 font-bold">Network Size</div>
+              <div className="text-3xl text-[#00FF00] leading-none font-black">{agents.length}</div>
             </div>
           </div>
         </div>
@@ -57,31 +102,28 @@ export const FriendsList = () => {
         <div className="flex gap-2">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-2 font-black uppercase text-xs border-4 transition-all ${
-              filter === 'all'
-                ? 'bg-black text-white border-black'
-                : 'bg-white text-black border-black/30 hover:border-black'
-            }`}
+            className={`px-4 py-2 font-black uppercase text-xs border-4 transition-all ${filter === 'all'
+              ? 'bg-black text-white border-black'
+              : 'bg-white text-black border-black/30 hover:border-black'
+              }`}
           >
             ALL
           </button>
           <button
             onClick={() => setFilter('humans')}
-            className={`px-4 py-2 font-black uppercase text-xs border-4 transition-all ${
-              filter === 'humans'
-                ? 'bg-[#0052FF] text-white border-black'
-                : 'bg-white text-black border-black/30 hover:border-black'
-            }`}
+            className={`px-4 py-2 font-black uppercase text-xs border-4 transition-all ${filter === 'humans'
+              ? 'bg-[#0052FF] text-white border-black'
+              : 'bg-white text-black border-black/30 hover:border-black'
+              }`}
           >
             HUMANS
           </button>
           <button
             onClick={() => setFilter('agents')}
-            className={`px-4 py-2 font-black uppercase text-xs border-4 transition-all ${
-              filter === 'agents'
-                ? 'bg-[#9945FF] text-white border-black'
-                : 'bg-white text-black border-black/30 hover:border-black'
-            }`}
+            className={`px-4 py-2 font-black uppercase text-xs border-4 transition-all ${filter === 'agents'
+              ? 'bg-[#9945FF] text-white border-black'
+              : 'bg-white text-black border-black/30 hover:border-black'
+              }`}
           >
             AGENTS
           </button>
@@ -94,18 +136,16 @@ export const FriendsList = () => {
         {filteredFriends.map((friend) => (
           <div
             key={friend.id}
-            className={`border-4 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${
-              isDark ? 'bg-[#2a2a2a]' : 'bg-white'
-            }`}
+            className={`border-4 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${isDark ? 'bg-[#2a2a2a]' : 'bg-white'
+              }`}
           >
             {/* Header with avatar and status */}
             <div className="flex items-start gap-3 mb-4">
               <div className="relative">
                 <AgentAvatar identifier={friend.handle} size={64} />
                 <div
-                  className={`absolute -bottom-1 -right-1 w-4 h-4 border-2 border-white rounded-full ${
-                    friend.status === 'online' ? 'bg-[#00FF00]' : 'bg-gray-400'
-                  }`}
+                  className={`absolute -bottom-1 -right-1 w-4 h-4 border-2 border-white rounded-full ${friend.status === 'online' ? 'bg-[#00FF00]' : 'bg-gray-400'
+                    }`}
                 />
               </div>
               <div className="flex-1 min-w-0">
@@ -135,12 +175,11 @@ export const FriendsList = () => {
             {/* Actions */}
             <div className="flex gap-2">
               <button
-                onClick={() => toggleBond(friend.handle)}
-                className={`flex-1 px-4 py-2 font-black uppercase text-xs border-4 border-black transition-all ${
-                  friend.isBonded
-                    ? 'bg-[#FFD700] text-black hover:bg-black hover:text-white'
-                    : 'bg-black text-white hover:bg-[#FFD700] hover:text-black'
-                }`}
+                onClick={() => handleToggleBond(friend.handle)}
+                className={`flex-1 px-4 py-2 font-black uppercase text-xs border-4 border-black transition-all ${friend.isBonded
+                  ? 'bg-[#FFD700] text-black hover:bg-black hover:text-white'
+                  : 'bg-black text-white hover:bg-[#FFD700] hover:text-black'
+                  }`}
               >
                 {friend.isBonded ? '✓ BONDED' : 'BOND'}
               </button>

@@ -1,84 +1,67 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutGrid, Users, Zap, User, Plus } from 'lucide-react';
+import { LayoutGrid, Briefcase, Plus } from 'lucide-react';
+import { usePrivy } from '@privy-io/react-auth';
+import ThemeToggle from './ThemeToggle';
+import { useThemeStore } from '../store/themeStore';
 
 interface MobileNavProps {
   onPostClick: () => void;
 }
 
 export function MobileNav({ onPostClick }: MobileNavProps) {
+  const { user } = usePrivy();
+  const { theme } = useThemeStore();
+  const isDark = theme === 'dark';
+  
+  // Agent = User who has linked a Solana wallet
+  const isAgent = user?.linkedAccounts.some(
+      (account) => account.type === 'wallet' && account.chainType === 'solana'
+  ) || false;
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white border-t-4 border-black">
+    <nav className={`fixed bottom-0 left-0 right-0 z-50 md:hidden ${isDark ? 'bg-mondrian-black border-white' : 'bg-white border-black'} border-t-4 transition-colors`}>
       <div className="flex items-center justify-around h-16">
         {/* Town Square */}
         <NavLink
           to="/"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-              isActive ? 'bg-[#0052FF] text-white' : 'text-black hover:bg-black/5'
-            }`
+            `flex flex-col items-center justify-center flex-1 h-full transition-colors ${isActive ? 'bg-mondrian-red text-mondrian-white' : (isDark ? 'text-white hover:bg-white/5' : 'text-black hover:bg-black/5')}`
           }
         >
-          <>
-            <LayoutGrid size={20} strokeWidth={2.5} />
-            <span className="text-[9px] font-black mt-1">TOWN</span>
-          </>
+          <LayoutGrid size={20} className="mb-1" strokeWidth={2.5} />
+          <span className="text-[9px] font-black">FEED</span>
         </NavLink>
 
-        {/* Bonds */}
+        {/* Ateliers */}
         <NavLink
-          to="/friends"
+          to="/ateliers"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-              isActive ? 'bg-[#FFD700] text-black' : 'text-black hover:bg-black/5'
-            }`
+            `flex flex-col items-center justify-center flex-1 h-full transition-colors ${isActive ? 'bg-rarity-epic text-white' : (isDark ? 'text-white hover:bg-white/5' : 'text-black hover:bg-black/5')}`
           }
         >
-          <>
-            <Users size={20} strokeWidth={2.5} />
-            <span className="text-[9px] font-black mt-1">BONDS</span>
-          </>
+          <Briefcase size={20} className="mb-1" strokeWidth={2.5} />
+          <span className="text-[9px] font-black">ATELIERS</span>
         </NavLink>
 
-        {/* Post Intel (Center Button) */}
-        <button
-          onClick={onPostClick}
-          className="flex flex-col items-center justify-center flex-1 h-full bg-[#FF0000] text-white hover:bg-[#CC0000] transition-colors relative"
-        >
-          <div className="absolute -top-3 bg-[#FF0000] border-4 border-black rounded-full p-2">
-            <Plus size={24} strokeWidth={3} />
+        {/* Post Intel (Only for Agents) */}
+        {isAgent && (
+          <button
+            onClick={onPostClick}
+            className="flex flex-col items-center justify-center flex-1 h-full bg-mondrian-red text-mondrian-white hover:bg-red-700 transition-colors relative"
+          >
+            <div className={`absolute -top-3 bg-mondrian-red border-4 rounded-full p-2 ${isDark ? 'border-mondrian-black' : 'border-white'}`}>
+              <Plus size={24} strokeWidth={3} />
+            </div>
+            <span className="text-[9px] font-black mt-6">POST</span>
+          </button>
+        )}
+
+        {/* Theme Toggle (Right side) */}
+        <div className="flex flex-col items-center justify-center flex-1 h-full px-2">
+          <div className="scale-75 origin-center">
+            <ThemeToggle />
           </div>
-          <span className="text-[9px] font-black mt-6">POST</span>
-        </button>
-
-        {/* Velocity */}
-        <NavLink
-          to="/velocity"
-          className={({ isActive }) =>
-            `flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-              isActive ? 'bg-[#00FF00] text-black' : 'text-black hover:bg-black/5'
-            }`
-          }
-        >
-          <>
-            <Zap size={20} strokeWidth={2.5} />
-            <span className="text-[9px] font-black mt-1">VELOCITY</span>
-          </>
-        </NavLink>
-
-        {/* Profile */}
-        <NavLink
-          to="/me"
-          className={({ isActive }) =>
-            `flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-              isActive ? 'bg-[#9945FF] text-white' : 'text-black hover:bg-black/5'
-            }`
-          }
-        >
-          <>
-            <User size={20} strokeWidth={2.5} />
-            <span className="text-[9px] font-black mt-1">PROFILE</span>
-          </>
-        </NavLink>
+        </div>
       </div>
     </nav>
   );

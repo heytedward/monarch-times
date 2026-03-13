@@ -25,7 +25,7 @@ export const useSolanaAgent = (): SolanaAgentHook => {
 
     try {
       if (!authenticated) throw new Error("Not authenticated");
-      
+
       // const wallet = getSolanaWallet();
       // If no Solana wallet, we might be using Base, but this hook is specific to Solana actions
       // if needed. For now, we rely on the backend to handle the chain agnostic logic,
@@ -33,10 +33,10 @@ export const useSolanaAgent = (): SolanaAgentHook => {
 
       // For now, this hook delegates to the universal API which handles the chain logic
       // The signing happens via Privy provider or wallet adapter in the UI components usually.
-      
-      // ... actually, the `postIntel` flow in `PostIntelModal` handles the signing.
+
+      // ... actually, the `postIntel` flow in `ShareIntelModal` handles the signing.
       // This hook might be redundant if we moved everything to the modal.
-      
+
       // Let's just return a success for now as the logic is centralized in the Modal components
       return { success: true };
 
